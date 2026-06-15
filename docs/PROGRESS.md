@@ -13,7 +13,7 @@
 - [x] **M1 · 修复打勾"加了一步"**：Web 完成体验改为真正一键即时——移除过宽的 `late`（<16:00 即判 late）触发；任何来源完成只走非阻塞内联微迸发（700ms）；满屏庆祝只留给"目标全完成"（advanceProgress）和真升级（独立 Modal）。详情弹窗完成不再弹满屏 2 秒浮层。`webapp/web-app.jsx` toggleDone。
 - [x] **M2 · 移动端撤销/回收站/延期**（补齐 web 已有）：Toast 支持「撤销」动作；deleteEvent 改软删除入回收站；新增 restoreEvent/purgeTrash/openTrash/postpone；详情弹层两行操作（完成 / 延期一天·取消·删除）；我的页加「回收站 · N 项」入口 + 底部回收站 Sheet。顺手补了 DetailSheet 缺失的 onStar 接线。`app/VoiceLogApp.jsx`、`app/screens-home.jsx`、`app/screens-export.jsx`。
 - [x] **M3 · 现在/接下来 焦点卡**（借 Focuster）：共享 `FocusCard`（`app/ui.jsx`），仅"今天"显示，按真实时钟算当前进行/下一件 + 相对时间（还剩 N 分 / N 分钟后），全部过完显示鼓励语。接入移动端日程顶部与 Web 右栏。
-- [ ] **M4 · 每日容量提醒**（借 Sunsama）：单日排程时长超阈值（默认 8h）时温和横幅「今天已排 X 小时」，可关、非模态。
+- [x] **M4 · 每日容量提醒**（借 Sunsama）：`window.VL.DAILY_CAPACITY_H=8` + `dayLoad()`；共享 `CapacityBanner`（`app/ui.jsx`，温和琥珀色、可关、非模态）。接入移动端日程顶部与 Web 右栏。Demo 把周三(06-18)排到 9h（不重叠）以便演示。
 - [ ] **M5 · 未完成顺延**（借 Sunsama）：温和提示「昨天有 N 件没做完，挪到今天？」一键移动，复用 postpone。
 - [ ] **M6 · 多意图批量语音**（PRD 丝滑核心）：`window.VL.parseBatch(text)` 分句多意图（新增/完成/补录）→ 可编辑「待执行清单」→ 确认后批量执行，永不静默。接入语音面板 + Web 快速建程。
 - [ ] **M7 · Typeless 成长报告增强**：成长页顶部隐私安心卡 + 多段甜甜圈（`window.Donut` 已存在）+ 图标化分类表 + 「时间洞察成熟度 X%」+ 折叠解释。

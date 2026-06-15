@@ -526,6 +526,7 @@
   function HomeScreen({ t, app }) {
     const { week } = window.VL.data;
     const [view, setView] = useState('list');
+    const [capDismiss, setCapDismiss] = useState({});
     const sel = app.selectedDay;
     const list = (app.events[sel] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
     const conflictIds = new Set();
@@ -582,6 +583,9 @@
               </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 24px' }}>
+              {totalH > window.VL.DAILY_CAPACITY_H && !capDismiss[sel] && (
+                <window.CapacityBanner t={t} hours={totalH} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [sel]: true }))} style={{ marginBottom: 12 }} />
+              )}
               <window.FocusCard t={t} events={list} dayKey={sel} onOpen={app.openDetail} style={{ marginBottom: 14 }} />
               {list.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

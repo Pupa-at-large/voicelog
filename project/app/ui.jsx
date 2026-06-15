@@ -249,6 +249,20 @@
     );
   }
 
+  // 每日容量提醒：温和、可关、非模态（借 Sunsama；遵守"复盘是主场、说教是禁区"）
+  function CapacityBanner({ t, hours, cap, onDismiss, style }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 14px', borderRadius: t.radius, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 12%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 30%, transparent)`, ...style }}>
+        <Icon name="clock" size={16} color={'oklch(0.6 0.13 65)'} style={{ flexShrink: 0, marginTop: 1 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>这天已排 {fmtH(hours)} 小时</div>
+          <div style={{ fontSize: 12.5, color: t.muted, marginTop: 2, lineHeight: 1.5 }}>超出你的容量（约 {cap} 小时）。排得太满容易把整块时间切碎——要不要把不紧要的挪到别天？你最懂自己的节奏。</div>
+        </div>
+        {onDismiss && <button onClick={onDismiss} title="知道了" style={{ width: 24, height: 24, flexShrink: 0, borderRadius: 999, border: 'none', cursor: 'pointer', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}><Icon name="x" size={14} color={t.faint} /></button>}
+      </div>
+    );
+  }
+
   function SectionLabel({ t, children, style }) {
     return <div style={{
       fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1.5,
@@ -257,7 +271,7 @@
   }
 
   Object.assign(window, {
-    Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard,
+    Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner,
     catColor, catLabel, fmtH,
   });
 })();

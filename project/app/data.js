@@ -21,7 +21,14 @@
         progress: { done: 2, total: 5 },
         note: '把解析引擎的边界情况补全。' },
     ],
+    // 周三：刻意排得很满（约 9 小时）用来演示「每日容量提醒」——保持不重叠
     '06-18': [
+      { id: 'g0', t: '09:00', dur: 120, title: '客户提案会', cat: 'meet', loc: '会议室 A',
+        reminder: 15, status: 'todo', note: '过一遍方案，准备好报价表。' },
+      { id: 'g2', t: '11:30', dur: 120, title: '写季度方案', cat: 'deep', status: 'todo' },
+      { id: 'g3', t: '14:00', dur: 120, title: '部门评审', cat: 'meet', loc: '大会议室',
+        reminder: 10, status: 'todo' },
+      { id: 'g4', t: '16:30', dur: 120, title: '跟进与修复线上问题', cat: 'deep', status: 'todo' },
       { id: 'g1', t: '20:00', dur: 60, title: '读书 · 《深度工作》', cat: 'learn',
         reminder: 10, status: 'todo' },
     ],
@@ -225,6 +232,12 @@
     });
   };
   window.VL.MULTITASK_NOTE = '一心多用时，前额叶要在任务间反复切换，认知负担更重、出错更多，长期还可能削弱专注力。能错开就错开，让需要专注的事各自独占一段时间。';
+  // 每日容量（小时）：单日排程超过它时温和提醒「今天排太满了」（借 Sunsama 的"过度安排"提示）
+  window.VL.DAILY_CAPACITY_H = 8;
+  // 某天已排（未取消）的小时数
+  window.VL.dayLoad = function (dayEvents) {
+    return (dayEvents || []).filter((e) => e.status !== 'cancelled').reduce((s, e) => s + (e.dur || 0), 0) / 60;
+  };
   window.VL.periods = [
     { key: 'day', label: '日' }, { key: 'week', label: '周' },
     { key: 'month', label: '月' }, { key: 'quarter', label: '季' },

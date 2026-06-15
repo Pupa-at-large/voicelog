@@ -105,7 +105,9 @@
   // ── 右栏：快速建程 + 当日清单 ──
   function RightRail({ t, app, dayKey }) {
     const [text, setText] = useState('');
+    const [capDismiss, setCapDismiss] = useState({});
     const list = (app.events[dayKey] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+    const load = window.VL.dayLoad(list);
     const w = window.VL.data.week.find((x) => x.key === dayKey);
     const submit = () => { const v = text.trim(); if (!v) return; app.quickAdd(v); setText(''); };
     return (
@@ -119,6 +121,9 @@
           <div style={{ fontSize: 11.5, color: t.faint, marginTop: 8 }}>回车即建 · 支持「每周三五」这类重复与「到学期末」截止</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
+          {load > window.VL.DAILY_CAPACITY_H && !capDismiss[dayKey] && (
+            <window.CapacityBanner t={t} hours={load} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [dayKey]: true }))} style={{ marginBottom: 14 }} />
+          )}
           <window.FocusCard t={t} events={list} dayKey={dayKey} onOpen={app.openDetail} style={{ marginBottom: 16 }} />
           <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 12 }}>{w.today ? '今天' : `周${w.dow}`} · 6月{w.day}日 <span style={{ fontSize: 13, fontWeight: 500, color: t.faint }}>{list.length} 项</span></div>
           {list.length ? <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
