@@ -280,11 +280,21 @@
                 <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
               </div>
               {transcript && (
-                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 10 }}>
                   <Icon name="mic" size={15} color={t.faint} style={{ marginTop: 2, flexShrink: 0 }} />
                   <span style={{ fontSize: 13.5, color: t.muted, lineHeight: 1.5 }}>{transcript}</span>
                 </div>
               )}
+              {transcript && (() => {
+                const tr = window.VL.speechTrust(transcript);
+                if (!tr.fillers && !tr.corrected) return null;
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 12px', borderRadius: t.radius - 4, background: t.accentSoft, marginBottom: 14 }}>
+                    <Icon name="sparkle" size={14} color={t.accentText} style={{ flexShrink: 0 }} />
+                    <span style={{ fontSize: 12.5, color: t.accentText, lineHeight: 1.5 }}>已清理 {tr.fillers} 处口头语{tr.corrected ? ' · 识别到一次更正' : ''} · 已帮你理清意图</span>
+                  </div>
+                );
+              })()}
               {(() => {
                 const conflict = app ? window.VL.overlaps(app.events[draft.dateKey] || [], { id: '__new', t: draft.time, dur: draft.dur }) : [];
                 if (!conflict.length) return null;

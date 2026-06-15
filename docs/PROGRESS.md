@@ -17,7 +17,7 @@
 - [x] **M5 · 未完成顺延**（借 Sunsama）：helpers `todayKey/prevKey/unfinished`；共享 `RolloverBanner`（`app/ui.jsx`，温和、不羞辱）；`rolloverUnfinished()` 一键把昨天待办全挪到今天。仅"今天"显示。Demo 给 06-15 留了 2 件未完成。移动端+Web 都接。
 - [x] **M6 · 多意图批量语音**（PRD 丝滑核心）：`parseBatch(text)`（`app/parser.js`）智能分句（强连接词 + "逗号后接新时间线索"切分 + 日期继承）识别 新增/完成 多意图；`applyBatchTo()` 纯函数执行（完成意图先匹配既有日程，匹配不到则补录为已完成）；共享 `BatchReviewList`（可勾选「待执行清单」，永不静默）。接入：Web 快速建程（一段话回车）+ Web 语音弹窗 + 移动端语音浮层（均带示例入口）。`applyBatch` 计 XP。
 - [x] **M7 · Typeless 成长报告增强**：`insightMaturity()`（懂你 X%，随累计天数/记录上升封顶95）；共享 `GrowthReport`（`app/screens-growth.jsx`）——隐私安心卡（可折叠「为什么」）+ 多段甜甜圈（中心显示懂你%）+ 图标化分类表。移动端竖排、Web 横排接入，替换原 时间去向 卡。
-- [ ] **M8 · 语音信任反馈**（借 Typeless）：解析后一行「已清理 N 处口头语 · 识别到一次更正」（模拟统计 嗯/啊/那个 等）。
+- [x] **M8 · 语音信任反馈**（借 Typeless）：`speechTrust(text)` 统计口头语 + 识别自我更正；解析预览里一行温和反馈「已清理 N 处口头语 · 识别到一次更正 · 已帮你理清意图」。Demo 语音改成带口头语+一次更正（嗯…两点…啊不对，是三点）以便演示，解析结果仍正确（15:00）。移动端+Web 语音预览都接。
 
 ## 提交记录
 - （baseline）M0 成长系统 + 根入口 + 归档 PRD/handoff 文档到 docs/

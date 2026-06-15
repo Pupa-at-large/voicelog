@@ -133,10 +133,10 @@
     },
   };
 
-  // 语音示例：识别 → 解析
+  // 语音示例：识别 → 解析（特意带口头语 + 一次自我更正，演示「语音信任反馈」）
   const voice = {
-    phrase: '明天下午三点跟老王开会，提前半小时提醒我，在公司',
-    chunks: ['明天', '下午三点', '跟老王开会，', '提前半小时提醒我，', '在公司'],
+    phrase: '嗯，明天下午两点…啊不对，是三点跟老王开会，提前半小时提醒我，在公司',
+    chunks: ['嗯，', '明天下午两点…', '啊不对，是三点', '跟老王开会，', '提前半小时提醒我，', '在公司'],
     parsed: {
       title: '跟老王开会',
       dateKey: '06-17', dateText: '明天 · 6月17日 周二',
@@ -356,6 +356,14 @@
   window.VL.insightMaturity = function (accumulatedDays, recordCount) {
     const d = accumulatedDays || 0, r = recordCount || 0;
     return Math.min(95, Math.round(100 * (1 - Math.exp(-((d * 0.6 + r * 1.2) / 90)))));
+  };
+  // 语音信任反馈（借 Typeless「捕捉想法而非词」）：统计口头语、识别自我更正
+  window.VL.speechTrust = function (text) {
+    const s = text || '';
+    let fillers = 0;
+    ['嗯', '呃', '额', '啊', '那个', '这个', '就是', '哦', '唉'].forEach((w) => { const m = s.match(new RegExp(w, 'g')); if (m) fillers += m.length; });
+    const corrected = /不对|不是.*?是|改成|应该是|说错|搞错|算了/.test(s);
+    return { fillers, corrected };
   };
   // 成长色：暖金（跨主题统一，呼应 PRD「等级=暖金」）
   window.VL.GOLD = 'oklch(0.78 0.115 82)';
