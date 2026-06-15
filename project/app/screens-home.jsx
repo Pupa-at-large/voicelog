@@ -1,0 +1,599 @@
+/* VoiceLog · 日程主页 + 语音建程 + 提醒 + 滑动操作 + 编辑 */
+(function () {
+  const { useState, useEffect, useRef } = React;
+  const { Icon, Card, Btn, Chip, Dot, Sheet, catColor, catLabel } = window;
+  const CATS_ORDER = ['meet', 'deep', 'life', 'learn', 'misc'];
+
+  if (!document.getElementById('vl-anim')) {
+    const s = document.createElement('style');
+    s.id = 'vl-anim';
+    s.textContent = `
+      @keyframes vlbar{0%,100%{transform:scaleY(.28)}50%{transform:scaleY(1)}}
+      @keyframes vlpulse{0%{transform:scale(1);opacity:.5}70%{transform:scale(2.1);opacity:0}100%{opacity:0}}
+      @keyframes vlspin{to{transform:rotate(360deg)}}
+      @keyframes vlin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+      @media (prefers-reduced-motion:reduce){[data-vlbar]{animation:none!important;transform:scaleY(.6)!important}}`;
+    document.head.appendChild(s);
+  }
+
+  function Waveform({ color, active, n = 28 }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 64 }}>
+        {Array.from({ length: n }).map((_, i) => {
+          const seed = (Math.sin(i * 1.7) + 1) / 2;
+          return (
+            <div key={i} data-vlbar style={{
+              width: 4, height: 52, borderRadius: 999, background: color, transformOrigin: 'center',
+              opacity: active ? 1 : 0.4,
+              animation: active ? `vlbar ${0.7 + seed * 0.7}s ease-in-out ${i * 0.045}s infinite` : 'none',
+              transform: active ? undefined : `scaleY(${0.2 + seed * 0.5})`,
+            }} />
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ── 语音建程：真实识别优先，失败自动回退示例 ──
+  function VoiceOverlay({ t, open, onClose, onConfirm, aiEngine, app }) {
+    const V = window.VL.data.voice;
+    const [phase, setPhase] = useState('listening'); // listening | parsing | preview | extracting | extracted
+    const [transcript, setTranscript] = useState('');
+    const [mode, setMode] = useState('real'); // real | demo
+    const [draft, setDraft] = useState(null);
+    const [run, setRun] = useState(0);
+    const [uploadName, setUploadName] = useState('');
+    const [extracted, setExtracted] = useState([]);
+    const R = useRef({});
+    const titleRef = useRef(null);
+    const fileRef = useRef(null);
+    const utRef = useRef(0);
+
+    const onPickFile = (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      try { R.current.rec && R.current.rec.stop && R.current.rec.stop(); } catch (x) {}
+      R.current.phase = 'upload'; R.current.fellBack = true;
+      clearInterval(R.current.sim); clearTimeout(R.current.t1); clearTimeout(R.current.t2);
+      setUploadName(f.name); setPhase('extracting');
+      clearTimeout(utRef.current);
+      utRef.current = setTimeout(() => {
+        setExtracted(window.VL.data.upload.map((x, i) => ({ ...x, _id: 'x' + i, _sel: true })));
+        setPhase('extracted');
+      }, 1500);
+    };
+
+    useEffect(() => {
+      if (!open) return;
+      const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
+      setPhase('listening'); setTranscript(''); setDraft(null);
+      const setP = (p) => { ctx.phase = p; setPhase(p); };
+
+      const startParse = (text, curated) => {
+        if (ctx.parsing) return; ctx.parsing = true;
+        setP('parsing');
+        ctx.t1 = setTimeout(() => {
+          let d = curated || (window.VL.parse ? window.VL.parse(text) : { ...V.parsed });
+          if (!d || !d.title) d = { ...V.parsed };
+          setDraft(d); setP('preview');
+        }, 850);
+      };
+      const fallbackDemo = () => {
+        if (ctx.fellBack) return; ctx.fellBack = true; ctx.real = false;
+        setMode('demo'); setTranscript('');
+        let i = 0;
+        ctx.sim = setInterval(() => {
+          i += 1; setTranscript(V.chunks.slice(0, i).join(''));
+          if (i >= V.chunks.length) { clearInterval(ctx.sim); ctx.sim = null; ctx.t2 = setTimeout(() => startParse(V.phrase, { ...V.parsed }), 620); }
+        }, 600);
+      };
+      ctx.stop = () => {
+        if (ctx.real && ctx.rec) { try { ctx.rec.stop(); } catch (e) {} }
+        else { clearInterval(ctx.sim); clearTimeout(ctx.t2); startParse(V.phrase, { ...V.parsed }); }
+      };
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let started = false;
+      if (SR) {
+        try {
+          const rec = new SR(); ctx.rec = rec; ctx.real = true; setMode('real');
+          rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+          rec.onresult = (e) => {
+            let final = '', interim = '';
+            for (let k = 0; k < e.results.length; k++) {
+              const r = e.results[k];
+              if (r.isFinal) final += r[0].transcript; else interim += r[0].transcript;
+            }
+            ctx.finalText = final; setTranscript(final + interim);
+          };
+          rec.onerror = () => fallbackDemo();
+          rec.onend = () => {
+            if (ctx.phase !== 'listening') return;
+            const txt = (ctx.finalText || '').trim();
+            if (txt) startParse(txt, null); else if (!ctx.fellBack) fallbackDemo();
+          };
+          rec.start(); started = true;
+        } catch (e) { started = false; }
+      }
+      if (!started) fallbackDemo();
+
+      return () => {
+        try { ctx.rec && ctx.rec.stop && ctx.rec.stop(); } catch (e) {}
+        clearInterval(ctx.sim); clearTimeout(ctx.t1); clearTimeout(ctx.t2); clearTimeout(utRef.current);
+      };
+    }, [open, run]);
+
+    const engine = aiEngine
+      ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' }
+      : { label: '规则解析', color: 'oklch(0.70 0.14 70)' };
+
+    const field = (label, value, opts) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderBottom: opts && opts.last ? 'none' : `1px solid ${t.border}` }}>
+        <span style={{ fontSize: 13.5, color: t.faint, width: 44, flexShrink: 0 }}>{label}</span>
+        <div style={{ flex: 1, minWidth: 0 }}>{value}</div>
+        {opts && opts.icon && <Icon name={opts.icon} size={15} color={t.faint} />}
+      </div>
+    );
+
+    return (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 50, pointerEvents: open ? 'auto' : 'none' }}>
+        <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(8,10,14,0.46)', opacity: open ? 1 : 0, transition: 'opacity .3s' }} />
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0, background: t.surface,
+          borderTopLeftRadius: t.radius + 14, borderTopRightRadius: t.radius + 14, boxShadow: t.shadowLg,
+          transform: open ? 'translateY(0)' : 'translateY(101%)', transition: 'transform .4s cubic-bezier(.32,.72,0,1)',
+          padding: '12px 20px calc(20px + 22px)', minHeight: phase === 'preview' ? 'auto' : 420,
+          display: 'flex', flexDirection: 'column',
+        }}>
+          <div style={{ width: 38, height: 5, borderRadius: 999, background: t.borderStrong, margin: '0 auto 6px' }} />
+
+          {phase === 'listening' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+                <Dot color={'oklch(0.62 0.2 25)'} ring />
+                <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在听…</span>
+                <Chip t={t} color={mode === 'real' ? engine.color : t.muted} soft>{mode === 'real' ? '浏览器语音识别' : '示例演示'}</Chip>
+              </div>
+              <Waveform color={t.accent} active />
+              <p style={{ marginTop: 20, fontSize: 19, lineHeight: 1.5, color: transcript ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 58, letterSpacing: 0.2 }}>
+                {transcript || '说出你的安排，例如「明天下午三点跟老王开会」'}
+                {transcript && <span style={{ display: 'inline-block', width: 2, height: 20, background: t.accent, marginLeft: 1, verticalAlign: -3, animation: 'vlbar 1s steps(1) infinite' }} />}
+              </p>
+              <div style={{ display: 'flex', gap: 12, marginTop: 22, alignItems: 'center' }}>
+                <button onClick={onClose} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${t.borderStrong}`, background: 'transparent', color: t.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={20} color={t.muted} /></button>
+                <button onClick={() => R.current.stop && R.current.stop()} style={{ width: 66, height: 66, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, color: t.onAccent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 6, background: t.onAccent }} />
+                </button>
+                <div style={{ width: 48 }} />
+              </div>
+              <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>点击停止 · 说完自动解析</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '16px 0 2px' }}>
+                <div style={{ flex: 1, height: 1, background: t.border }} />
+                <span style={{ fontSize: 12, color: t.faint }}>或</span>
+                <div style={{ flex: 1, height: 1, background: t.border }} />
+              </div>
+              <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={onPickFile} />
+              <button onClick={() => fileRef.current && fileRef.current.click()} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, height: 42, padding: '0 18px', marginTop: 6,
+                borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2,
+                color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600,
+              }}>
+                <Icon name="export" size={17} color={t.accentText} />上传文件 / 图片，让 AI 提取日程
+              </button>
+            </div>
+          )}
+
+          {phase === 'parsing' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', gap: 18 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 999, border: `3px solid ${t.chartTrack}`, borderTopColor: t.accent, animation: 'vlspin .8s linear infinite' }} />
+              <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在解析…</span>
+              <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
+            </div>
+          )}
+
+          {phase === 'extracting' && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '54px 0', gap: 16 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 999, border: `3px solid ${t.chartTrack}`, borderTopColor: t.accent, animation: 'vlspin .8s linear infinite' }} />
+              <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>AI 正在提取日程…</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, maxWidth: '80%' }}>
+                <Icon name="doc" size={14} color={t.faint} />
+                <span style={{ fontSize: 12.5, color: t.faint, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{uploadName}</span>
+              </div>
+              <Chip t={t} color={'oklch(0.62 0.15 150)'} soft icon="sparkle">大模型解析</Chip>
+            </div>
+          )}
+
+          {phase === 'extracted' && (
+            <div style={{ animation: 'vlin .3s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 2px 4px' }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>找到 {extracted.length} 个日程</span>
+                <Chip t={t} color={'oklch(0.62 0.15 150)'} soft icon="sparkle">大模型解析</Chip>
+              </div>
+              <div style={{ display: 'flex', gap: 7, padding: '8px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 12 }}>
+                <Icon name="doc" size={14} color={t.faint} style={{ marginTop: 1, flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: t.muted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{uploadName} · 勾选要加入的项</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 320, overflowY: 'auto' }}>
+                {extracted.map((x) => (
+                  <button key={x._id} onClick={() => setExtracted((arr) => arr.map((y) => y._id === x._id ? { ...y, _sel: !y._sel } : y))} style={{
+                    display: 'flex', alignItems: 'center', gap: 11, padding: 12, cursor: 'pointer', textAlign: 'left', font: 'inherit',
+                    borderRadius: t.radius, background: x._sel ? t.surface : t.surface2, border: `1.5px solid ${x._sel ? t.accentText : t.border}`,
+                  }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: x._sel ? 'none' : `2px solid ${t.borderStrong}`, background: x._sel ? t.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{x._sel && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 650, color: t.text }}>{x.title}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 12.5, color: t.muted }}>{x.dateText.split(' · ')[0]} {x.time}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, x.cat)} size={7} />{catLabel(t, x.cat)}</span>
+                        {x.loc && <span style={{ fontSize: 12, color: t.faint }}>· {x.loc}</span>}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" onClick={() => { setPhase('listening'); setRun((r) => r + 1); }} style={{ flex: 1 }}>重新上传</Btn>
+                <Btn t={t} kind="primary" icon="check" onClick={() => { const sel = extracted.filter((x) => x._sel); if (sel.length) app.addExtracted(sel); onClose(); }} style={{ flex: 2 }}>加入选中（{extracted.filter((x) => x._sel).length}）</Btn>
+              </div>
+            </div>
+          )}
+
+          {phase === 'preview' && draft && (
+            <div style={{ animation: 'vlin .3s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 2px 12px' }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>解析结果</span>
+                <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
+              </div>
+              {transcript && (
+                <div style={{ display: 'flex', gap: 8, padding: '10px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 14 }}>
+                  <Icon name="mic" size={15} color={t.faint} style={{ marginTop: 2, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13.5, color: t.muted, lineHeight: 1.5 }}>{transcript}</span>
+                </div>
+              )}
+              {(() => {
+                const conflict = app ? window.VL.overlaps(app.events[draft.dateKey] || [], { id: '__new', t: draft.time, dur: draft.dur }) : [];
+                if (!conflict.length) return null;
+                return (
+                  <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
+                    <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>
+                      与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div style={{ border: `1px solid ${t.border}`, borderRadius: t.radius, overflow: 'hidden', background: t.raised }}>
+                {field('标题', (
+                  <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>
+                ), { icon: 'pencil' })}
+                {field('时间', (
+                  <div>
+                    <div style={{ fontSize: 15.5, fontWeight: 600, color: t.text }}>{draft.time}</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>{draft.dateText}</div>
+                  </div>
+                ), { icon: 'clock' })}
+                {field('地点', <span style={{ fontSize: 15, color: draft.loc ? t.text : t.faint }}>{draft.loc || '未识别 · 可不填'}</span>, { icon: 'pin' })}
+                {field('提醒', (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[0, 15, 30].map((m) => (
+                      <button key={m} onClick={() => setDraft({ ...draft, reminder: m })} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${draft.reminder === m ? 'transparent' : t.border}`, background: draft.reminder === m ? t.accentSoft : 'transparent', color: draft.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>
+                    ))}
+                  </div>
+                ))}
+                {field('类别', (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {CATS_ORDER.map((c) => {
+                      const on = draft.cat === c;
+                      return (
+                        <button key={c} onClick={() => setDraft({ ...draft, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}>
+                          <Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ), { last: true })}
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" icon="redo" onClick={() => setRun((r) => r + 1)} style={{ flex: 1 }}>重说</Btn>
+                <Btn t={t} kind="primary" icon="check" onClick={() => { const title = titleRef.current ? titleRef.current.textContent.trim() : draft.title; onConfirm({ ...draft, title: title || draft.title }); }} style={{ flex: 2 }}>加入日程</Btn>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  function ReminderBanner({ t, ev, onClose, onView }) {
+    useEffect(() => { if (!ev) return; const tm = setTimeout(onClose, 6500); return () => clearTimeout(tm); }, [ev]);
+    return (
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60, padding: '52px 12px 0', transform: ev ? 'translateY(0)' : 'translateY(-130%)', transition: 'transform .42s cubic-bezier(.32,.72,0,1)', pointerEvents: ev ? 'auto' : 'none' }}>
+        <div style={{ background: t.mode === 'dark' ? 'rgba(40,44,52,0.86)' : 'rgba(255,255,255,0.88)', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)', borderRadius: 22, border: `1px solid ${t.border}`, boxShadow: t.shadowLg, padding: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bell" size={19} color={t.accentText} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: t.faint, fontWeight: 600 }}>{ev ? `提前 ${ev.reminder} 分钟 · ${ev.t}` : ''}</div>
+              <div style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev ? ev.title : ''}{ev && ev.loc ? ` · ${ev.loc}` : ''}</div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
+            <Btn t={t} kind="ghost" size="sm" onClick={onClose} style={{ flex: 1 }}>知道了</Btn>
+            <Btn t={t} kind="primary" size="sm" onClick={onView} style={{ flex: 1 }}>查看</Btn>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 可滑动日程行：左滑「编辑/删除」，右滑「完成」 ──
+  function SwipeRow({ t, ev, onToggle, onOpen, onEdit, onDelete, conflict, onWarn, onStar }) {
+    const RIGHT = 144, LEFT = 96;
+    const [tx, setTx] = useState(0);
+    const [drag, setDrag] = useState(false);
+    const d = useRef(null);
+    const movedRef = useRef(false);
+    const done = ev.status === 'done';
+    const cancelled = ev.status === 'cancelled';
+    const col = catColor(t, ev.cat);
+
+    const down = (e) => { d.current = { x0: e.clientX, y0: e.clientY, base: tx, axis: null, moved: false }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (x) {} };
+    const move = (e) => {
+      if (!d.current) return;
+      const dx = e.clientX - d.current.x0, dy = e.clientY - d.current.y0;
+      if (!d.current.axis && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) d.current.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+      if (d.current.axis === 'x') {
+        d.current.moved = true; setDrag(true);
+        setTx(Math.max(-RIGHT, Math.min(LEFT, d.current.base + dx)));
+      }
+    };
+    const up = () => {
+      if (!d.current) return;
+      const moved = d.current.axis === 'x' && d.current.moved;
+      setDrag(false);
+      if (d.current.axis === 'x') setTx((v) => (v <= -RIGHT / 2 ? -RIGHT : v >= LEFT / 2 ? LEFT : 0));
+      d.current = null; movedRef.current = moved;
+    };
+    const onClickCard = () => {
+      if (movedRef.current) { movedRef.current = false; return; }
+      if (tx !== 0) { setTx(0); return; }
+      onOpen(ev);
+    };
+
+    return (
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ width: 48, flexShrink: 0, textAlign: 'right', paddingTop: 14 }}>
+          <div style={{ fontSize: 15, fontWeight: 650, color: done || cancelled ? t.faint : t.text, fontVariantNumeric: 'tabular-nums' }}>{ev.t}</div>
+          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{ev.dur}分</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0, position: 'relative', borderRadius: t.radius, overflow: 'hidden', boxShadow: t.shadow }}>
+          {/* 右侧操作：编辑 / 删除 */}
+          <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: RIGHT, display: 'flex' }}>
+            <button onClick={() => { setTx(0); onEdit(ev); }} style={swBtn(t.accentSoft, t.accentText)}><Icon name="pencil" size={19} color={t.accentText} /><span style={{ fontSize: 11, marginTop: 3 }}>编辑</span></button>
+            <button onClick={() => { setTx(0); onDelete(ev.id); }} style={swBtn('oklch(0.62 0.2 25)', '#fff')}><Icon name="trash" size={19} color="#fff" /><span style={{ fontSize: 11, marginTop: 3 }}>删除</span></button>
+          </div>
+          {/* 左侧操作：完成 */}
+          <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: LEFT, display: 'flex' }}>
+            <button onClick={() => { setTx(0); onToggle(ev.id); }} style={swBtn('oklch(0.6 0.14 150)', '#fff')}><Icon name="check" size={20} color="#fff" sw={2.4} /><span style={{ fontSize: 11, marginTop: 3 }}>{done ? '撤销' : '完成'}</span></button>
+          </div>
+          {/* 前景卡片 */}
+          <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={onClickCard}
+            style={{ position: 'relative', background: t.surface, border: `1px solid ${t.border}`, borderRadius: t.radius, padding: '13px 14px 13px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', touchAction: 'pan-y', transform: `translateX(${tx}px)`, transition: drag ? 'none' : 'transform .26s cubic-bezier(.32,.72,0,1)', opacity: cancelled ? 0.62 : 1 }}>
+            <div style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3.5, borderRadius: 999, background: col, opacity: done || cancelled ? 0.4 : 1 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15.5, fontWeight: 600, color: done || cancelled ? t.faint : t.text, textDecoration: done || cancelled ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 5, alignItems: 'center' }}>
+                {ev.loc && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, color: t.muted }}><Icon name="pin" size={13} color={t.faint} />{ev.loc}</span>}
+                {ev.reminder ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, color: t.muted }}><Icon name="bell" size={13} color={t.faint} />提前{ev.reminder}分</span> : null}
+                {conflict && !cancelled && <span onClick={(e) => { e.stopPropagation(); onWarn && onWarn(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: 'oklch(0.58 0.15 60)', background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', padding: '2px 8px', borderRadius: 999 }}><Icon name="bolt" size={12} color={'oklch(0.58 0.15 60)'} sw={2.2} />重叠</span>}
+                {cancelled && <span style={{ fontSize: 12.5, color: t.faint }}>已取消</span>}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+              <button onClick={(e) => { e.stopPropagation(); onStar && onStar(ev.id); }} style={{ width: 28, height: 28, borderRadius: 999, cursor: 'pointer', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} title="重要">
+                <Icon name={ev.important ? 'starFill' : 'star'} size={19} color={ev.important ? 'oklch(0.76 0.14 80)' : t.faint} fill={ev.important} sw={1.9} />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); onToggle(ev.id); }} style={{ width: 28, height: 28, borderRadius: 999, cursor: 'pointer', border: done ? 'none' : `2px solid ${t.borderStrong}`, background: done ? col : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>{done && <Icon name="check" size={16} color={t.onAccent} sw={2.6} />}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  function swBtn(bg, fg) { return { width: 72, height: '100%', border: 'none', cursor: 'pointer', background: bg, color: fg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', font: 'inherit', fontWeight: 600 }; }
+
+  // ── 日程详情 ──
+  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar }) {
+    if (!ev) return null;
+    const done = ev.status === 'done';
+    const col = catColor(t, ev.cat);
+    const meta = (icon, label, val) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${t.border}` }}>
+        <Icon name={icon} size={17} color={t.faint} />
+        <span style={{ fontSize: 14, color: t.muted, width: 52 }}>{label}</span>
+        <span style={{ fontSize: 14.5, color: t.text, fontWeight: 550 }}>{val}</span>
+      </div>
+    );
+    return (
+      <Sheet t={t} open={!!ev} onClose={onClose}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 4 }}>
+          <div style={{ width: 5, alignSelf: 'stretch', minHeight: 30, borderRadius: 999, background: col, marginTop: 3 }} />
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: 0, fontSize: 22, fontWeight: 720, color: t.text, letterSpacing: -0.3 }}>{ev.title}</h3>
+            <div style={{ marginTop: 6 }}><Chip t={t} color={col} soft><Dot color={col} size={7} />{catLabel(t, ev.cat)}</Chip></div>
+          </div>
+          <button onClick={() => onStar(ev.id)} style={{ width: 38, height: 38, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="重要">
+            <Icon name={ev.important ? 'starFill' : 'star'} size={18} color={ev.important ? 'oklch(0.76 0.14 80)' : t.muted} fill={ev.important} />
+          </button>
+          <button onClick={() => onEdit(ev)} style={{ height: 34, padding: '0 13px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name="pencil" size={15} color={t.text} />编辑</button>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          {meta('clock', '时间', `${ev.t} · ${ev.dur} 分钟`)}
+          {ev.loc && meta('pin', '地点', ev.loc)}
+          {meta('bell', '提醒', ev.reminder ? `提前 ${ev.reminder} 分钟` : '不提醒')}
+        </div>
+        {ev.note && (
+          <div style={{ marginTop: 14, padding: 14, borderRadius: t.radius - 2, background: t.surface2 }}>
+            <div style={{ fontSize: 12, color: t.faint, fontWeight: 600, marginBottom: 5 }}>备注</div>
+            <div style={{ fontSize: 14.5, color: t.text, lineHeight: 1.55 }}>{ev.note}</div>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+          <Btn t={t} kind={done ? 'ghost' : 'primary'} icon="check" onClick={() => { onToggle(ev.id); onClose(); }} style={{ flex: 1 }}>{done ? '标记未完成' : '标记完成'}</Btn>
+          <Btn t={t} kind="ghost" onClick={() => { onCancel(ev.id); onClose(); }}>取消日程</Btn>
+          <button onClick={() => { onDelete(ev.id); onClose(); }} style={{ width: 46, height: 46, borderRadius: t.radius - 2, flexShrink: 0, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: 'oklch(0.62 0.19 25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color="oklch(0.62 0.19 25)" /></button>
+        </div>
+      </Sheet>
+    );
+  }
+
+  // ── 编辑表单 ──
+  function EditSheet({ t, ev, onClose, onSave, app }) {
+    const [st, setSt] = useState(null);
+    const titleRef = useRef(null), locRef = useRef(null);
+    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important }); } }, [ev]);
+    if (!ev || !st) return null;
+    const bump = (delta) => setSt((s) => { let total = (s.hh * 60 + s.mm + delta + 1440) % 1440; return { ...s, hh: Math.floor(total / 60), mm: total % 60 }; });
+    const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
+    const editable = (ref, val) => (
+      <span ref={ref} contentEditable suppressContentEditableWarning style={{ fontSize: 15.5, fontWeight: 600, color: t.text, outline: 'none', borderRadius: 6, padding: '6px 10px', background: t.surface2, display: 'inline-block', minWidth: 120 }}>{val}</span>
+    );
+    const row = (label, node) => (
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600, marginBottom: 7, marginLeft: 2 }}>{label}</div>
+        {node}
+      </div>
+    );
+    return (
+      <Sheet t={t} open={!!ev} onClose={onClose}>
+        <h3 style={{ margin: '2px 2px 16px', fontSize: 20, fontWeight: 720, color: t.text }}>编辑日程</h3>
+        {row('标题', editable(titleRef, ev.title))}
+        {row('时间', (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={() => bump(-15)} style={stepBtn(t)}><Icon name="minus" size={18} color={t.text} sw={2.2} /></button>
+            <span style={{ fontSize: 22, fontWeight: 720, color: t.text, fontVariantNumeric: 'tabular-nums', minWidth: 78, textAlign: 'center' }}>{time}</span>
+            <button onClick={() => bump(15)} style={stepBtn(t)}><Icon name="plus" size={18} color={t.text} sw={2.2} /></button>
+            <span style={{ fontSize: 12.5, color: t.faint, marginLeft: 4 }}>每档 15 分钟</span>
+          </div>
+        ))}
+        {row('类别', (
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            {CATS_ORDER.map((c) => {
+              const on = st.cat === c;
+              return <button key={c} onClick={() => setSt({ ...st, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>;
+            })}
+          </div>
+        ))}
+        {row('地点', editable(locRef, ev.loc || ''))}
+        {row('提醒', (
+          <div style={{ display: 'flex', gap: 7 }}>
+            {[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}
+          </div>
+        ))}
+        {row('重要度', (
+          <button onClick={() => setSt({ ...st, important: !st.important })} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.important ? 'transparent' : t.border}`, background: st.important ? 'color-mix(in oklch, oklch(0.76 0.14 80) 18%, transparent)' : 'transparent', color: st.important ? t.text : t.muted }}>
+            <Icon name={st.important ? 'starFill' : 'star'} size={17} color={st.important ? 'oklch(0.72 0.14 80)' : t.muted} fill={st.important} />{st.important ? '重要' : '标为重要'}
+          </button>
+        ))}
+        {(() => {
+          const conflict = app ? window.VL.overlaps(app.events[app.selectedDay] || [], { id: ev.id, t: time, dur: ev.dur }) : [];
+          if (!conflict.length) return null;
+          return (
+            <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 14, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
+              <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span></div>
+            </div>
+          );
+        })()}
+        <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+          <Btn t={t} kind="ghost" onClick={onClose} style={{ flex: 1 }}>取消</Btn>
+          <Btn t={t} kind="primary" icon="check" onClick={() => {
+            const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title;
+            const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc;
+            onSave(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important });
+            onClose();
+          }} style={{ flex: 2 }}>保存</Btn>
+        </div>
+      </Sheet>
+    );
+  }
+  function stepBtn(t) { return { width: 40, height: 40, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }; }
+
+  // ── 主页 ──
+  function HomeScreen({ t, app }) {
+    const { week } = window.VL.data;
+    const [view, setView] = useState('list');
+    const sel = app.selectedDay;
+    const list = (app.events[sel] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+    const conflictIds = new Set();
+    list.forEach((ev) => { if (ev.status !== 'cancelled' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
+    const doneN = list.filter((e) => e.status === 'done').length;
+    const cur = week.find((w) => w.key === sel) || week[1];
+    const totalH = list.filter((e) => e.status !== 'cancelled').reduce((s, e) => s + e.dur, 0) / 60;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 13, color: t.accentText, fontWeight: 650, letterSpacing: 0.3 }}>{cur.today ? '今天' : `周${cur.dow}`}</div>
+              <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>6月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
+            </div>
+            <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
+          </div>
+          {/* 列表 / 全览 切换 */}
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: 'inline-flex', background: t.surface2, borderRadius: 999, padding: 3, border: `1px solid ${t.border}` }}>
+              {[['list', '列表', 'list'], ['overview', '全览', 'grid']].map(([k, lab, ic]) => {
+                const on = view === k;
+                return <button key={k} onClick={() => setView(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 16px', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: on ? 650 : 500, borderRadius: 999, color: on ? t.text : t.muted, background: on ? t.raised : 'transparent', boxShadow: on ? t.shadow : 'none' }}><Icon name={ic} size={15} color={on ? t.text : t.muted} sw={on ? 2.1 : 1.8} />{lab}</button>;
+              })}
+            </div>
+          </div>
+        </div>
+
+        {view === 'overview' ? <window.OverviewView t={t} app={app} /> : (
+          <React.Fragment>
+            <div style={{ padding: '4px 20px 0', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {week.map((w) => {
+                  const on = w.key === sel;
+                  const has = (app.events[w.key] || []).length > 0;
+                  return (
+                    <button key={w.key} onClick={() => app.setDay(w.key)} style={{ flex: 1, padding: '8px 0 9px', borderRadius: 14, cursor: 'pointer', border: 'none', background: on ? t.accent : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'background .2s' }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 600, color: on ? t.onAccent : t.faint }}>{w.dow}</span>
+                      <span style={{ fontSize: 16, fontWeight: 680, color: on ? t.onAccent : t.text, fontVariantNumeric: 'tabular-nums' }}>{w.day}</span>
+                      <span style={{ width: 5, height: 5, borderRadius: 999, background: has ? (on ? t.onAccent : t.accent) : 'transparent' }} />
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: 14, fontSize: 13.5, color: t.muted }}>
+                {list.length > 0 ? <>共 <b style={{ color: t.text }}>{list.length}</b> 项 · 约 {totalH % 1 === 0 ? totalH : totalH.toFixed(1)} 小时 · 已完成 {doneN}</> : '这天还没有安排'}
+              </div>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 24px' }}>
+              {list.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {list.map((ev) => <SwipeRow key={ev.id} t={t} ev={ev} conflict={conflictIds.has(ev.id)} onWarn={app.showMultitask} onToggle={app.toggleDone} onOpen={app.openDetail} onEdit={app.openEdit} onDelete={app.deleteEvent} onStar={app.toggleImportant} />)}
+                  <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 6 }}>← 左滑编辑/删除 · 右滑完成 →</div>
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '44px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: 24, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="calendar" size={32} color={t.faint} sw={1.6} /></div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 650, color: t.text }}>这天还很空</div>
+                    <div style={{ fontSize: 13.5, color: t.muted, marginTop: 4, lineHeight: 1.5 }}>说一句话，就能建个日程</div>
+                  </div>
+                  <Btn t={t} kind="primary" icon="mic" onClick={app.openVoice}>说一句试试</Btn>
+                </div>
+              )}
+            </div>
+          </React.Fragment>
+        )}
+      </div>
+    );
+  }
+
+  Object.assign(window, { HomeScreen, VoiceOverlay, ReminderBanner, DetailSheet, EditSheet });
+})();

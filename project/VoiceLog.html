@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>语迹 VoiceLog · 交互方向</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; }
+  body { font-family: -apple-system, "PingFang SC", system-ui, sans-serif; }
+  #root { height: 100vh; }
+</style>
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <rect width="100" height="100" rx="22" fill="#14b8a6"/>
+    <g fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M50 30a7 7 0 0 0-7 7v12a7 7 0 0 0 14 0V37a7 7 0 0 0-7-7Z" fill="#fff" stroke="none"/>
+      <path d="M65 49a15 15 0 0 1-30 0M50 64v8"/>
+    </g>
+  </svg>
+</template>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- 数据 / 令牌（普通脚本，先于 Babel 执行） -->
+<script src="app/tokens.js"></script>
+<script src="app/data.js"></script>
+<script src="app/parser.js"></script>
+
+<!-- 脚手架 + 组件（Babel 按序编译） -->
+<script type="text/babel" src="frames/ios-frame.jsx"></script>
+<script type="text/babel" src="frames/design-canvas.jsx"></script>
+<script type="text/babel" src="app/icons.jsx"></script>
+<script type="text/babel" src="app/ui.jsx"></script>
+<script type="text/babel" src="app/screens-home.jsx"></script>
+<script type="text/babel" src="app/screens-overview.jsx"></script>
+<script type="text/babel" src="app/screens-review.jsx"></script>
+<script type="text/babel" src="app/screens-export.jsx"></script>
+<script type="text/babel" src="app/VoiceLogApp.jsx"></script>
+<script type="text/babel" src="webapp/web-calendar.jsx"></script>
+<script type="text/babel" src="webapp/web-voice.jsx"></script>
+<script type="text/babel" src="webapp/web-celebrate.jsx"></script>
+<script type="text/babel" src="webapp/web-welcome.jsx"></script>
+<script type="text/babel" src="webapp/web-app.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+  const Device = window.IOSDevice;
+  const App_ = window.VoiceLogApp;
+  const Canvas = window.DesignCanvas;
+  const Section = window.DCSection;
+  const Board = window.DCArtboard;
+  const Web = window.VoiceLogWeb;
+  const themes = window.VL.themes;
+
+  function Phone({ theme }) {
+    return (
+      <Device dark={theme.mode === 'dark'}>
+        <App_ theme={theme} />
+      </Device>
+    );
+  }
+
+  const board = (theme, label) => (
+    <Board id={theme.key} label={label} width={402} height={874}
+      style={{ background: 'transparent', boxShadow: 'none', borderRadius: 48, overflow: 'visible' }}>
+      <Phone theme={theme} />
+    </Board>
+  );
+
+  function Mount() {
+    return (
+      <Canvas>
+        <Section id="voicelog" title="语迹 VoiceLog · 移动端交互"
+          subtitle="三套「柔和现代」视觉方向 · 全部可点：点麦克风模拟语音建程，切日期、勾完成、看复盘、导出。拖动空白处平移，点右上角放大任意一台。">
+          {board(themes.cloud, '云 · Cloud · 浅色清爽')}
+          {board(themes.dawn, '暖 · Dawn · 暖纸亲和')}
+          {board(themes.night, '夜 · Night · 深色专业')}
+        </Section>
+        <Section id="voicelog-web" title="语迹 VoiceLog · Web 桌面端"
+          subtitle="侧边栏 + 大日历为主 · 同样可点：左下「说一句 / 上传建程」、右栏键盘快速建程，周/月/日切换、重叠并排、星标重要、复盘导出。三套方向可在「设置」里切换。">
+          <Board id="web-desktop" label="Web · 桌面端（1440×900）" width={1440} height={900}
+            style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid rgba(0,0,0,0.1)`, background: '#fff' }}>
+            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              <Web theme={themes.cloud} />
+            </div>
+          </Board>
+          <Board id="web-welcome" label="Web · 新用户首开 / 空状态（1440×900）" width={1440} height={900}
+            style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid rgba(0,0,0,0.1)`, background: '#fff' }}>
+            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+              <Web theme={themes.cloud} fresh />
+            </div>
+          </Board>
+        </Section>
+      </Canvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<Mount />);
+</script>
+</body>
+</html>

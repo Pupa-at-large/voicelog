@@ -1,0 +1,92 @@
+/* VoiceLog · 复盘 */
+(function () {
+  const { useState } = React;
+  const { Icon, Card, Btn, Segmented, Ring, StackBar, AllocRow, Dot, SectionLabel, catColor, catLabel, fmtH } = window;
+
+  function ReviewScreen({ t, app }) {
+    const [period, setPeriod] = useState('day');
+    const r = window.VL.getReview(period, app.events);
+    const max = Math.max(1, ...r.alloc.map((a) => a.hours));
+    const dayList = (app.events['06-16'] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
+          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>复盘</h1>
+          <div style={{ marginTop: 14 }}>
+            <Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} />
+          </div>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
+          <Card t={t} style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 13, color: t.muted, fontWeight: 600 }}>{r.label} · {r.range}</div>
+                <div style={{ marginTop: 8, display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontSize: 38, fontWeight: 780, color: t.text, letterSpacing: -1, lineHeight: 1 }}>{fmtH(r.total)}</span>
+                  <span style={{ fontSize: 15, color: t.muted, fontWeight: 600 }}>小时</span>
+                </div>
+                <div style={{ fontSize: 13, color: t.faint, marginTop: 6 }}>共 {r.count} 项日程</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <Ring t={t} value={r.rate} size={88} />
+                <span style={{ fontSize: 12, color: t.faint }}>完成率</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              {[['完成', r.done], ['取消', r.cancelled], ['待办', r.todo]].map(([k, v]) => (
+                <div key={k} style={{ flex: 1, padding: '9px 0', borderRadius: t.radius - 4, background: t.surface2, textAlign: 'center' }}>
+                  <div style={{ fontSize: 18, fontWeight: 720, color: t.text }}>{v}</div>
+                  <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{k}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <SectionLabel t={t}>时间去向</SectionLabel>
+          {r.alloc.length > 0 ? (
+            <Card t={t} style={{ marginBottom: 14 }}>
+              <StackBar t={t} alloc={r.alloc} total={r.total} h={16} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 18 }}>
+                {r.alloc.map((a) => <AllocRow key={a.cat} t={t} a={a} total={r.total} max={max} />)}
+              </div>
+            </Card>
+          ) : (
+            <Card t={t} style={{ marginBottom: 14, textAlign: 'center', color: t.faint, fontSize: 13.5, padding: 24 }}>这个周期还没有日程</Card>
+          )}
+
+          <SectionLabel t={t}>洞察与建议</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+            {r.insights.map((s, i) => (
+              <div key={i} style={{ display: 'flex', gap: 11, padding: 14, borderRadius: t.radius, background: i === 0 ? t.accentSoft : t.surface, border: `1px solid ${i === 0 ? 'transparent' : t.border}`, boxShadow: i === 0 ? 'none' : t.shadow }}>
+                <div style={{ flexShrink: 0, marginTop: 1 }}><Icon name={i === 0 ? 'sparkle' : 'bolt'} size={17} color={i === 0 ? t.accentText : t.muted} /></div>
+                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: i === 0 ? t.accentText : t.text, fontWeight: i === 0 ? 550 : 400 }}>{s}</p>
+              </div>
+            ))}
+          </div>
+
+          {period === 'day' && dayList.length > 0 && (
+            <React.Fragment>
+              <SectionLabel t={t}>日程明细</SectionLabel>
+              <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+                {dayList.map((ev, i, arr) => (
+                  <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none', opacity: ev.status === 'cancelled' ? 0.55 : 1 }}>
+                    <Dot color={catColor(t, ev.cat)} />
+                    <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums', width: 42 }}>{ev.t}</span>
+                    <span style={{ flex: 1, fontSize: 14.5, color: t.text, fontWeight: 550, textDecoration: ev.status !== 'todo' ? 'line-through' : 'none', opacity: ev.status === 'done' ? 0.6 : 1 }}>{ev.title}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: ev.status === 'done' ? 'oklch(0.6 0.13 150)' : t.faint, background: ev.status === 'done' ? 'color-mix(in oklch, oklch(0.6 0.13 150) 14%, transparent)' : t.surface2 }}>{ev.status === 'done' ? '完成' : ev.status === 'cancelled' ? '取消' : '待办'}</span>
+                  </div>
+                ))}
+              </Card>
+            </React.Fragment>
+          )}
+
+          <Btn t={t} kind="outline" full icon="export" onClick={() => app.goExport(period)}>导出这份复盘</Btn>
+        </div>
+      </div>
+    );
+  }
+
+  window.ReviewScreen = ReviewScreen;
+})();
