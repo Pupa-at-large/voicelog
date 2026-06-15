@@ -100,6 +100,7 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
+          <button onClick={() => app.setTab('review')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 12px 0 8px', marginBottom: 8, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.muted, font: 'inherit', fontSize: 13, fontWeight: 600 }}><Icon name="chevL" size={15} color={t.muted} sw={2.2} />复盘</button>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>导出</h1>
           <div style={{ marginTop: 14 }}><Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} /></div>
         </div>

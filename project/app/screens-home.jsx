@@ -539,7 +539,13 @@
               <div style={{ fontSize: 13, color: t.accentText, fontWeight: 650, letterSpacing: 0.3 }}>{cur.today ? '今天' : `周${cur.dow}`}</div>
               <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>6月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
             </div>
-            <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={app.goGrowth} title="成长" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 12px 0 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, boxShadow: t.shadow }}>
+                <span style={{ width: 22, height: 22, borderRadius: 999, border: `1.5px solid ${window.VL.GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 720, color: window.VL.GOLD, flexShrink: 0 }}>{app.level.lv}</span>
+                <span style={{ fontSize: 13, fontWeight: 650, color: t.text }}>LV.{app.level.lv}</span>
+              </button>
+              <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
+            </div>
           </div>
           {/* 列表 / 全览 切换 */}
           <div style={{ marginTop: 14 }}>

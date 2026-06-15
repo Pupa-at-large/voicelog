@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>语迹 VoiceLog · 交互 Demo</title>
+<style>
+:root{
+  --ink:#0e1a1f;--ink-2:#13242b;--ink-3:#1b3039;--line:#27424c;--fog:#8aa3ac;
+  --paper:#e8eef0;--amber:#f5a623;--amber-soft:#f5a62322;--teal:#4fd1c5;
+  --rose:#e8688a;--green:#5fd08a;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(1200px 600px at 80% -10%,#14323a 0%,transparent 60%),
+    radial-gradient(900px 500px at -10% 110%,#15282f 0%,transparent 55%),var(--ink);
+  color:var(--paper);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 90px}
+
+/* demo banner */
+.demobar{background:linear-gradient(90deg,var(--amber-soft),transparent);border-bottom:1px solid var(--line);
+  padding:9px 20px;font-size:12.5px;color:var(--fog);text-align:center}
+.demobar b{color:var(--amber)}
+
+header{padding:28px 0 14px;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.brand{display:flex;align-items:baseline;gap:14px}
+.brand h1{font-size:30px;font-weight:800;letter-spacing:-.02em;
+  background:linear-gradient(100deg,var(--paper),var(--teal));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brand .en{font-size:12px;letter-spacing:.34em;color:var(--fog);text-transform:uppercase;font-weight:600}
+.status{font-size:12px;color:var(--fog);display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber)}
+
+.capture{background:linear-gradient(165deg,var(--ink-3),var(--ink-2));border:1px solid var(--line);
+  border-radius:calc(var(--r) + 6px);padding:24px;margin-top:8px;position:relative;overflow:hidden}
+.capture::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--amber-soft),transparent);transform:translateX(-100%)}
+.capture.live::before{animation:sweep 1.4s ease-in-out infinite}
+@keyframes sweep{to{transform:translateX(100%)}}
+.cap-label{font-size:12px;letter-spacing:.2em;color:var(--fog);text-transform:uppercase;font-weight:600;margin-bottom:12px}
+.cap-row{display:flex;gap:12px;align-items:flex-end}
+#capInput{flex:1;background:var(--ink);border:1px solid var(--line);border-radius:var(--r);color:var(--paper);
+  font-size:16px;font-family:inherit;padding:14px 16px;resize:none;min-height:54px}
+#capInput:focus{outline:none;border-color:var(--amber)}
+#capInput::placeholder{color:#5d757e}
+.mic{flex:0 0 auto;width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;
+  background:radial-gradient(circle at 30% 30%,#ffce7a,var(--amber));display:grid;place-items:center;
+  position:relative;transition:transform .15s;box-shadow:0 6px 18px #f5a62333}
+.mic:hover{transform:translateY(-2px)}
+.mic svg{width:24px;height:24px;fill:var(--ink)}
+.mic.rec{background:radial-gradient(circle at 30% 30%,#ff9b9b,var(--rose))}
+.mic.rec::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--rose);animation:pulse 1.1s ease-out infinite}
+@keyframes pulse{from{transform:scale(.9);opacity:.8}to{transform:scale(1.5);opacity:0}}
+.btn{border:none;border-radius:var(--r);padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:inherit;background:var(--amber);color:var(--ink);transition:filter .15s,transform .1s;white-space:nowrap}
+.btn:hover{filter:brightness(1.08)}.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--paper);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--amber);color:var(--amber);filter:none}
+.btn.sm{padding:8px 14px;font-size:13px}
+.hint{margin-top:10px;font-size:12.5px;color:var(--fog)}
+.hint b{color:var(--teal);font-weight:600}
+.chips{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--ink);border:1px solid var(--line);color:var(--fog);font-size:12.5px;
+  padding:6px 12px;border-radius:20px;cursor:pointer;transition:all .15s;font-family:inherit}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+
+.preview{margin-top:14px;border:1px dashed var(--line);border-radius:var(--r);padding:16px;display:none}
+.preview.show{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.pv-title{font-size:18px;font-weight:700}
+.conf{font-size:11px;color:var(--fog);border:1px solid var(--line);border-radius:20px;padding:3px 10px}
+.pv-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.field label{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--fog);margin-bottom:4px}
+.field input{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:9px;color:var(--paper);padding:9px 11px;font-size:14px;font-family:inherit}
+.field input:focus{outline:none;border-color:var(--amber)}
+.pv-actions{margin-top:14px;display:flex;gap:10px;justify-content:flex-end}
+
+.tabs{display:flex;gap:6px;margin:28px 0 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{background:none;border:none;color:var(--fog);font-family:inherit;font-size:15px;font-weight:600;
+  padding:10px 16px;cursor:pointer;position:relative;border-radius:8px 8px 0 0}
+.tab:hover{color:var(--paper)}.tab.active{color:var(--amber)}
+.tab.active::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:2px;background:var(--amber);border-radius:2px}
+.panel{display:none}.panel.active{display:block;animation:fade .25s ease}
+
+.daygroup{margin-bottom:22px}
+.daygroup h3{font-size:13px;letter-spacing:.1em;color:var(--teal);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.daygroup h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.ev{display:flex;gap:14px;align-items:flex-start;background:var(--ink-2);border:1px solid var(--line);
+  border-left:3px solid var(--teal);border-radius:12px;padding:12px 14px;margin-bottom:9px;transition:transform .12s,border-color .2s}
+.ev:hover{transform:translateX(3px);border-left-color:var(--amber)}
+.ev.done{opacity:.5;border-left-color:var(--green)}
+.ev.cancelled{opacity:.4;border-left-color:var(--rose)}
+.ev.cancelled .ev-title{text-decoration:line-through}
+.ev-time{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:800;font-size:17px;min-width:54px;color:var(--paper);padding-top:1px}
+.ev-time small{display:block;font-size:10px;color:var(--fog);font-weight:600;letter-spacing:.08em}
+.ev-body{flex:1;min-width:0}
+.ev-title{font-size:16px;font-weight:600;margin-bottom:2px}
+.ev-meta{font-size:12.5px;color:var(--fog);display:flex;gap:12px;flex-wrap:wrap}
+.ev-meta:empty{display:none}
+.ev-meta .tag{color:var(--teal)}.ev-meta .rem{color:var(--amber)}
+.ev-note{margin-top:7px;font-size:13px;color:var(--fog);background:var(--ink);border-radius:8px;padding:7px 10px}
+.ev-acts{display:flex;flex-direction:row;gap:6px;flex:0 0 auto}
+.icbtn{background:none;border:1px solid var(--line);color:var(--fog);width:30px;height:28px;border-radius:7px;cursor:pointer;font-size:13px;transition:all .15s}
+.icbtn:hover{border-color:var(--amber);color:var(--amber)}
+.icbtn.del:hover{border-color:var(--rose);color:var(--rose)}
+.icbtn.ok:hover{border-color:var(--green);color:var(--green)}
+.empty{text-align:center;color:var(--fog);padding:50px 20px}
+.empty .big{font-size:40px;margin-bottom:12px;opacity:.5}
+
+.rev-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
+.seg{display:inline-flex;background:var(--ink-2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{background:none;border:none;color:var(--fog);padding:7px 13px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
+.seg button.active{background:var(--amber);color:var(--ink)}
+.rev-out{background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r);padding:24px 26px;margin-top:6px;min-height:120px}
+.rev-out h1{font-size:22px;margin-bottom:14px;font-weight:800}
+.rev-out h2{font-size:15px;letter-spacing:.05em;color:var(--teal);margin:20px 0 10px;font-weight:700}
+.rev-out p{margin-bottom:8px}
+.rev-out ul{list-style:none}
+.rev-out li{position:relative;padding-left:18px;margin-bottom:8px;color:#cdd9dd}
+.rev-out li::before{content:"";position:absolute;left:2px;top:10px;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.barline{display:flex;gap:12px;align-items:center;margin-bottom:7px;font-size:13px}
+.barwrap{flex:0 0 200px;height:18px;background:#0c181d;border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+.barfill{height:100%;background:linear-gradient(90deg,var(--teal),#3aa99f);border-radius:5px 0 0 5px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.barlbl{color:var(--paper);font-size:13px}
+.exp-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;align-items:center}
+.exp-row .lab{color:var(--fog);font-size:13px;margin-right:4px}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+  background:var(--ink-3);border:1px solid var(--amber);color:var(--paper);padding:13px 20px;border-radius:12px;
+  font-size:14px;box-shadow:0 10px 30px #0008;transition:transform .35s cubic-bezier(.2,.9,.3,1.2);z-index:50;max-width:90vw;
+  display:flex;align-items:center;gap:14px}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.alert{border-color:var(--rose)}
+.toast-undo{background:var(--amber);color:var(--ink);border:none;font-family:inherit;font-weight:700;font-size:13px;
+  padding:5px 14px;border-radius:8px;cursor:pointer;flex-shrink:0;transition:filter .15s}
+.toast-undo:hover{filter:brightness(1.1)}
+
+/* ---- Phase 1 新增 ---- */
+.head-actions{display:flex;align-items:center;gap:10px}
+.hbtn{background:var(--ink-2);border:1px solid var(--line);color:var(--fog);font-family:inherit;font-size:12.5px;
+  padding:6px 11px;border-radius:9px;cursor:pointer;transition:all .15s}
+.hbtn:hover:not(:disabled){border-color:var(--amber);color:var(--amber)}
+.hbtn:disabled{opacity:.4;cursor:default}
+#binCount{font-weight:600}
+
+/* 打钩微奖励:勾的弹跳 + XP 飘字 */
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.25)}100%{transform:scale(1);opacity:1}}
+.icbtn.celebrate{animation:pop .45s cubic-bezier(.2,.9,.3,1.4);border-color:var(--green)!important;color:var(--green)!important}
+@keyframes floatup{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-34px);opacity:0}}
+.xpfloat{position:absolute;right:8px;top:6px;font-size:12px;font-weight:700;color:var(--amber);pointer-events:none;animation:floatup 1s ease-out forwards}
+.ev{position:relative}
+
+/* 等级面板(成长页) */
+.lvpanel{background:linear-gradient(160deg,#16302c,#102420);border:.5px solid #2a4a42;border-radius:18px;padding:22px 20px;margin-bottom:16px}
+.lvtop{display:flex;align-items:center;gap:16px}
+.lvbadge{position:relative;width:62px;height:62px;flex-shrink:0}
+.lvbadge .ring{position:absolute;inset:0;border-radius:50%;border:1px solid #c9a86a;opacity:.4}
+.lvbadge .core{position:absolute;inset:6px;border-radius:50%;background:#0c1e1a;display:flex;align-items:center;justify-content:center;border:1px solid #c9a86a;font-size:25px;font-weight:600;color:#d9bd84}
+.lvmeta .tier{font-size:10.5px;color:#7d9b91;letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}
+.lvmeta .name{font-size:20px;font-weight:600;color:#eef3f0;line-height:1.2}
+.xpbar-wrap{margin-top:18px}
+.xpbar-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px}
+.xpbar-top .xp{color:#d9bd84;font-weight:600}.xpbar-top .nxt{color:#7d9b91}
+.xptrack{height:8px;background:#0a1815;border-radius:4px;overflow:hidden}
+.xpfill{height:100%;background:linear-gradient(90deg,#c9a86a,#d9bd84);border-radius:4px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.statgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:16px}
+.statcard{background:var(--ink-2);border:.5px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center}
+.statcard .v{font-size:22px;font-weight:600}.statcard .l{font-size:11px;color:var(--fog);margin-top:3px}
+.insight-card{background:var(--ink-2);border-left:2px solid var(--teal);border-radius:0 12px 12px 0;padding:14px 16px;margin-bottom:16px}
+.insight-card .ih{font-size:13px;font-weight:600;color:var(--paper);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.insight-card p{font-size:13px;color:var(--fog);margin:0;line-height:1.65}
+.privacy-note{display:flex;align-items:flex-start;gap:8px;padding:0 2px}
+.privacy-note .pic{font-size:14px;color:var(--fog);margin-top:1px}
+.privacy-note p{font-size:12px;color:var(--fog);margin:0;line-height:1.6}
+
+/* 升级庆祝弹层 */
+.levelup-mask{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;z-index:60;opacity:0;pointer-events:none;transition:opacity .3s}
+.levelup-mask.show{opacity:1;pointer-events:auto}
+.levelup-card{background:linear-gradient(160deg,#16302c,#102420);border:1px solid #c9a86a;border-radius:20px;padding:32px 36px;text-align:center;transform:scale(.85);transition:transform .35s cubic-bezier(.2,.9,.3,1.3)}
+.levelup-mask.show .levelup-card{transform:scale(1)}
+.levelup-card .lu-badge{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;background:#0c1e1a;border:2px solid #c9a86a;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:700;color:#d9bd84}
+.levelup-card .lu-t{font-size:13px;color:#7d9b91;letter-spacing:.18em;text-transform:uppercase}
+.levelup-card .lu-n{font-size:24px;font-weight:600;color:#eef3f0;margin:6px 0 14px}
+@keyframes confetti{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(120px) rotate(360deg);opacity:0}}
+.confetti{position:absolute;width:8px;height:8px;border-radius:2px;animation:confetti 1.2s ease-out forwards}
+
+/* 回收站弹层 */
+.bin-mask{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:55;opacity:0;pointer-events:none;transition:opacity .25s}
+.bin-mask.show{opacity:1;pointer-events:auto}
+.bin-card{background:var(--ink-3);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(440px,92vw);max-height:80vh;overflow:auto}
+.bin-card h3{font-size:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.bin-item{display:flex;align-items:center;gap:10px;background:var(--ink-2);border:.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.bin-item .bi-body{flex:1;min-width:0}
+.bin-item .bi-title{font-size:14px}.bin-item .bi-sub{font-size:12px;color:var(--fog)}
+
+/* 分类标签 + 设置开关 */
+.cat-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:var(--ink);border:1px solid var(--line);color:var(--teal);margin-left:6px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;background:var(--ink-2);border:.5px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:10px}
+.setting-row .sr-l{font-size:14px}.setting-row .sr-d{font-size:12px;color:var(--fog);margin-top:2px}
+.switch{width:42px;height:24px;border-radius:12px;background:var(--line);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.switch.on{background:var(--teal)}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s}
+.switch.on::after{transform:translateX(18px)}
+
+@media (max-width:560px){.brand h1{font-size:24px}.cap-row{flex-wrap:wrap}#capInput{min-width:100%}.barwrap{flex-basis:120px}.head-actions{gap:6px}.hbtn{padding:5px 8px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="demobar">这是 <b>语迹 VoiceLog · Phase 1</b> 交互原型 · 解析/复盘/等级逻辑均为真实代码 · 数据仅存本页,刷新即重置</div>
+<div class="wrap">
+
+  <header>
+    <div class="brand"><h1>语迹</h1><span class="en">VoiceLog</span></div>
+    <div class="head-actions">
+      <button class="hbtn" id="undoBtn" title="撤销上一步" disabled>↶ 撤销</button>
+      <button class="hbtn" id="binBtn" title="回收站">🗑 <span id="binCount">0</span></button>
+      <span class="status"><span class="dot"></span><span>本地解析</span></span>
+    </div>
+  </header>
+
+  <section class="capture" id="capCard">
+    <div class="cap-label">说出或写下你的安排</div>
+    <div class="cap-row">
+      <textarea id="capInput" rows="1" placeholder="例如：明天下午三点跟老王开会，提前半小时提醒我"></textarea>
+      <button class="mic" id="micBtn" title="语音输入" aria-label="语音输入">
+        <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+      </button>
+      <button class="btn" id="parseBtn">解析</button>
+    </div>
+    <div class="hint">支持自然口语：<b>明天</b> / <b>下周三</b> / <b>下午三点半</b> / <b>提前一小时提醒</b>。点下面的例子试试：</div>
+    <div class="chips" id="chips"></div>
+
+    <div class="preview" id="preview">
+      <div class="pv-head"><span class="pv-title">解析结果</span><span class="conf" id="pvConf"></span></div>
+      <div class="pv-fields">
+        <div class="field"><label>标题</label><input id="pvTitle"></div>
+        <div class="field"><label>开始</label><input id="pvStart"></div>
+        <div class="field"><label>结束</label><input id="pvEnd"></div>
+        <div class="field"><label>地点</label><input id="pvLoc"></div>
+        <div class="field"><label>提前提醒(分钟)</label><input id="pvRemind" type="number"></div>
+        <div class="field"><label>备注</label><input id="pvNote"></div>
+      </div>
+      <div class="pv-actions">
+        <button class="btn ghost sm" id="pvCancel">放弃</button>
+        <button class="btn sm" id="pvSave">加入日程</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="schedule">日程</button>
+    <button class="tab" data-tab="review">复盘</button>
+    <button class="tab" data-tab="growth">成长</button>
+  </nav>
+
+  <section class="panel active" id="panel-schedule"><div id="schedule"></div></section>
+
+  <section class="panel" id="panel-growth"><div id="growth"></div></section>
+
+  <section class="panel" id="panel-review">
+    <div class="rev-controls">
+      <div class="seg" id="periodSeg">
+        <button data-p="daily" class="active">日</button>
+        <button data-p="weekly">周</button>
+        <button data-p="monthly">月</button>
+        <button data-p="quarterly">季</button>
+        <button data-p="yearly">年</button>
+      </div>
+      <button class="btn sm" id="genBtn">生成复盘</button>
+    </div>
+    <div class="rev-out" id="revOut">
+      <div class="empty"><div class="big">◷</div>选择周期,生成一份带时间分析的复盘。<br>它会算出你的时间去向、指出可以更高效的地方。</div>
+    </div>
+    <div class="exp-row" id="expRow" style="display:none">
+      <span class="lab">导出给其他大模型:</span>
+      <button class="btn ghost sm" data-fmt="md">Markdown</button>
+      <button class="btn ghost sm" data-fmt="txt">TXT</button>
+    </div>
+  </section>
+
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   语迹 VoiceLog — 纯前端 Demo
+   解析与复盘逻辑由真实后端 (Python) 移植为 JS,行为一致。
+   ============================================================ */
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let _toastTimer=null;
+function toast(m,a){const t=$("#toast");t.innerHTML=esc(m);t.className="show"+(a?" alert":"");
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>t.className="",2600);}
+// 带"撤销"按钮的 toast:点了就回退上一步
+function toastUndo(m,a){
+  const t=$("#toast");
+  t.innerHTML=`<span>${esc(m)}</span><button class="toast-undo" id="toastUndoBtn">撤销</button>`;
+  t.className="show"+(a?" alert":"");
+  clearTimeout(_toastTimer);_toastTimer=setTimeout(()=>t.className="",4500); // 给更长时间反应
+  const ub=$("#toastUndoBtn");
+  if(ub)ub.onclick=()=>{const act=undoStack.pop();if(act){act.undoFn();refreshUndo();renderSchedule();renderBinCount();toast("已撤销:"+act.label);}};
+}
+function esc(s){return(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function pad(n){return String(n).padStart(2,"0");}
+
+/* ---------- 中文数字 ---------- */
+const CN={零:0,〇:0,一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9,十:10};
+function cnInt(s){
+  if(!s)return null;s=s.trim();
+  if(/^\d+$/.test(s))return +s;
+  if(s.length===1)return CN[s]??null;
+  if(s.includes("十")){const[a,b]=s.split("十");const t=a?(CN[a]??1):1,o=b?(CN[b]??0):0;return t*10+o;}
+  let v=0;for(const ch of s){const d=CN[ch];if(d==null)return null;v=v*10+d;}return v;
+}
+
+/* ---------- 日期/时间解析(移植自 parser.py) ---------- */
+const REL={今天:0,今日:0,今晚:0,今早:0,明天:1,明日:1,明晚:1,明早:1,后天:2,大后天:3,昨天:-1};
+const WD={一:0,二:1,三:2,四:3,五:4,六:5,日:6,天:6};
+function resolveWeekday(text,base){
+  const m=text.match(/(下{0,2}|这|本)?\s*(?:周|星期|礼拜)([一二三四五六日天])/);
+  if(!m)return null;
+  const pre=m[1]||"",wd=WD[m[2]];if(wd==null)return null;
+  let ahead=(wd-base.getDay()+7)%7;const wk=(pre.match(/下/g)||[]).length;
+  const d=new Date(base);
+  if(wk){d.setDate(d.getDate()+ahead+wk*7);return d;}
+  if(ahead===0&&!pre)return d;
+  d.setDate(d.getDate()+ahead);return d;
+}
+function resolveDate(text,now){
+  const base=new Date(now);base.setHours(0,0,0,0);
+  let m=text.match(/(\d{1,2}|[一二三四五六七八九十]+)\s*月\s*(\d{1,2}|[一二三四五六七八九十]+)\s*[日号]?/);
+  if(m){const mo=cnInt(m[1]),da=cnInt(m[2]);if(mo&&da){let y=now.getFullYear();let c=new Date(y,mo-1,da);
+    if(c<new Date(base.getTime()-864e5))c=new Date(y+1,mo-1,da);return[c,true];}}
+  const wd=resolveWeekday(text,base);if(wd)return[wd,true];
+  for(const k of Object.keys(REL).sort((a,b)=>b.length-a.length))
+    if(text.includes(k)){const d=new Date(base);d.setDate(d.getDate()+REL[k]);return[d,true];}
+  return[base,false];
+}
+const PERIODS=[["凌晨",0,5],["早上",0,8],["早晨",0,8],["上午",0,10],["中午",12,12],["下午",12,15],["傍晚",12,18],["晚上",12,20],["晚",12,20],["夜",12,22]];
+function resolveTime(text){
+  let period=null;for(const p of PERIODS)if(text.includes(p[0])){period=p;break;}
+  let hour=null,minute=null;
+  let m=text.match(/(\d{1,2}|[一二三四五六七八九十两]+)\s*[点:：]\s*(半|一刻|三刻|\d{1,2}|[一二三四五六七八九十]+)?\s*分?/);
+  if(m){hour=cnInt(m[1]);const mt=m[2];
+    minute=mt==="半"?30:mt==="一刻"?15:mt==="三刻"?45:mt?cnInt(mt):0;}
+  else{const m2=text.match(/(\d{1,2}|[一二三四五六七八九十两]+)\s*点/);if(m2){hour=cnInt(m2[1]);minute=0;}}
+  if(hour==null){if(period)return[period[2],0,true];return[null,null,false];}
+  if(minute==null)minute=0;
+  if(period){if(period[1]===12&&hour<12)hour+=12;else if(period[1]===0&&hour===12)hour=0;}
+  else if(hour>=1&&hour<=7)hour+=12;
+  if(hour>23)hour%=24;
+  return[hour,minute,true];
+}
+const UNIT={分钟:1,分:1,小时:60,钟头:60,天:1440};
+function resolveRemind(text){
+  const m=text.match(/提前\s*(半|\d+|[一二三四五六七八九十两]+)\s*(小时|分钟|分|钟头|天)/);
+  if(m){const num=m[1]==="半"?(m[2].includes("小时")||m[2]==="钟头"?30:30):cnInt(m[1]);
+    if(m[1]==="半")return 30;return num*(UNIT[m[2]]||1);}
+  if(/提醒我?/.test(text))return 15;return null;
+}
+const STOP="开见吃集聚谈聊面报打做参进举办召安排准备完成处理跟和与给为";
+function resolveLoc(text){
+  const re=new RegExp("在\\s*([\\u4e00-\\u9fa5A-Za-z0-9]{1,8}?)(?=["+STOP+"]|$|，|,|。|\\s|的)");
+  const m=text.match(re);
+  if(m&&!["一起","那里","这里","家",""].includes(m[1]))return m[1];return null;
+}
+function extractTitle(text,loc){
+  let t=text;
+  for(const k of Object.keys(REL))t=t.split(k).join("");
+  t=t.replace(/(下{0,2}|这|本)?\s*(?:周|星期|礼拜)[一二三四五六日天]/g,"")
+     .replace(/(\d{1,2}|[一二三四五六七八九十]+)\s*月\s*(\d{1,2}|[一二三四五六七八九十]+)\s*[日号]?/g,"")
+     .replace(/(凌晨|早上|早晨|上午|中午|下午|傍晚|晚上)/g,"")
+     .replace(/(\d{1,2}|[一二三四五六七八九十两]+)\s*[点:：]\s*(半|一刻|三刻|\d{1,2}|[一二三四五六七八九十]+)?\s*分?/g,"")
+     .replace(/提前\s*(半|\d+|[一二三四五六七八九十两]+)\s*(小时|分钟|分|钟头|天)/g,"")
+     .replace(/提醒我?/g,"");
+  t=t.replace(/^[，,。\s的和跟与于要去到在帮我记一下提醒]+/,"").replace(/[，,。\s]+$/,"").trim();
+  t=t.replace(/^(我|要|想|需要|得|去|到|在)+/,"").trim();
+  if(loc){t=t.replace(new RegExp("在\\s*"+loc),"").replace(/^[，,。、\s]+|[，,。、\s]+$/g,"");
+    if(t.startsWith(loc))t=t.slice(loc.length).replace(/^[，,。、\s]+/,"");}
+  return t||"未命名日程";
+}
+function fmtDT(d,h,mi){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(h)+":"+pad(mi);}
+function parse(text){
+  const now=new Date();
+  const[date,df]=resolveDate(text,now);
+  const[h,mi,tf]=resolveTime(text);
+  const rem=resolveRemind(text);const loc=resolveLoc(text);const title=extractTitle(text,loc);
+  let start=null,end=null;
+  if(tf&&h!=null){start=fmtDT(date,h,mi);const e=new Date(date);e.setHours(h+1,mi);end=fmtDT(e,e.getHours(),e.getMinutes());}
+  else if(df){start=fmtDT(date,9,0);end=fmtDT(date,10,0);}
+  let conf=0.3;if(df)conf+=0.3;if(tf)conf+=0.3;if(title!=="未命名日程")conf+=0.1;
+  return{title,start,end,location:loc,remind_before:rem,note:null,raw:text,confidence:Math.min(conf,0.95)};
+}
+
+/* ---------- 复盘(移植自 review.py) ---------- */
+const CATS={
+  会议沟通:["开会","会议","评审","沟通","对接","面试","见面","碰面","电话","通话","见客户","汇报","例会","站会"],
+  深度工作:["写","设计","开发","编码","方案","文档","研究","分析","学习","复盘","规划","策划","调研"],
+  生活健康:["吃饭","午餐","晚餐","健身","运动","跑步","睡觉","吃药","医院","体检","买","购物","做饭"],
+  社交休闲:["朋友","聚会","聚餐","约","看电影","玩","喝","咖啡"],
+  出行通勤:["飞机","高铁","火车","出差","通勤","打车","机场","车站"]
+};
+function categorize(t){for(const[c,ks]of Object.entries(CATS))if(ks.some(k=>(t||"").includes(k)))return c;return "其他";}
+function durMin(e){if(!e.start||!e.end)return 60;const s=new Date(e.start),en=new Date(e.end);const m=(en-s)/60000;return m>0?m:60;}
+function fmtH(m){const h=m/60;return h>=1?h.toFixed(1)+" 小时":m+" 分钟";}
+function buildReview(period,events,label){
+  const PL={daily:"每日复盘",weekly:"每周复盘",monthly:"每月复盘",quarterly:"季度复盘",yearly:"年度复盘"}[period]||"复盘";
+  if(!events.length)return{md:`# ${PL} · ${label}\n\n共 0 项日程。\n\n## 洞察与建议\n\n- 这段时间没有记录任何日程。如果确实有安排,记得随手记下来——没有数据就没有复盘。`,bars:[],count:0};
+  let totalMin=0;const catMin={},catCnt={};let done=0,canc=0;const hourHist={};const dayCnt={};
+  events.forEach(e=>{const m=durMin(e);totalMin+=m;const c=categorize(e.title);catMin[c]=(catMin[c]||0)+m;catCnt[c]=(catCnt[c]||0)+1;
+    if(e.status==="done")done++;if(e.status==="cancelled")canc++;
+    if(e.start){const hh=new Date(e.start).getHours();hourHist[hh]=(hourHist[hh]||0)+1;const d=e.start.slice(0,10);dayCnt[d]=(dayCnt[d]||0)+1;}});
+  const planned=events.length-done-canc;const completion=events.length?done/events.length:0;
+  let morning=0,after=0,eve=0;for(const[h,c]of Object.entries(hourHist)){if(h<12)morning+=c;else if(h<18)after+=c;else eve+=c;}
+  const cats=Object.entries(catMin).sort((a,b)=>b[1]-a[1]);
+  const top=cats[0];const bars=cats.map(([c,m])=>({label:`${c} · ${fmtH(m)}（${catCnt[c]} 项）`,ratio:m/totalMin}));
+  const ins=[];
+  if(done||canc)ins.push(`完成率 ${Math.round(completion*100)}%（完成 ${done} / 取消 ${canc} / 待办 ${planned}）。`+(completion>=0.7?"完成度不错,保持这个节奏。":"完成率偏低,下次排期时不妨少排一点、留出缓冲。"));
+  if(top){const share=top[1]/totalMin;ins.push(`时间主要花在「${top[0]}」上,约 ${fmtH(top[1])},占 ${Math.round(share*100)}%。`+(share>0.5?"分布比较集中,注意别让单一类事务挤占其他重要事项。":"时间分配相对均衡。"));}
+  const parts={上午:morning,下午:after,晚上:eve};const peak=Object.keys(parts).reduce((a,b)=>parts[a]>=parts[b]?a:b);
+  if(parts[peak])ins.push(`日程在${peak}最密集（${parts[peak]} 项）。`+(parts[peak]>=3?"会议/事务扎堆在同一时段时,容易把整块时间切碎——试着把需要专注的事挪到相对空的时段。":"时段分布较松,节奏可控。"));
+  const meet=catCnt["会议沟通"]||0,deep=catCnt["深度工作"]||0;
+  if(meet&&deep&&meet>deep*1.5)ins.push(`会议沟通（${meet} 项）明显多于深度工作（${deep} 项）。如果你需要产出,考虑主动合并或推掉一部分会议,给自己留出不被打断的整块时间。`);
+  else if(deep&&!meet)ins.push("这段时间以深度工作为主,几乎没有会议打断——通常是高产出的状态,值得复制。");
+  if(period!=="daily"){const bd=Object.entries(dayCnt).sort((a,b)=>b[1]-a[1])[0];if(bd&&bd[1]>=4)ins.push(`${bd[0]} 当天排了 ${bd[1]} 项,是最满的一天。如果可以,把其中一两项分散到前后几天会更从容。`);}
+  // build markdown for export
+  let md=`# ${PL} · ${label}\n\n共 ${events.length} 项日程,合计约 ${fmtH(totalMin)}。\n\n## 时间去向\n\n`;
+  bars.forEach(b=>{const f=Math.round(16*b.ratio);md+="`"+"█".repeat(f)+"·".repeat(16-f)+"` "+b.label+"\n";});
+  md+="\n## 洞察与建议\n\n"+ins.map(i=>"- "+i).join("\n")+"\n\n## 日程明细\n\n";
+  events.forEach(e=>{const t=e.start?e.start.slice(11,16):"—",d=e.start?e.start.slice(0,10):"";
+    const st=e.status==="done"?"● 完成":e.status==="cancelled"?"✕ 取消":"○ 待办";
+    md+=`- [${st}] ${d} ${t} ${e.title}`+(e.location?` @ ${e.location}`:"")+"\n";if(e.note)md+=`    备注：${e.note}\n`;});
+  return{md,bars,insights:ins,total:totalMin,count:events.length,title:`${PL} · ${label}`,events};
+}
+
+/* ---------- 周期范围 ---------- */
+function periodRange(period,anchor){
+  const a=new Date(anchor);a.setHours(0,0,0,0);
+  if(period==="daily")return[a,a,a.toISOString().slice(0,10)];
+  if(period==="weekly"){const s=new Date(a);s.setDate(a.getDate()-((a.getDay()+6)%7));const e=new Date(s);e.setDate(s.getDate()+6);
+    return[s,e,`${s.toISOString().slice(0,10)} ~ ${e.toISOString().slice(0,10)}`];}
+  if(period==="monthly"){const s=new Date(a.getFullYear(),a.getMonth(),1),e=new Date(a.getFullYear(),a.getMonth()+1,0);
+    return[s,e,`${a.getFullYear()}-${pad(a.getMonth()+1)}`];}
+  if(period==="quarterly"){const q=Math.floor(a.getMonth()/3);const s=new Date(a.getFullYear(),q*3,1),e=new Date(a.getFullYear(),q*3+3,0);
+    return[s,e,`${a.getFullYear()} Q${q+1}`];}
+  const s=new Date(a.getFullYear(),0,1),e=new Date(a.getFullYear(),11,31);return[s,e,""+a.getFullYear()];
+}
+
+/* ============================================================
+   状态 + 渲染
+   ============================================================ */
+let EVENTS=[],nextId=1,currentPeriod="daily",lastReview=null;
+
+/* ============================================================
+   Phase 1 新增:等级系统 / 撤销 / 回收站 / 分类开关
+   ============================================================ */
+// 等级称号体系(只升不降;XP 由记录/完成/复盘累积)。称号可自由改文字。
+const LEVELS=[
+  {lv:1,need:0,   name:"初次记录的人"},
+  {lv:2,need:60,  name:"开始留意时间的人"},
+  {lv:3,need:160, name:"渐入轨道的人"},
+  {lv:4,need:320, name:"稳步前行的人"},
+  {lv:5,need:540, name:"掌控节奏的人"},
+  {lv:6,need:820, name:"善用时间的人"},
+  {lv:7,need:1180,name:"复盘成习惯的人"},
+  {lv:8,need:1640,name:"时间的经营者"},
+  {lv:9,need:2200,name:"自律自如的人"},
+  {lv:10,need:2900,name:"时间的主人"},
+];
+const XP={create:5,done:10,review:15}; // 记录+5 完成+10 复盘+15
+let state={xp:0,activeDays:new Set(),recordCount:0};
+let bin=[]; // 软删除的日程
+let undoStack=[]; // 撤销栈
+
+function levelFromXp(xp){
+  let cur=LEVELS[0];for(const L of LEVELS)if(xp>=L.need)cur=L;
+  const idx=LEVELS.indexOf(cur);const next=LEVELS[idx+1]||null;
+  return {...cur,next,idx};
+}
+function markActiveToday(){state.activeDays.add(new Date().toISOString().slice(0,10));}
+function addXp(amount,reason){
+  const before=levelFromXp(state.xp);
+  state.xp+=amount;markActiveToday();
+  const after=levelFromXp(state.xp);
+  if(after.lv>before.lv)celebrateLevelUp(after);
+  updateBadgeHint();
+}
+function updateBadgeHint(){
+  // 成长 tab 是否高亮(有未看的升级)——简单起见这里只在升级时弹层
+}
+
+/* 撤销:记录一个可回退的快照动作 */
+function pushUndo(label,undoFn){undoStack.push({label,undoFn});if(undoStack.length>30)undoStack.shift();refreshUndo();}
+function refreshUndo(){const b=$("#undoBtn");b.disabled=undoStack.length===0;b.textContent=undoStack.length?`↶ 撤销`:"↶ 撤销";}
+$("#undoBtn").onclick=()=>{const a=undoStack.pop();if(!a)return;a.undoFn();refreshUndo();toast("已撤销:"+a.label);renderSchedule();renderBinCount();};
+
+function renderBinCount(){$("#binCount").textContent=bin.length;}
+
+function seed(){
+  // 以"今天"为基准生成一批真实感数据,跨当天 + 本周
+  const base=new Date();base.setHours(0,0,0,0);
+  const mk=(dayOffset,h,mi,title,loc,rem,status,note)=>{
+    const d=new Date(base);d.setDate(d.getDate()+dayOffset);
+    const s=fmtDT(d,h,mi);const e=new Date(d);e.setHours(h+1,mi);
+    EVENTS.push({id:nextId++,title,start:s,end:fmtDT(e,e.getHours(),e.getMinutes()),location:loc||null,remind_before:rem||null,note:note||null,status:status||"planned"});
+  };
+  // 今天
+  mk(0,9,0,"写产品方案",null,10,"done","初稿已发群里");
+  mk(0,11,0,"团队晨会",null,null,"done");
+  mk(0,14,0,"跟老王对接需求","会议室",30,"planned");
+  mk(0,15,30,"客户电话",null,null,"planned");
+  mk(0,18,0,"健身",null,null,"planned");
+  // 本周其他天
+  mk(1,10,0,"季度评审会议","大会议室",60,"planned");
+  mk(1,16,0,"写复盘文档",null,null,"planned");
+  mk(2,12,0,"和朋友午餐","公司楼下",null,"planned");
+  mk(-1,10,0,"代码评审",null,null,"done");
+  mk(-1,20,0,"看行业报告",null,null,"done");
+  mk(-2,15,0,"面试候选人",null,15,"done");
+}
+seed();
+
+const EXAMPLES=["明天下午三点跟老王开会，提前半小时提醒我","下周三上午十点在大会议室做季度汇报","后天晚上八点和朋友吃饭","6月20号下午两点半团队评审","今晚十点提醒我吃药"];
+$("#chips").innerHTML=EXAMPLES.map(e=>`<button class="chip">${esc(e)}</button>`).join("");
+$$("#chips .chip").forEach(c=>c.onclick=()=>{$("#capInput").value=c.textContent;doParse();});
+
+$("#capInput").addEventListener("input",e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,160)+"px";});
+
+$$(".tab").forEach(t=>t.onclick=()=>{
+  $$(".tab").forEach(x=>x.classList.remove("active"));$$(".panel").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");$("#panel-"+t.dataset.tab).classList.add("active");
+  if(t.dataset.tab==="schedule")renderSchedule();
+  if(t.dataset.tab==="growth")renderGrowth();
+});
+
+let preview=null;
+function doParse(){
+  const text=$("#capInput").value.trim();if(!text){toast("先输入或点一个例子",true);return;}
+  $("#capCard").classList.add("live");
+  setTimeout(()=>{ // 模拟一点处理时延,让扫光动画可见
+    const ev=parse(text);preview=ev;
+    $("#pvTitle").value=ev.title||"";$("#pvStart").value=ev.start||"";$("#pvEnd").value=ev.end||"";
+    $("#pvLoc").value=ev.location||"";$("#pvRemind").value=ev.remind_before??"";$("#pvNote").value=ev.note||"";
+    $("#pvConf").textContent="本地解析 · 置信 "+Math.round((ev.confidence||0)*100)+"%";
+    $("#preview").classList.add("show");$("#capCard").classList.remove("live");
+  },550);
+}
+$("#parseBtn").onclick=doParse;
+$("#capInput").addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter")doParse();});
+$("#pvCancel").onclick=()=>{$("#preview").classList.remove("show");preview=null;};
+$("#pvSave").onclick=()=>{
+  const t=$("#pvTitle").value.trim();if(!t){toast("标题不能为空",true);return;}
+  const ev={id:nextId++,title:t,start:$("#pvStart").value.trim()||null,end:$("#pvEnd").value.trim()||null,
+    location:$("#pvLoc").value.trim()||null,remind_before:$("#pvRemind").value?+$("#pvRemind").value:null,
+    note:$("#pvNote").value.trim()||null,status:"planned"};
+  if(catEnabled)ev.category=categorize(ev.title);
+  EVENTS.push(ev);
+  state.recordCount++;addXp(XP.create);
+  pushUndo("新增「"+t+"」",()=>{EVENTS=EVENTS.filter(x=>x.id!==ev.id);state.recordCount--;});
+  $("#preview").classList.remove("show");$("#capInput").value="";$("#capInput").style.height="auto";preview=null;
+  toast("已加入日程 ✓ +5 XP");renderSchedule();
+};
+
+/* 语音(浏览器内置,可选) */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){const rec=new SR();rec.lang="zh-CN";rec.interimResults=true;let recording=false,ft="";
+  $("#micBtn").onclick=()=>{if(recording){rec.stop();return;}ft="";rec.start();};
+  rec.onstart=()=>{recording=true;$("#micBtn").classList.add("rec");};
+  rec.onend=()=>{recording=false;$("#micBtn").classList.remove("rec");if(ft.trim()){$("#capInput").value=ft.trim();doParse();}};
+  rec.onerror=e=>toast("语音识别出错（可改用打字）",true);
+  rec.onresult=e=>{let s="";for(let i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;ft=s;$("#capInput").value=s;};
+}else{$("#micBtn").onclick=()=>toast("当前浏览器不支持内置语音,可直接打字试试 🎤",true);}
+
+/* 日程渲染 */
+function renderSchedule(){
+  const el=$("#schedule");
+  if(!EVENTS.length){el.innerHTML=`<div class="empty"><div class="big">◔</div>还没有日程。<br>说一句“明天下午三点开会”,就从这里开始。</div>`;return;}
+  const sorted=[...EVENTS].sort((a,b)=>(a.start||"z").localeCompare(b.start||"z"));
+  const groups={};sorted.forEach(e=>{const d=e.start?e.start.slice(0,10):"未排期";(groups[d]??=[]).push(e);});
+  const today=new Date();today.setHours(0,0,0,0);const td=today.toISOString().slice(0,10);
+  let html="";
+  Object.keys(groups).sort().forEach(d=>{
+    const lbl=d===td?d+" · 今天":d;
+    html+=`<div class="daygroup"><h3>${lbl}</h3>`+groups[d].map(evCard).join("")+`</div>`;
+  });
+  el.innerHTML=html;
+}
+function evCard(e){
+  const t=e.start?e.start.slice(11,16):"—";
+  const cls=e.status==="done"?"done":e.status==="cancelled"?"cancelled":"";
+  const loc=e.location?`<span class="tag">📍 ${esc(e.location)}</span>`:"";
+  const rem=e.remind_before?`<span class="rem">⏰ 提前${e.remind_before}分钟</span>`:"";
+  const note=e.note?`<div class="ev-note">${esc(e.note)}</div>`:"";
+  const stt=e.status==="done"?"完成":e.status==="cancelled"?"取消":"待办";
+  const cat=(catEnabled&&e.category)?`<span class="cat-tag">${esc(e.category)}</span>`:"";
+  return `<div class="ev ${cls}" id="ev-${e.id}">
+    <div class="ev-time">${t}<small>${stt}</small></div>
+    <div class="ev-body"><div class="ev-title">${esc(e.title)}${cat}</div><div class="ev-meta">${loc}${rem}</div>${note}</div>
+    <div class="ev-acts">
+      <button class="icbtn ok" id="ok-${e.id}" title="${e.status==='done'?'取消完成':'标记完成'}" onclick="setStatus(${e.id},'done')">✓</button>
+      <button class="icbtn" title="${e.status==='cancelled'?'恢复待办':'标记取消'}" onclick="setStatus(${e.id},'cancelled')">⊘</button>
+      <button class="icbtn del" title="删除" onclick="delEvent(${e.id})">✕</button>
+    </div></div>`;
+}
+window.setStatus=(id,st)=>{
+  const e=EVENTS.find(x=>x.id===id);if(!e)return;
+  const prev=e.status;
+  // 再次点击同一状态 = 取消该状态(回到待办),方便误触修正
+  const newSt=(prev===st)?"planned":st;
+  e.status=newSt;
+  const label=(newSt==="done"?"完成":newSt==="cancelled"?"取消":"恢复待办")+"「"+e.title+"」";
+  pushUndo(label,()=>{e.status=prev;});
+  if(newSt==="done"){
+    const card=$("#ev-"+id),ok=$("#ok-"+id);
+    if(ok)ok.classList.add("celebrate");
+    if(card){const f=document.createElement("div");f.className="xpfloat";f.textContent="+10 XP";card.appendChild(f);setTimeout(()=>f.remove(),1000);}
+    addXp(XP.done);
+    setTimeout(()=>renderSchedule(),650);
+    toastUndo("完成 ✓ +10 XP");
+  }else if(newSt==="cancelled"){
+    renderSchedule();toastUndo("已标记取消");
+  }else{
+    renderSchedule();toastUndo("已恢复为待办");
+  }
+};
+window.delEvent=(id)=>{
+  const e=EVENTS.find(x=>x.id===id);if(!e)return;
+  EVENTS=EVENTS.filter(x=>x.id!==id);
+  bin.unshift(e);
+  pushUndo("删除「"+e.title+"」",()=>{bin=bin.filter(x=>x.id!==e.id);EVENTS.push(e);});
+  renderSchedule();renderBinCount();
+  toastUndo("已删除(可在回收站找回)");
+};
+
+/* 复盘 */
+$$("#periodSeg button").forEach(b=>b.onclick=()=>{$$("#periodSeg button").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentPeriod=b.dataset.p;});
+$("#genBtn").onclick=()=>{
+  const[d0,d1,label]=periodRange(currentPeriod,new Date());
+  const s=d0.toISOString().slice(0,10),e=d1.toISOString().slice(0,10);
+  const evs=EVENTS.filter(x=>x.start&&x.start.slice(0,10)>=s&&x.start.slice(0,10)<=e);
+  const r=buildReview(currentPeriod,evs,label);lastReview=r;
+  renderReview(r);$("#expRow").style.display=r.count?"flex":"none";
+  if(!r.count){toast("这个周期还没有日程数据");return;}
+  if(!state._reviewedToday){state._reviewedToday=true;addXp(XP.review);toast("复盘完成 +15 XP");}
+};
+function renderReview(r){
+  if(!r.count){$("#revOut").innerHTML=`<div class="empty"><div class="big">○</div>${esc(r.title||"复盘")}<br>这个周期还没有日程。</div>`;return;}
+  let h=`<h1>${esc(r.title)}</h1><p>共 ${r.count} 项日程,合计约 ${fmtH(r.total)}。</p><h2>时间去向</h2>`;
+  r.bars.forEach(b=>{h+=`<div class="barline"><div class="barwrap"><div class="barfill" style="width:0"></div></div><span class="barlbl">${esc(b.label)}</span></div>`;});
+  h+=`<h2>洞察与建议</h2><ul>`+r.insights.map(i=>`<li>${esc(i)}</li>`).join("")+`</ul>`;
+  h+=`<h2>日程明细</h2><ul>`+r.events.map(e=>{const t=e.start?e.start.slice(11,16):"—",d=e.start?e.start.slice(0,10):"";
+    const st=e.status==="done"?"● 完成":e.status==="cancelled"?"✕ 取消":"○ 待办";
+    return `<li style="list-style:none;padding-left:0">[${st}] ${d} ${t} ${esc(e.title)}${e.location?" @ "+esc(e.location):""}</li>`;}).join("")+`</ul>`;
+  $("#revOut").innerHTML=h;
+  // animate bars
+  requestAnimationFrame(()=>{$$("#revOut .barfill").forEach((el,i)=>{el.style.width=Math.max(4,Math.round(r.bars[i].ratio*100))+"%";});});
+}
+$$("#expRow button").forEach(b=>b.onclick=()=>{
+  if(!lastReview)return;
+  const fmt=b.dataset.fmt;let content=lastReview.md;
+  if(fmt==="txt")content=content.replace(/^#+\s*/gm,"").replace(/`[█·]+`\s*/g,"").replace(/\*\*(.+?)\*\*/g,"$1").replace(/^- /gm,"· ");
+  const blob=new Blob([content],{type:"text/plain;charset=utf-8"});const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="voicelog_"+currentPeriod+"."+fmt;a.click();URL.revokeObjectURL(url);
+  toast("已导出 "+fmt.toUpperCase()+"（Word 版在完整应用中支持）");
+});
+
+/* ============================================================
+   Phase 1:分类开关 / 成长页 / 升级庆祝 / 回收站
+   ============================================================ */
+let catEnabled=true; // AI 自动分类(设置可关)
+
+/* 成长页渲染 */
+function renderGrowth(){
+  const L=levelFromXp(state.xp);
+  const curBase=L.need, nextNeed=L.next?L.next.need:L.need;
+  const into=state.xp-curBase, span=L.next?(nextNeed-curBase):1;
+  const pct=L.next?Math.min(100,Math.round(into/span*100)):100;
+  const remain=L.next?(nextNeed-state.xp):0;
+  const[d0,d1]=periodRange("weekly",new Date());
+  const s=d0.toISOString().slice(0,10),e=d1.toISOString().slice(0,10);
+  const weekEvs=EVENTS.filter(x=>x.start&&x.start.slice(0,10)>=s&&x.start.slice(0,10)<=e);
+  const done=weekEvs.filter(x=>x.status==="done").length;
+  const total=weekEvs.length;const compl=total?Math.round(done/total*100):0;
+  const catMin={};let tot=0;
+  weekEvs.forEach(ev=>{const m=durMin(ev);tot+=m;const c=categorize(ev.title);catMin[c]=(catMin[c]||0)+m;});
+  const cats=Object.entries(catMin).sort((a,b)=>b[1]-a[1]);
+  const COLORS={会议沟通:"#4a7fb5",深度工作:"#2f8f6e",学习成长:"#8079c4",生活健康:"#c9a86a",社交休闲:"#c97f9a",出行通勤:"#7d9b91",其他:"#888780"};
+  const bars=cats.map(([c,m])=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+     <span style="width:60px;font-size:13px">${esc(c)}</span>
+     <div style="flex:1;height:12px;background:var(--ink);border-radius:6px;overflow:hidden"><div style="width:${Math.round(m/tot*100)}%;height:100%;background:${COLORS[c]||"#888"};border-radius:6px"></div></div>
+     <span style="width:30px;text-align:right;font-size:13px;font-weight:600">${Math.round(m/tot*100)}%</span></div>`).join("");
+  $("#growth").innerHTML=`
+    <div class="lvpanel">
+      <div class="lvtop">
+        <div class="lvbadge"><div class="ring"></div><div class="core">${L.lv}</div></div>
+        <div class="lvmeta"><div class="tier">Level ${L.lv}</div><div class="name">${esc(L.name)}</div></div>
+      </div>
+      <div class="xpbar-wrap">
+        <div class="xpbar-top"><span class="xp">${state.xp} XP</span><span class="nxt">${L.next?`距 LV.${L.next.lv} · 还差 ${remain}`:"已达最高等级"}</span></div>
+        <div class="xptrack"><div class="xpfill" style="width:0"></div></div>
+      </div>
+    </div>
+    <div class="statgrid">
+      <div class="statcard"><div class="v">${total}</div><div class="l">本周记录</div></div>
+      <div class="statcard"><div class="v" style="color:var(--green)">${compl}%</div><div class="l">完成率</div></div>
+      <div class="statcard"><div class="v" style="color:var(--teal)">${state.activeDays.size}</div><div class="l">累计天数</div></div>
+    </div>
+    ${cats.length?`<div style="font-size:13px;color:var(--fog);margin:0 0 9px;padding-left:2px">时间去向 · 本周</div>
+    <div style="background:var(--ink-2);border:.5px solid var(--line);border-radius:14px;padding:16px 16px 4px;margin-bottom:16px">${bars}</div>`:""}
+    <div class="insight-card"><div class="ih">💡 本周洞察</div><p>${growthInsight(L,remain,done,total)}</p></div>
+    <div class="setting-row"><div><div class="sr-l">AI 自动分类</div><div class="sr-d">给日程自动打类别标签,用于复盘统计</div></div>
+      <div class="switch ${catEnabled?"on":""}" id="catSwitch"></div></div>
+    <div class="privacy-note"><span class="pic">🔒</span><p>数据本地存储,随时导出带走。等级与 XP 只升不降——每一次记录都算数。</p></div>
+  `;
+  requestAnimationFrame(()=>{const f=$("#growth .xpfill");if(f)f.style.width=pct+"%";});
+  $("#catSwitch").onclick=()=>{catEnabled=!catEnabled;$("#catSwitch").classList.toggle("on",catEnabled);
+    EVENTS.forEach(ev=>{if(catEnabled)ev.category=categorize(ev.title);});renderGrowth();toast(catEnabled?"已开启自动分类":"已关闭自动分类");};
+}
+function growthInsight(L,remain,done,total){
+  if(total===0)return "本周还没有日程记录。记一条,就向下一级迈进一步。";
+  const parts=[];
+  if(done)parts.push(`本周已完成 ${done} 项`);
+  if(L.next)parts.push(`再积累 ${remain} XP 就能升到 LV.${L.next.lv}`);
+  parts.push("late better than never——你一直在向上");
+  return parts.join(",")+"。";
+}
+
+/* 升级庆祝 */
+function celebrateLevelUp(L){
+  let mask=$("#levelupMask");
+  if(!mask){mask=document.createElement("div");mask.id="levelupMask";mask.className="levelup-mask";
+    mask.innerHTML=`<div class="levelup-card"><div class="lu-badge" id="luBadge"></div><div class="lu-t">Level Up</div><div class="lu-n" id="luName"></div><button class="btn sm" id="luClose">继续前行</button></div>`;
+    document.body.appendChild(mask);}
+  $("#luBadge").textContent=L.lv;$("#luName").textContent="LV."+L.lv+" "+L.name;
+  mask.classList.add("show");
+  const card=mask.querySelector(".levelup-card");
+  const cols=["#c9a86a","#2f8f6e","#4a7fb5","#d9bd84"];
+  for(let i=0;i<14;i++){const c=document.createElement("div");c.className="confetti";
+    c.style.background=cols[i%cols.length];c.style.left=(20+Math.random()*60)+"%";c.style.top="10%";
+    c.style.animationDelay=(Math.random()*.3)+"s";card.appendChild(c);setTimeout(()=>c.remove(),1500);}
+  $("#luClose").onclick=()=>mask.classList.remove("show");
+  setTimeout(()=>{if(mask.classList.contains("show"))mask.classList.remove("show");},4000);
+}
+
+/* 回收站 */
+$("#binBtn").onclick=()=>{
+  let mask=$("#binMask");
+  if(!mask){mask=document.createElement("div");mask.id="binMask";mask.className="bin-mask";
+    mask.innerHTML=`<div class="bin-card"><h3>回收站 <button class="hbtn" id="binCloseTop">关闭</button></h3><div id="binList"></div></div>`;
+    document.body.appendChild(mask);
+    mask.onclick=ev=>{if(ev.target===mask)mask.classList.remove("show");};
+  }
+  renderBinList();
+  $("#binCloseTop").onclick=()=>mask.classList.remove("show");
+  mask.classList.add("show");
+};
+function renderBinList(){
+  const list=$("#binList");if(!list)return;
+  if(!bin.length){list.innerHTML=`<div style="text-align:center;color:var(--fog);padding:30px">回收站是空的</div>`;return;}
+  list.innerHTML=bin.map(e=>{const t=e.start?e.start.slice(5,16).replace("T"," "):"未排期";
+    return `<div class="bin-item"><div class="bi-body"><div class="bi-title">${esc(e.title)}</div><div class="bi-sub">${t}</div></div>
+      <button class="hbtn" onclick="restoreEv(${e.id})">↩ 找回</button>
+      <button class="hbtn" onclick="purgeEv(${e.id})" style="color:var(--rose)">彻底删除</button></div>`;}).join("");
+}
+window.restoreEv=(id)=>{const e=bin.find(x=>x.id===id);if(!e)return;bin=bin.filter(x=>x.id!==id);EVENTS.push(e);
+  renderSchedule();renderBinCount();renderBinList();toast("已找回「"+e.title+"」");};
+window.purgeEv=(id)=>{bin=bin.filter(x=>x.id!==id);renderBinCount();renderBinList();toast("已彻底删除");};
+
+/* 初始化:给一点初始 XP/活跃天,让成长页有内容 */
+(function initGrowth(){
+  let days=new Set();
+  EVENTS.forEach(e=>{if(e.start)days.add(e.start.slice(0,10));});
+  state.xp=320; // 落在 LV.4 区间,贴近设计稿
+  for(let i=0;i<86;i++)days.add("d"+i); // 累计天数演示
+  state.activeDays=days;
+  if(catEnabled)EVENTS.forEach(e=>e.category=categorize(e.title));
+})();
+renderBinCount();refreshUndo();
+
+renderSchedule();
+</script>
+</body>
+</html>

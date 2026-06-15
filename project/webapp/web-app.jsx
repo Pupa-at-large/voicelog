@@ -5,6 +5,9 @@
   const clone = (o) => JSON.parse(JSON.stringify(o));
   const SKEY = 'voicelog-web-v2';
   const CATS = ['meet', 'deep', 'life', 'learn', 'misc'];
+  const XP = window.VL.XP;
+  const GOLD = window.VL.GOLD;
+  const todayStr = () => new Date().toISOString().slice(0, 10);
   const load = () => { try { return JSON.parse(localStorage.getItem(SKEY) || 'null'); } catch (e) { return null; } };
 
   function Modal({ t, open, onClose, children, width = 440 }) {
@@ -59,8 +62,8 @@
   }
 
   // ── 侧边栏 ──
-  function Sidebar({ t, tab, setTab, onVoice, aiEngine }) {
-    const nav = [['cal', '日历', 'calendar'], ['review', '复盘', 'chart'], ['export', '导出', 'export'], ['me', '设置', 'user']];
+  function Sidebar({ t, tab, setTab, onVoice, aiEngine, level, xp, onGrowth }) {
+    const nav = [['cal', '日历', 'calendar'], ['review', '复盘', 'chart'], ['growth', '成长', 'sparkle'], ['export', '导出', 'export'], ['me', '设置', 'user']];
     return (
       <div style={{ width: 248, flexShrink: 0, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 6px 18px' }}>
@@ -82,6 +85,15 @@
           })}
         </div>
         <div style={{ flex: 1 }} />
+        {level && (
+          <button onClick={onGrowth} title="成长" style={{ display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit', padding: 12, marginBottom: 10, borderRadius: t.radius, border: `1px solid color-mix(in oklch, ${GOLD} 40%, ${t.border})`, background: t.mode === 'dark' ? 'linear-gradient(150deg,#16302c,#102420)' : `linear-gradient(150deg, color-mix(in oklch, ${GOLD} 13%, ${t.surface}), ${t.surface})` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ width: 30, height: 30, borderRadius: 999, flexShrink: 0, border: `1.5px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 720, color: GOLD }}>{level.lv}</span>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{level.name}</div><div style={{ fontSize: 11, color: t.faint }}>LV.{level.lv} · {xp} XP</div></div>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: t.chartTrack, overflow: 'hidden', marginTop: 9 }}><div style={{ height: '100%', width: `${level.pct}%`, borderRadius: 999, background: GOLD }} /></div>
+          </button>
+        )}
         <div style={{ padding: 12, borderRadius: t.radius, background: t.surface2 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Dot color={aiEngine ? 'oklch(0.62 0.15 150)' : 'oklch(0.70 0.14 70)'} size={9} ring /><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{aiEngine ? 'AI 解析' : '规则解析'}</span></div>
           <div style={{ fontSize: 11.5, color: t.faint, marginTop: 6, lineHeight: 1.5 }}>数据存于本机 voicelog.db，并镜像一份 Markdown。</div>
@@ -384,6 +396,12 @@
     const [trashOpen, setTrashOpen] = useState(false);
     const [celebrate, setCelebrate] = useState(null);
     const [burst, setBurst] = useState(null);
+    // 成长系统：新用户从 0 起步，老用户落在 LV.4 区间
+    const [xp, setXp] = useState(() => fresh ? 0 : ((saved && typeof saved.xp === 'number') ? saved.xp : 320));
+    const [accumulatedDays, setAccDays] = useState(() => fresh ? 0 : ((saved && typeof saved.accumulatedDays === 'number') ? saved.accumulatedDays : 86));
+    const [lastActiveDay, setLastActiveDay] = useState(() => (saved && saved.lastActiveDay) || '');
+    const [lastReviewDay, setLastReviewDay] = useState(() => (saved && saved.lastReviewDay) || '');
+    const [levelUp, setLevelUp] = useState(null);
     const [toast, setToastState] = useState(null);
     const toastTimer = useRef(0);
     const celTimer = useRef(0);
@@ -391,7 +409,10 @@
 
     const base = window.VL.themes[baseKey] || theme;
     const t = useMemo(() => { const a = base.accents.find((x) => x.key === accentKey) || base.accents[0]; return { ...base, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft }; }, [base, accentKey]);
-    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, baseKey, accentKey })); } catch (e) {} }, [events, baseKey, accentKey, fresh]);
+    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay })); } catch (e) {} }, [events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, fresh]);
+
+    const markActive = () => { const today = todayStr(); setLastActiveDay((p) => { if (p !== today) setAccDays((d) => d + 1); return today; }); };
+    const awardXp = (amount) => { markActive(); setXp((p) => { const nv = p + amount; if (window.VL.levelFromXp(nv).lv > window.VL.levelFromXp(p).lv) setLevelUp(window.VL.levelFromXp(nv)); return nv; }); };
     const isEmpty = useMemo(() => Object.values(events).every((a) => !a || a.length === 0), [events]);
 
     const setToast = (msg, icon, action) => { setToastState({ msg, icon, action }); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToastState(null), action ? 4200 : 2400); };
@@ -408,11 +429,13 @@
     const hasPending = useMemo(() => Object.values(events).some((arr) => (arr || []).some((e) => e.repeat && !e.repeat.until)), [events]);
     const pendingCount = useMemo(() => Object.values(events).reduce((n, arr) => n + (arr || []).filter((e) => e.repeat && !e.repeat.until).length, 0), [events]);
     const mutate = (day, fn) => setEvents((prev) => { const next = { ...prev, [day]: (prev[day] || []).map((e) => ({ ...e })) }; next[day] = fn(next[day]); return next; });
-    const addEvent = (p) => { const ev = { id: 'v' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; mutate(p.dateKey, (arr) => [...arr, ev]); setSelDay(p.dateKey); return ev; };
+    const addEvent = (p) => { const ev = { id: 'v' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; mutate(p.dateKey, (arr) => [...arr, ev]); setSelDay(p.dateKey); awardXp(XP.create); return ev; };
 
     const app = {
       events, selDay, detail, editEv, aiEngine, notify, accentKey, hasPending, pendingCount, burst,
+      xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelDay, setToast, setDetail, setEditEv, setTab,
+      goGrowth: () => { setTab('growth'); const today = todayStr(); if (lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); } },
       openDetail: (ev) => setDetail(ev),
       openEdit: (ev) => { setDetail(null); setEditEv(ev); },
       openRecur: () => setRecurOpen(true),
@@ -427,6 +450,7 @@
         const willDone = cur && cur.status !== 'done';
         mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, status: e.status === 'done' ? 'todo' : 'done' } : e));
         if (!willDone || !cur) return;
+        awardXp(XP.done);
         const doneToday = (events['06-16'] || []).filter((e) => e.status === 'done').length + (selDay === '06-16' ? 1 : 0);
         const late = selDay === '06-16' && cur.t < '16:00';
         const milestone = !!cur.progress || late || (doneToday > 0 && doneToday % 5 === 0);
@@ -439,7 +463,7 @@
         const full = nd >= ev.progress.total;
         mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, progress: { ...e.progress, done: nd }, status: full ? 'done' : e.status } : e));
         setDetail((d) => d && d.id === id ? { ...d, progress: { ...d.progress, done: nd }, status: full ? 'done' : d.status } : d);
-        if (full) fireCelebrate({ ...ev, goalDone: true });
+        if (full) { awardXp(XP.done); fireCelebrate({ ...ev, goalDone: true }); }
         else flashCelebrate({ msg: '又推进一步 · 做了就好', streak: 0, goal: false });
       },
       postpone: (id) => {
@@ -479,9 +503,10 @@
         });
         setSelDay(dk[d.repeat.dows[0]] || '06-16'); setTab('cal');
         const n = d.repeat.dows.length;
+        awardXp(XP.create * n);
         setToast(d.repeat.until ? `已加入每周 ${n} 项 · 重复至 ${d.repeat.untilText}` : `已加入每周 ${n} 项 · 范围待补充`, 'repeat');
       },
-      addExtracted: (list) => { setEvents((prev) => { const next = { ...prev }; list.forEach((p) => { const ev = { id: 'u' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; next[p.dateKey] = [...(next[p.dateKey] || []).map((e) => ({ ...e })), ev]; }); return next; }); setToast(`已加入 ${list.length} 个日程`, 'check'); },
+      addExtracted: (list) => { setEvents((prev) => { const next = { ...prev }; list.forEach((p) => { const ev = { id: 'u' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; next[p.dateKey] = [...(next[p.dateKey] || []).map((e) => ({ ...e })), ev]; }); return next; }); awardXp(XP.create * list.length); setToast(`已加入 ${list.length} 个日程`, 'check'); },
       addCourses: (list, repeat) => {
         const dk = window.VL.data.dowToKey;
         setEvents((prev) => {
@@ -494,6 +519,7 @@
           return next;
         });
         setSelDay('06-16'); setTab('cal');
+        awardXp(XP.create * list.length);
         setToast(repeat.until ? `已加入 ${list.length} 节课 · 每周重复至 ${repeat.untilText}` : `已加入 ${list.length} 节课 · 重复范围待补充`, 'check');
       },
       setCourseRange: (until, untilText) => {
@@ -505,10 +531,11 @@
 
     return (
       <div style={{ position: 'absolute', inset: 0, background: t.bg, color: t.text, fontFamily: t.font, display: 'flex', overflow: 'hidden', WebkitFontSmoothing: 'antialiased' }}>
-        <Sidebar t={t} tab={tab} setTab={setTab} onVoice={() => setVoiceOpen(true)} aiEngine={aiEngine} />
+        <Sidebar t={t} tab={tab} setTab={(k) => (k === 'growth' ? app.goGrowth() : setTab(k))} onVoice={() => setVoiceOpen(true)} aiEngine={aiEngine} level={app.level} xp={xp} onGrowth={app.goGrowth} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
           {tab === 'cal' && (isEmpty ? <window.WebWelcome t={t} app={app} /> : <CalView t={t} app={app} />)}
           {tab === 'review' && <ReviewView t={t} app={app} />}
+          {tab === 'growth' && <window.WebGrowth t={t} app={app} />}
           {tab === 'export' && <ExportView t={t} app={app} />}
           {tab === 'me' && <SettingsView t={t} app={app} baseKey={baseKey} />}
         </div>
@@ -524,6 +551,16 @@
         </Modal>
         <Toast t={t} toast={toast} />
         <window.WebCelebrate t={t} data={celebrate} />
+        <Modal t={t} open={!!levelUp} onClose={() => setLevelUp(null)} width={360}>
+          {levelUp && (
+            <div style={{ textAlign: 'center', padding: '6px 4px' }}>
+              <div style={{ width: 84, height: 84, margin: '0 auto 16px', borderRadius: 999, background: t.mode === 'dark' ? '#0c1e1a' : t.surface, border: `2px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 36, fontWeight: 720, color: GOLD }}>{levelUp.lv}</span></div>
+              <div style={{ fontSize: 12, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 650 }}>Level Up</div>
+              <div style={{ fontSize: 22, fontWeight: 720, color: t.text, margin: '6px 0 18px' }}>LV.{levelUp.lv} {levelUp.name}</div>
+              <Btn t={t} kind="primary" full onClick={() => setLevelUp(null)}>继续前行</Btn>
+            </div>
+          )}
+        </Modal>
         <Modal t={t} open={trashOpen} onClose={() => setTrashOpen(false)} width={440}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>

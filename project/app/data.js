@@ -230,4 +230,73 @@
     { key: 'month', label: '月' }, { key: 'quarter', label: '季' },
     { key: 'year', label: '年' },
   ];
+
+  // ── 成长系统：等级 / XP（只升不降，绝不惩罚、绝不裸 streak）──
+  // 称号文字可自由替换；阈值为累计 XP。
+  const LEVELS = [
+    { lv: 1,  need: 0,    name: '初次记录的人' },
+    { lv: 2,  need: 60,   name: '开始留意时间的人' },
+    { lv: 3,  need: 160,  name: '渐入轨道的人' },
+    { lv: 4,  need: 320,  name: '稳步前行的人' },
+    { lv: 5,  need: 540,  name: '掌控节奏的人' },
+    { lv: 6,  need: 820,  name: '善用时间的人' },
+    { lv: 7,  need: 1180, name: '复盘成习惯的人' },
+    { lv: 8,  need: 1640, name: '时间的经营者' },
+    { lv: 9,  need: 2200, name: '自律自如的人' },
+    { lv: 10, need: 2900, name: '时间的主人' },
+  ];
+  // 记录 +5 · 完成 +10 · 复盘 +15（只增不减）
+  const XP = { create: 5, done: 10, review: 15 };
+
+  function levelFromXp(xp) {
+    let cur = LEVELS[0];
+    for (const L of LEVELS) if (xp >= L.need) cur = L;
+    const idx = LEVELS.indexOf(cur);
+    const next = LEVELS[idx + 1] || null;
+    const into = xp - cur.need;
+    const span = next ? next.need - cur.need : 1;
+    const pct = next ? Math.max(0, Math.min(100, Math.round((into / span) * 100))) : 100;
+    const remain = next ? next.need - xp : 0;
+    return { ...cur, next, idx, into, span, pct, remain };
+  }
+
+  // 本周成长统计（基于真实日程，保证主页/复盘/成长处处一致）
+  function growthStats(eventsObj) {
+    const all = [];
+    Object.keys(eventsObj || {}).forEach((k) => (eventsObj[k] || []).forEach((e) => all.push(e)));
+    const live = all.filter((e) => e.status !== 'cancelled');
+    const done = all.filter((e) => e.status === 'done').length;
+    const cancelled = all.filter((e) => e.status === 'cancelled').length;
+    const todo = all.length - done - cancelled;
+    const denom = done + todo;
+    const completion = denom ? Math.round((done / denom) * 100) : 0;
+    const byCat = {};
+    live.forEach((e) => {
+      const c = e.cat || 'misc';
+      byCat[c] = byCat[c] || { cat: c, hours: 0, items: 0 };
+      byCat[c].hours += (e.dur || 0) / 60;
+      byCat[c].items += 1;
+    });
+    const alloc = Object.values(byCat).sort((a, b) => b.hours - a.hours);
+    const totalH = alloc.reduce((s, a) => s + a.hours, 0);
+    return { recordCount: all.length, done, todo, cancelled, completion, alloc, totalH };
+  }
+
+  function growthInsight(L, stats) {
+    if (stats.recordCount === 0) return '本周还没有日程记录。记一条，就向下一级迈进一步。';
+    const parts = [];
+    if (stats.done) parts.push(`本周已完成 ${stats.done} 项`);
+    if (L.next) parts.push(`再积累 ${L.remain} XP 就能升到 LV.${L.next.lv}`);
+    parts.push('late better than never——你一直在向上');
+    return parts.join('，') + '。';
+  }
+
+  window.VL.LEVELS = LEVELS;
+  window.VL.XP = XP;
+  window.VL.levelFromXp = levelFromXp;
+  window.VL.growthStats = growthStats;
+  window.VL.growthInsight = growthInsight;
+  // 成长色：暖金（跨主题统一，呼应 PRD「等级=暖金」）
+  window.VL.GOLD = 'oklch(0.78 0.115 82)';
+  window.VL.GOLD_SOFT = 'oklch(0.92 0.05 85)';
 })();
