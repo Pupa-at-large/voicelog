@@ -2,6 +2,12 @@
 (function () {
   // 当天 = 2026-06-16 周一（与示例复盘一致）
   const events = {
+    // 昨天（周日）：留了几件没做完，用来演示「未完成顺延到今天」
+    '06-15': [
+      { id: 'd1', t: '10:00', dur: 60, title: '整理上周周报', cat: 'deep', status: 'todo' },
+      { id: 'd2', t: '15:00', dur: 60, title: '陪家人逛超市', cat: 'life', status: 'done' },
+      { id: 'd3', t: '17:00', dur: 30, title: '回复邮件', cat: 'misc', status: 'todo' },
+    ],
     '06-16': [
       { id: 'e0', t: '09:00', dur: 60, title: '季度规划 PPT', cat: 'deep', status: 'todo', goal: true,
         progress: { done: 1, total: 4 }, note: '分四次打磨：① 大纲 ② 数据 ③ 排版 ④ 演练。今天先搭大纲。' },
@@ -238,6 +244,10 @@
   window.VL.dayLoad = function (dayEvents) {
     return (dayEvents || []).filter((e) => e.status !== 'cancelled').reduce((s, e) => s + (e.dur || 0), 0) / 60;
   };
+  // 日期键工具 + 未完成（待办）筛选（用于「未完成顺延」）
+  window.VL.todayKey = function () { const w = (window.VL.data.week || []).find((x) => x.today); return w ? w.key : '06-16'; };
+  window.VL.prevKey = function (key) { const o = (window.VL.data.week || []).map((w) => w.key); const i = o.indexOf(key); return i > 0 ? o[i - 1] : null; };
+  window.VL.unfinished = function (dayEvents) { return (dayEvents || []).filter((e) => e.status === 'todo'); };
   window.VL.periods = [
     { key: 'day', label: '日' }, { key: 'week', label: '周' },
     { key: 'month', label: '月' }, { key: 'quarter', label: '季' },

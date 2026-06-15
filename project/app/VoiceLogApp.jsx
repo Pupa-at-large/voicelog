@@ -220,6 +220,21 @@
         setEvents((prev) => ({ ...prev, [nextKey]: [...(prev[nextKey] || []).map((e) => ({ ...e })), { ...ev }] }));
         setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
       },
+      rolloverUnfinished: () => {
+        const toKey = window.VL.todayKey();
+        const fromKey = window.VL.prevKey(toKey);
+        if (!fromKey) return;
+        const items = (events[fromKey] || []).filter((e) => e.status === 'todo');
+        if (!items.length) return;
+        setEvents((prev) => {
+          const next = { ...prev };
+          next[fromKey] = (prev[fromKey] || []).filter((e) => e.status !== 'todo').map((e) => ({ ...e }));
+          next[toKey] = [...(prev[toKey] || []).map((e) => ({ ...e })), ...items.map((e) => ({ ...e }))];
+          return next;
+        });
+        setSelectedDay(toKey);
+        setToast(`已把 ${items.length} 件挪到今天 · 开始了就好`, 'redo');
+      },
       goExport: (p) => { setExportPeriod(p); setTab('export'); },
       setTab,
       demoReminder: () => {

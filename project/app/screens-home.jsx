@@ -527,7 +527,11 @@
     const { week } = window.VL.data;
     const [view, setView] = useState('list');
     const [capDismiss, setCapDismiss] = useState({});
+    const [rollDismiss, setRollDismiss] = useState(false);
     const sel = app.selectedDay;
+    const todayKey = window.VL.todayKey();
+    const prevKey = window.VL.prevKey(todayKey);
+    const rollN = (sel === todayKey && prevKey) ? (app.events[prevKey] || []).filter((e) => e.status === 'todo').length : 0;
     const list = (app.events[sel] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
     const conflictIds = new Set();
     list.forEach((ev) => { if (ev.status !== 'cancelled' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
@@ -583,6 +587,9 @@
               </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 24px' }}>
+              {rollN > 0 && !rollDismiss && (
+                <window.RolloverBanner t={t} count={rollN} onMove={() => { app.rolloverUnfinished(); setRollDismiss(true); }} onDismiss={() => setRollDismiss(true)} style={{ marginBottom: 12 }} />
+              )}
               {totalH > window.VL.DAILY_CAPACITY_H && !capDismiss[sel] && (
                 <window.CapacityBanner t={t} hours={totalH} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [sel]: true }))} style={{ marginBottom: 12 }} />
               )}

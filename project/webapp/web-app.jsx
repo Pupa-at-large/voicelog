@@ -106,8 +106,12 @@
   function RightRail({ t, app, dayKey }) {
     const [text, setText] = useState('');
     const [capDismiss, setCapDismiss] = useState({});
+    const [rollDismiss, setRollDismiss] = useState(false);
     const list = (app.events[dayKey] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
     const load = window.VL.dayLoad(list);
+    const todayKey = window.VL.todayKey();
+    const prevKey = window.VL.prevKey(todayKey);
+    const rollN = (dayKey === todayKey && prevKey) ? (app.events[prevKey] || []).filter((e) => e.status === 'todo').length : 0;
     const w = window.VL.data.week.find((x) => x.key === dayKey);
     const submit = () => { const v = text.trim(); if (!v) return; app.quickAdd(v); setText(''); };
     return (
@@ -121,6 +125,9 @@
           <div style={{ fontSize: 11.5, color: t.faint, marginTop: 8 }}>回车即建 · 支持「每周三五」这类重复与「到学期末」截止</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
+          {rollN > 0 && !rollDismiss && (
+            <window.RolloverBanner t={t} count={rollN} onMove={() => { app.rolloverUnfinished(); setRollDismiss(true); }} onDismiss={() => setRollDismiss(true)} style={{ marginBottom: 14 }} />
+          )}
           {load > window.VL.DAILY_CAPACITY_H && !capDismiss[dayKey] && (
             <window.CapacityBanner t={t} hours={load} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [dayKey]: true }))} style={{ marginBottom: 14 }} />
           )}
@@ -479,6 +486,21 @@
         setEvents((prev) => ({ ...prev, [nextKey]: [...(prev[nextKey] || []).map((e) => ({ ...e })), { ...ev }] }));
         setDetail(null);
         setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
+      },
+      rolloverUnfinished: () => {
+        const toKey = window.VL.todayKey();
+        const fromKey = window.VL.prevKey(toKey);
+        if (!fromKey) return;
+        const items = (events[fromKey] || []).filter((e) => e.status === 'todo');
+        if (!items.length) return;
+        setEvents((prev) => {
+          const next = { ...prev };
+          next[fromKey] = (prev[fromKey] || []).filter((e) => e.status !== 'todo').map((e) => ({ ...e }));
+          next[toKey] = [...(prev[toKey] || []).map((e) => ({ ...e })), ...items.map((e) => ({ ...e }))];
+          return next;
+        });
+        setSelDay(toKey);
+        setToast(`已把 ${items.length} 件挪到今天 · 开始了就好`, 'redo');
       },
       toggleImportant: (id) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, important: !e.important } : e)); setDetail((d) => d && d.id === id ? { ...d, important: !d.important } : d); },
       saveEvent: (id, patch) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },

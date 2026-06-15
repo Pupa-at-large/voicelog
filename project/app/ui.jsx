@@ -263,6 +263,23 @@
     );
   }
 
+  // 未完成顺延提示：把昨天没做完的温和地拉到今天（借 Sunsama；不羞辱，late better than never）
+  function RolloverBanner({ t, count, onMove, onDismiss, style }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: t.radius, background: t.accentSoft, ...style }}>
+        <Icon name="redo" size={16} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 650, color: t.accentText }}>昨天有 {count} 件没做完</div>
+          <div style={{ fontSize: 12.5, color: t.accentText, opacity: 0.85, marginTop: 2, lineHeight: 1.5 }}>挪到今天继续吗？开始了就好，late better than never。</div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
+            <button onClick={onMove} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700, background: t.accent, color: t.onAccent }}>全部挪到今天</button>
+            <button onClick={onDismiss} style={{ height: 30, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: 'none', background: 'transparent', color: t.accentText }}>先不用</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function SectionLabel({ t, children, style }) {
     return <div style={{
       fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1.5,
@@ -271,7 +288,7 @@
   }
 
   Object.assign(window, {
-    Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner,
+    Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner, RolloverBanner,
     catColor, catLabel, fmtH,
   });
 })();
