@@ -11,7 +11,7 @@
 
 - [x] **M0 · 成长/等级系统**（上一轮已完成）：LEVELS/XP/levelFromXp/growthStats（`app/data.js`）；移动端「成长」页 + 等级徽章 + 升级浮层（`app/screens-growth.jsx`）；Web「成长」页 + 侧栏等级卡 + 升级 Modal（`webapp/web-growth.jsx`）；XP 接入建程/完成/复盘。根入口 `VoiceLog.html`。
 - [x] **M1 · 修复打勾"加了一步"**：Web 完成体验改为真正一键即时——移除过宽的 `late`（<16:00 即判 late）触发；任何来源完成只走非阻塞内联微迸发（700ms）；满屏庆祝只留给"目标全完成"（advanceProgress）和真升级（独立 Modal）。详情弹窗完成不再弹满屏 2 秒浮层。`webapp/web-app.jsx` toggleDone。
-- [ ] **M2 · 移动端撤销/回收站/延期**（补齐 web 已有）：软删除 + toast「撤销」+ 我的页回收站 + 详情「延期一天」。复用 web 逻辑模式。
+- [x] **M2 · 移动端撤销/回收站/延期**（补齐 web 已有）：Toast 支持「撤销」动作；deleteEvent 改软删除入回收站；新增 restoreEvent/purgeTrash/openTrash/postpone；详情弹层两行操作（完成 / 延期一天·取消·删除）；我的页加「回收站 · N 项」入口 + 底部回收站 Sheet。顺手补了 DetailSheet 缺失的 onStar 接线。`app/VoiceLogApp.jsx`、`app/screens-home.jsx`、`app/screens-export.jsx`。
 - [ ] **M3 · 现在/接下来 焦点卡**（借 Focuster）：移动端日程顶部 + Web 右栏，显示当前进行/下一件 + 相对时间。纯派生。
 - [ ] **M4 · 每日容量提醒**（借 Sunsama）：单日排程时长超阈值（默认 8h）时温和横幅「今天已排 X 小时」，可关、非模态。
 - [ ] **M5 · 未完成顺延**（借 Sunsama）：温和提示「昨天有 N 件没做完，挪到今天？」一键移动，复用 postpone。

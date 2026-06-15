@@ -216,6 +216,11 @@
             <Row t={t} icon="bell" title="浏览器到点提醒" sub="到点在页面内提醒，并发送系统通知" right={<Toggle t={t} on={app.notify} onChange={app.setNotify} />} last />
           </Card>
 
+          <SectionLabel t={t}>回收站</SectionLabel>
+          <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+            <Row t={t} icon="trash" title={`回收站 · ${app.trash.length} 项`} sub="删除的日程先放这里，随时找回" onClick={app.openTrash} right={<Icon name="chevR" size={18} color={t.faint} />} last />
+          </Card>
+
           <SectionLabel t={t}>数据位置</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 20, overflow: 'hidden' }}>
             <Row t={t} icon="folder" title="voicelog.db" sub="SQLite · 程序的事实来源" />

@@ -403,7 +403,7 @@
   function swBtn(bg, fg) { return { width: 72, height: '100%', border: 'none', cursor: 'pointer', background: bg, color: fg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', font: 'inherit', fontWeight: 600 }; }
 
   // ── 日程详情 ──
-  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar }) {
+  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar, onPostpone }) {
     if (!ev) return null;
     const done = ev.status === 'done';
     const col = catColor(t, ev.cat);
@@ -438,10 +438,13 @@
             <div style={{ fontSize: 14.5, color: t.text, lineHeight: 1.55 }}>{ev.note}</div>
           </div>
         )}
-        <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-          <Btn t={t} kind={done ? 'ghost' : 'primary'} icon="check" onClick={() => { onToggle(ev.id); onClose(); }} style={{ flex: 1 }}>{done ? '标记未完成' : '标记完成'}</Btn>
-          <Btn t={t} kind="ghost" onClick={() => { onCancel(ev.id); onClose(); }}>取消日程</Btn>
-          <button onClick={() => { onDelete(ev.id); onClose(); }} style={{ width: 46, height: 46, borderRadius: t.radius - 2, flexShrink: 0, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: 'oklch(0.62 0.19 25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color="oklch(0.62 0.19 25)" /></button>
+        <div style={{ marginTop: 18 }}>
+          <Btn t={t} kind={done ? 'ghost' : 'primary'} icon="check" full onClick={() => { onToggle(ev.id); onClose(); }}>{done ? '标记未完成' : '标记完成'}</Btn>
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+            {onPostpone && <Btn t={t} kind="ghost" icon="redo" onClick={() => onPostpone(ev.id)} style={{ flex: 1 }}>延期一天</Btn>}
+            <Btn t={t} kind="ghost" onClick={() => { onCancel(ev.id); onClose(); }} style={{ flex: 1 }}>取消</Btn>
+            <button onClick={() => { onDelete(ev.id); onClose(); }} style={{ width: 46, height: 46, borderRadius: t.radius - 2, flexShrink: 0, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: 'oklch(0.62 0.19 25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color="oklch(0.62 0.19 25)" /></button>
+          </div>
         </div>
       </Sheet>
     );

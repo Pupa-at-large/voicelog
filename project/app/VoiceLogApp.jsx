@@ -62,21 +62,23 @@
   }
 
   function Toast({ t, toast }) {
+    const hasAction = !!(toast && toast.action);
     return (
       <div style={{
         position: 'absolute', left: 0, right: 0, bottom: 104, zIndex: 70, display: 'flex', justifyContent: 'center',
-        pointerEvents: 'none', transition: 'opacity .3s, transform .3s',
+        pointerEvents: hasAction ? 'auto' : 'none', transition: 'opacity .3s, transform .3s',
         opacity: toast ? 1 : 0, transform: toast ? 'translateY(0)' : 'translateY(10px)',
       }}>
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 999,
+          display: 'inline-flex', alignItems: 'center', gap: 8, padding: hasAction ? '8px 8px 8px 18px' : '11px 18px', borderRadius: 999,
           background: t.mode === 'dark' ? 'rgba(40,44,52,0.92)' : 'rgba(28,31,38,0.94)',
-          backdropFilter: 'blur(12px)', boxShadow: t.shadowLg, maxWidth: '85%',
+          backdropFilter: 'blur(12px)', boxShadow: t.shadowLg, maxWidth: '90%',
         }}>
           {toast && toast.icon && <Icon name={toast.icon} size={17} color="#fff" sw={2.4} />}
           <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {toast ? toast.msg : ''}
           </span>
+          {hasAction && <button onClick={toast.action.fn} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, background: 'rgba(255,255,255,0.18)', color: '#fff', flexShrink: 0 }}>{toast.action.label}</button>}
         </div>
       </div>
     );
@@ -94,6 +96,8 @@
     const [lastActiveDay, setLastActiveDay] = useState(() => (saved && saved.lastActiveDay) || '');
     const [lastReviewDay, setLastReviewDay] = useState(() => (saved && saved.lastReviewDay) || '');
     const [levelUp, setLevelUp] = useState(null);
+    const [trash, setTrash] = useState([]);
+    const [trashOpen, setTrashOpen] = useState(false);
     const [voiceOpen, setVoiceOpen] = useState(false);
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
@@ -130,10 +134,10 @@
       });
     };
 
-    const setToast = (msg, icon) => {
-      setToastState({ msg, icon });
+    const setToast = (msg, icon, action) => {
+      setToastState({ msg, icon, action });
       clearTimeout(toastTimer.current);
-      toastTimer.current = setTimeout(() => setToastState(null), 2400);
+      toastTimer.current = setTimeout(() => setToastState(null), action ? 4200 : 2400);
     };
 
     useEffect(() => () => { clearTimeout(toastTimer.current); clearTimeout(remTimer.current); }, []);
@@ -184,7 +188,38 @@
       saveEvent: (id, patch) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
       cancelEvent: (id) => mutate(selectedDay, (arr) => arr.map((e) =>
         e.id === id ? { ...e, status: 'cancelled' } : e)),
-      deleteEvent: (id) => { mutate(selectedDay, (arr) => arr.filter((e) => e.id !== id)); setToast('已删除', 'trash'); },
+      deleteEvent: (id) => {
+        const day = selectedDay;
+        const ev = (events[day] || []).find((e) => e.id === id);
+        mutate(day, (arr) => arr.filter((e) => e.id !== id));
+        if (ev) {
+          setTrash((tr) => [{ ev, day, ts: Date.now() }, ...tr]);
+          setToast('已删除', 'trash', { label: '撤销', fn: () => {
+            setEvents((prev) => ({ ...prev, [day]: [...(prev[day] || []).map((e) => ({ ...e })), ev] }));
+            setTrash((tr) => tr.filter((x) => x.ev.id !== ev.id));
+            setToast('已恢复', 'check');
+          } });
+        }
+      },
+      restoreEvent: (item) => {
+        setEvents((prev) => ({ ...prev, [item.day]: [...(prev[item.day] || []).map((e) => ({ ...e })), item.ev] }));
+        setTrash((tr) => tr.filter((x) => x.ev.id !== item.ev.id));
+        setToast('已恢复到日程', 'check');
+      },
+      purgeTrash: () => { setTrash([]); setToast('回收站已清空', 'trash'); },
+      openTrash: () => setTrashOpen(true),
+      trash,
+      postpone: (id) => {
+        const order = window.VL.data.week.map((w) => w.key);
+        const idx = order.indexOf(selectedDay);
+        const nextKey = order[Math.min(order.length - 1, idx + 1)];
+        if (nextKey === selectedDay) { setToast('已经是本周最后一天', 'bolt'); return; }
+        const ev = (events[selectedDay] || []).find((e) => e.id === id);
+        if (!ev) return;
+        mutate(selectedDay, (arr) => arr.filter((e) => e.id !== id));
+        setEvents((prev) => ({ ...prev, [nextKey]: [...(prev[nextKey] || []).map((e) => ({ ...e })), { ...ev }] }));
+        setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
+      },
       goExport: (p) => { setExportPeriod(p); setTab('export'); },
       setTab,
       demoReminder: () => {
@@ -232,7 +267,8 @@
         <Toast t={t} toast={toast} />
         <VoiceOverlay t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
         <DetailSheet t={t} ev={detail} onClose={() => setDetail(null)}
-          onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit} />
+          onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit}
+          onStar={app.toggleImportant} onPostpone={(id) => { app.postpone(id); setDetail(null); }} />
         <EditSheet t={t} ev={editEv} onClose={() => setEditEv(null)} onSave={app.saveEvent} app={app} />
         <Sheet t={t} open={mtOpen} onClose={() => setMtOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -245,6 +281,28 @@
         </Sheet>
         <ReminderBanner t={t} ev={reminderEv} onClose={() => setReminderEv(null)}
           onView={() => { const e = reminderEv; setReminderEv(null); setDetail(e); }} />
+        <Sheet t={t} open={trashOpen} onClose={() => setTrashOpen(false)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>
+            <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>回收站</h3>
+          </div>
+          <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: t.muted }}>删除的日程都先放这里，随时可以找回。</p>
+          {trash.length ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+              {trash.map((it) => { const wk = window.VL.data.week.find((x) => x.key === it.day); return (
+                <div key={it.ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface2 }}>
+                  <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: window.catColor(t, it.ev.cat) }} />
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · 6月${wk.day}日` : it.day} · {it.ev.t}</div></div>
+                  <button onClick={() => app.restoreEvent(it)} style={{ flexShrink: 0, height: 32, padding: '0 13px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>恢复</button>
+                </div>
+              ); })}
+            </div>
+          ) : <div style={{ textAlign: 'center', padding: '26px 0', color: t.faint, fontSize: 13.5 }}>回收站是空的</div>}
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Btn t={t} kind="ghost" onClick={() => setTrashOpen(false)} style={{ flex: 1 }}>关闭</Btn>
+            {trash.length > 0 && <Btn t={t} kind="ghost" icon="trash" onClick={() => { app.purgeTrash(); setTrashOpen(false); }} style={{ flexShrink: 0, color: 'oklch(0.62 0.19 25)' }}>清空</Btn>}
+          </div>
+        </Sheet>
         <LevelUpOverlay t={t} level={levelUp} onClose={() => setLevelUp(null)} />
       </div>
     );
