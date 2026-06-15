@@ -451,11 +451,11 @@
         mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, status: e.status === 'done' ? 'todo' : 'done' } : e));
         if (!willDone || !cur) return;
         awardXp(XP.done);
-        const doneToday = (events['06-16'] || []).filter((e) => e.status === 'done').length + (selDay === '06-16' ? 1 : 0);
-        const late = selDay === '06-16' && cur.t < '16:00';
-        const milestone = !!cur.progress || late || (doneToday > 0 && doneToday % 5 === 0);
-        if (source === 'list' && !milestone) { setBurst({ id, key: Date.now() }); clearTimeout(burstTimer.current); burstTimer.current = setTimeout(() => setBurst(null), 700); }
-        else fireCelebrate({ ...cur, goalDone: !!cur.progress });
+        // 一键即时完成：永远只做非阻塞的内联微迸发，不弹满屏浮层（不再让"完成"变成一步）。
+        // 满屏庆祝仅保留给真正的里程碑——长期目标全部完成（advanceProgress）与升级（独立 Modal）。
+        setBurst({ id, key: Date.now() });
+        clearTimeout(burstTimer.current);
+        burstTimer.current = setTimeout(() => setBurst(null), 700);
       },
       advanceProgress: (id) => {
         const ev = (events[selDay] || []).find((e) => e.id === id); if (!ev || !ev.progress) return;
