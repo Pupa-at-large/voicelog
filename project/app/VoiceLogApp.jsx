@@ -98,6 +98,7 @@
     const [levelUp, setLevelUp] = useState(null);
     const [trash, setTrash] = useState([]);
     const [trashOpen, setTrashOpen] = useState(false);
+    const [matrixOpen, setMatrixOpen] = useState(false);
     const [voiceOpen, setVoiceOpen] = useState(false);
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
@@ -170,6 +171,8 @@
         if (willDone) awardXp(XP.done);
       },
       toggleImportant: (id) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, important: !e.important } : e)); setDetail((d) => d && d.id === id ? { ...d, important: !d.important } : d); },
+      toggleUrgent: (id) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, urgent: !e.urgent } : e)); setDetail((d) => d && d.id === id ? { ...d, urgent: !d.urgent } : d); },
+      showMatrix: () => setMatrixOpen(true),
       openDetail: (ev) => setDetail(ev),
       openEdit: (ev) => { setDetail(null); setEditEv(ev); },
       showMultitask: () => setMtOpen(true),
@@ -256,6 +259,7 @@
       const ev = {
         id: 'v' + Date.now(), t: parsed.time, dur: parsed.dur || 60, title: parsed.title,
         cat: parsed.cat, loc: parsed.loc, reminder: parsed.reminder, status: 'todo',
+        important: !!parsed.important, urgent: !!parsed.urgent,
       };
       mutate(parsed.dateKey, (arr) => [...arr, ev]);
       awardXp(XP.create);
@@ -292,7 +296,7 @@
         <VoiceOverlay t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
         <DetailSheet t={t} ev={detail} onClose={() => setDetail(null)}
           onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit}
-          onStar={app.toggleImportant} onPostpone={(id) => { app.postpone(id); setDetail(null); }} />
+          onStar={app.toggleImportant} onUrgent={app.toggleUrgent} onMatrixInfo={app.showMatrix} onPostpone={(id) => { app.postpone(id); setDetail(null); }} />
         <EditSheet t={t} ev={editEv} onClose={() => setEditEv(null)} onSave={app.saveEvent} app={app} />
         <Sheet t={t} open={mtOpen} onClose={() => setMtOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -305,6 +309,23 @@
         </Sheet>
         <ReminderBanner t={t} ev={reminderEv} onClose={() => setReminderEv(null)}
           onView={() => { const e = reminderEv; setReminderEv(null); setDetail(e); }} />
+        <Sheet t={t} open={matrixOpen} onClose={() => setMatrixOpen(false)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="grid4" size={20} color={t.accentText} /></div>
+            <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>重要 × 紧急 四象限</h3>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {window.VL.QUAD_ORDER.map((k) => { const q = window.VL.QUADRANTS[k]; return (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: t.radius - 2, background: t.surface2 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 999, background: q.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 13.5, color: t.text, fontWeight: 600, width: 96, flexShrink: 0 }}>{q.label}</span>
+                <span style={{ fontSize: 13.5, color: q.color, fontWeight: 650 }}>{q.advice}</span>
+              </div>
+            ); })}
+          </div>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: t.muted }}>{window.VL.MATRIX_NOTE}</p>
+          <div style={{ marginTop: 16 }}><Btn t={t} kind="primary" full onClick={() => setMatrixOpen(false)}>知道了</Btn></div>
+        </Sheet>
         <Sheet t={t} open={trashOpen} onClose={() => setTrashOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>

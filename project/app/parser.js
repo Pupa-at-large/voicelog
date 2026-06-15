@@ -139,7 +139,11 @@
       title = base || loc || '新日程';
     }
 
-    const out = { title, dateKey, dateText: dateTextOf(dateKey, datePrefix), time, loc, reminder, cat, dur: 60 };
+    // ── 重要 / 紧急（喂入四象限）──
+    const urgent = /紧急|尽快|赶紧|赶快|马上|立刻|立马|加急|催|今天就?要|今天必须|deadline|截止|ddl/i.test(raw);
+    const importantKw = /重要|关键|必须|一定要?|别忘|千万|要紧|优先/.test(raw);
+
+    const out = { title, dateKey, dateText: dateTextOf(dateKey, datePrefix), time, loc, reminder, cat, dur: 60, urgent, important: importantKw };
     if (repeat && repeat.dows.length) {
       const DOWL = ['日', '一', '二', '三', '四', '五', '六'];
       const dk = (window.VL.data && window.VL.data.dowToKey) || {};

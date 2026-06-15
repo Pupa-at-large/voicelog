@@ -429,6 +429,7 @@
               <div style={{ display: 'flex', gap: 12, marginTop: 5, alignItems: 'center' }}>
                 {ev.loc && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, color: t.muted }}><Icon name="pin" size={13} color={t.faint} />{ev.loc}</span>}
                 {ev.reminder ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, color: t.muted }}><Icon name="bell" size={13} color={t.faint} />提前{ev.reminder}分</span> : null}
+                {ev.urgent && !cancelled && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: 'oklch(0.62 0.19 25)' }}><Icon name="flagFill" size={12} color={'oklch(0.62 0.19 25)'} fill />急</span>}
                 {conflict && !cancelled && <span onClick={(e) => { e.stopPropagation(); onWarn && onWarn(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: 'oklch(0.58 0.15 60)', background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', padding: '2px 8px', borderRadius: 999 }}><Icon name="bolt" size={12} color={'oklch(0.58 0.15 60)'} sw={2.2} />重叠</span>}
                 {cancelled && <span style={{ fontSize: 12.5, color: t.faint }}>已取消</span>}
               </div>
@@ -447,7 +448,7 @@
   function swBtn(bg, fg) { return { width: 72, height: '100%', border: 'none', cursor: 'pointer', background: bg, color: fg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', font: 'inherit', fontWeight: 600 }; }
 
   // ── 日程详情 ──
-  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar, onPostpone }) {
+  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar, onUrgent, onPostpone, onMatrixInfo }) {
     if (!ev) return null;
     const done = ev.status === 'done';
     const col = catColor(t, ev.cat);
@@ -464,12 +465,18 @@
           <div style={{ width: 5, alignSelf: 'stretch', minHeight: 30, borderRadius: 999, background: col, marginTop: 3 }} />
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: 0, fontSize: 22, fontWeight: 720, color: t.text, letterSpacing: -0.3 }}>{ev.title}</h3>
-            <div style={{ marginTop: 6 }}><Chip t={t} color={col} soft><Dot color={col} size={7} />{catLabel(t, ev.cat)}</Chip></div>
+            <div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+              <Chip t={t} color={col} soft><Dot color={col} size={7} />{catLabel(t, ev.cat)}</Chip>
+              <button onClick={onMatrixInfo} style={{ border: 'none', background: 'transparent', cursor: onMatrixInfo ? 'pointer' : 'default', padding: 0, font: 'inherit' }} title="四象限"><window.QuadrantChip t={t} ev={ev} /></button>
+            </div>
           </div>
           <button onClick={() => onStar(ev.id)} style={{ width: 38, height: 38, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="重要">
             <Icon name={ev.important ? 'starFill' : 'star'} size={18} color={ev.important ? 'oklch(0.76 0.14 80)' : t.muted} fill={ev.important} />
           </button>
-          <button onClick={() => onEdit(ev)} style={{ height: 34, padding: '0 13px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name="pencil" size={15} color={t.text} />编辑</button>
+          <button onClick={() => onUrgent && onUrgent(ev.id)} style={{ width: 38, height: 38, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="紧急">
+            <Icon name={ev.urgent ? 'flagFill' : 'flag'} size={18} color={ev.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={ev.urgent} />
+          </button>
+          <button onClick={() => onEdit(ev)} style={{ height: 38, padding: '0 13px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name="pencil" size={15} color={t.text} />编辑</button>
         </div>
         <div style={{ marginTop: 10 }}>
           {meta('clock', '时间', `${ev.t} · ${ev.dur} 分钟`)}
@@ -498,7 +505,7 @@
   function EditSheet({ t, ev, onClose, onSave, app }) {
     const [st, setSt] = useState(null);
     const titleRef = useRef(null), locRef = useRef(null);
-    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important }); } }, [ev]);
+    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent }); } }, [ev]);
     if (!ev || !st) return null;
     const bump = (delta) => setSt((s) => { let total = (s.hh * 60 + s.mm + delta + 1440) % 1440; return { ...s, hh: Math.floor(total / 60), mm: total % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
@@ -537,10 +544,16 @@
             {[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}
           </div>
         ))}
-        {row('重要度', (
-          <button onClick={() => setSt({ ...st, important: !st.important })} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.important ? 'transparent' : t.border}`, background: st.important ? 'color-mix(in oklch, oklch(0.76 0.14 80) 18%, transparent)' : 'transparent', color: st.important ? t.text : t.muted }}>
-            <Icon name={st.important ? 'starFill' : 'star'} size={17} color={st.important ? 'oklch(0.72 0.14 80)' : t.muted} fill={st.important} />{st.important ? '重要' : '标为重要'}
-          </button>
+        {row('优先级', (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => setSt({ ...st, important: !st.important })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.important ? 'transparent' : t.border}`, background: st.important ? 'color-mix(in oklch, oklch(0.76 0.14 80) 18%, transparent)' : 'transparent', color: st.important ? t.text : t.muted }}>
+              <Icon name={st.important ? 'starFill' : 'star'} size={16} color={st.important ? 'oklch(0.72 0.14 80)' : t.muted} fill={st.important} />重要
+            </button>
+            <button onClick={() => setSt({ ...st, urgent: !st.urgent })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.urgent ? 'transparent' : t.border}`, background: st.urgent ? 'color-mix(in oklch, oklch(0.62 0.19 25) 16%, transparent)' : 'transparent', color: st.urgent ? t.text : t.muted }}>
+              <Icon name={st.urgent ? 'flagFill' : 'flag'} size={16} color={st.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={st.urgent} />紧急
+            </button>
+            <window.QuadrantChip t={t} ev={{ important: st.important, urgent: st.urgent }} />
+          </div>
         ))}
         {(() => {
           const conflict = app ? window.VL.overlaps(app.events[app.selectedDay] || [], { id: ev.id, t: time, dur: ev.dur }) : [];
@@ -557,7 +570,7 @@
           <Btn t={t} kind="primary" icon="check" onClick={() => {
             const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title;
             const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc;
-            onSave(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important });
+            onSave(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important, urgent: st.urgent });
             onClose();
           }} style={{ flex: 2 }}>保存</Btn>
         </div>
@@ -602,7 +615,7 @@
           {/* 列表 / 全览 切换 */}
           <div style={{ marginTop: 14 }}>
             <div style={{ display: 'inline-flex', background: t.surface2, borderRadius: 999, padding: 3, border: `1px solid ${t.border}` }}>
-              {[['list', '列表', 'list'], ['overview', '全览', 'grid']].map(([k, lab, ic]) => {
+              {[['list', '列表', 'list'], ['overview', '全览', 'grid'], ['matrix', '象限', 'grid4']].map(([k, lab, ic]) => {
                 const on = view === k;
                 return <button key={k} onClick={() => setView(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 16px', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: on ? 650 : 500, borderRadius: 999, color: on ? t.text : t.muted, background: on ? t.raised : 'transparent', boxShadow: on ? t.shadow : 'none' }}><Icon name={ic} size={15} color={on ? t.text : t.muted} sw={on ? 2.1 : 1.8} />{lab}</button>;
               })}
@@ -610,7 +623,12 @@
           </div>
         </div>
 
-        {view === 'overview' ? <window.OverviewView t={t} app={app} /> : (
+        {view === 'overview' ? <window.OverviewView t={t} app={app} /> :
+         view === 'matrix' ? (
+          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 24px' }}>
+            <window.MatrixView t={t} events={list} onOpen={app.openDetail} onInfo={app.showMatrix} />
+          </div>
+        ) : (
           <React.Fragment>
             <div style={{ padding: '4px 20px 0', flexShrink: 0 }}>
               <div style={{ display: 'flex', gap: 6 }}>

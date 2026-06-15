@@ -9,15 +9,15 @@
       { id: 'd3', t: '17:00', dur: 30, title: '回复邮件', cat: 'misc', status: 'todo' },
     ],
     '06-16': [
-      { id: 'e0', t: '09:00', dur: 60, title: '季度规划 PPT', cat: 'deep', status: 'todo', goal: true,
+      { id: 'e0', t: '09:00', dur: 60, title: '季度规划 PPT', cat: 'deep', status: 'todo', goal: true, important: true,
         progress: { done: 1, total: 4 }, note: '分四次打磨：① 大纲 ② 数据 ③ 排版 ④ 演练。今天先搭大纲。' },
       { id: 'e1', t: '10:00', dur: 60, title: '写产品方案', cat: 'deep', status: 'done',
         note: '先把核心流程理清，写完发群里给大家看。' },
       { id: 'e2', t: '11:30', dur: 60, title: '团队周会', cat: 'meet', loc: '会议室 A',
-        reminder: 10, status: 'todo', note: '同步上周进度，过本周排期。' },
+        reminder: 10, status: 'todo', urgent: true, note: '同步上周进度，过本周排期。' },
       { id: 'e3', t: '15:00', dur: 60, title: '跟老王开会', cat: 'meet', loc: '公司',
-        reminder: 30, status: 'todo', important: true, note: '确认下季度排期与人手。' },
-      { id: 'e4', t: '19:00', dur: 60, title: '健身 · 跑步', cat: 'life',
+        reminder: 30, status: 'todo', important: true, urgent: true, note: '确认下季度排期与人手。' },
+      { id: 'e4', t: '19:00', dur: 60, title: '健身 · 跑步', cat: 'life', important: true,
         reminder: 15, status: 'todo' },
     ],
     '06-17': [
@@ -241,6 +241,32 @@
     });
   };
   window.VL.MULTITASK_NOTE = '一心多用时，前额叶要在任务间反复切换，认知负担更重、出错更多，长期还可能削弱专注力。能错开就错开，让需要专注的事各自独占一段时间。';
+
+  // ── 重要 × 紧急 四象限（艾森豪威尔矩阵）──
+  // important（⭐已有）× urgent（🚩新增）→ 四格。Q2「重要不紧急」是成长区，呼应产品灵魂。
+  const QUADRANTS = {
+    do:       { key: 'do',       label: '重要 · 紧急',    advice: '立即做',         color: 'oklch(0.62 0.19 25)',  imp: true,  urg: true,  pos: 0 },
+    plan:     { key: 'plan',     label: '重要 · 不紧急',  advice: '计划做 · 成长区',  color: 'oklch(0.60 0.13 165)', imp: true,  urg: false, pos: 1 },
+    delegate: { key: 'delegate', label: '紧急 · 不重要',  advice: '快办 / 能托则托',  color: 'oklch(0.72 0.14 70)',  imp: false, urg: true,  pos: 2 },
+    reduce:   { key: 'reduce',   label: '不重要 · 不紧急', advice: '可减少',          color: 'oklch(0.65 0.03 260)', imp: false, urg: false, pos: 3 },
+  };
+  window.VL.QUADRANTS = QUADRANTS;
+  window.VL.QUAD_ORDER = ['do', 'plan', 'delegate', 'reduce'];
+  window.VL.quadrant = function (ev) {
+    const i = !!(ev && ev.important), u = !!(ev && ev.urgent);
+    return i && u ? QUADRANTS.do : i && !u ? QUADRANTS.plan : !i && u ? QUADRANTS.delegate : QUADRANTS.reduce;
+  };
+  // 各象限的小时数 / 件数（未取消）——给复盘/成长用
+  window.VL.quadrantStats = function (dayEventsOrObj) {
+    let all = [];
+    if (Array.isArray(dayEventsOrObj)) all = dayEventsOrObj;
+    else Object.keys(dayEventsOrObj || {}).forEach((k) => (dayEventsOrObj[k] || []).forEach((e) => all.push(e)));
+    const out = { do: { hours: 0, items: 0 }, plan: { hours: 0, items: 0 }, delegate: { hours: 0, items: 0 }, reduce: { hours: 0, items: 0 } };
+    all.filter((e) => e.status !== 'cancelled').forEach((e) => { const q = window.VL.quadrant(e); out[q.key].hours += (e.dur || 0) / 60; out[q.key].items += 1; });
+    const total = Object.values(out).reduce((s, q) => s + q.hours, 0);
+    return { byKey: out, total };
+  };
+  window.VL.MATRIX_NOTE = '把事情按「重要」和「紧急」两个维度分四格：重要又紧急的立即做；重要但不紧急的，才是真正带来成长的区，值得计划着多投入；紧急但不重要的尽量快办或交出去；既不重要也不紧急的，少做一点。语迹不替你判定——你来标，它帮你看清。';
   // 每日容量（小时）：单日排程超过它时温和提醒「今天排太满了」（借 Sunsama 的"过度安排"提示）
   window.VL.DAILY_CAPACITY_H = 8;
   // 某天已排（未取消）的小时数
@@ -257,7 +283,7 @@
     const next = {}; Object.keys(prev || {}).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
     let created = 0, completed = 0;
     const rid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status });
+    const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent });
     const findMatch = (title, dateKey) => {
       const days = [dateKey, window.VL.todayKey(), window.VL.prevKey(window.VL.todayKey())].filter(Boolean);
       const seen = new Set();

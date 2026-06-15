@@ -143,6 +143,7 @@
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                       {ev.important && <Icon name="starFill" size={12} color={'oklch(0.76 0.14 80)'} fill />}
+                      {ev.urgent && <Icon name="flagFill" size={11} color={'oklch(0.62 0.19 25)'} fill />}
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: done || cancelled ? t.faint : t.text, textDecoration: done || cancelled ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3 }}>
@@ -165,7 +166,8 @@
   // ── 日历视图 ──
   function CalView({ t, app }) {
     const [view, setView] = useState('week');
-    const ranges = { week: '6月15日 – 21日', month: '2026 年 6 月', day: '6月' + (window.VL.data.week.find((x) => x.key === app.selDay) || {}).day + '日' };
+    const selDayNum = (window.VL.data.week.find((x) => x.key === app.selDay) || {}).day;
+    const ranges = { week: '6月15日 – 21日', month: '2026 年 6 月', day: '6月' + selDayNum + '日', matrix: '6月' + selDayNum + '日 · 四象限' };
     return (
       <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -173,7 +175,7 @@
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 750, color: t.text }}>{ranges[view]}</h1>
             <button onClick={() => { app.setDay('06-16'); }} style={{ height: 34, padding: '0 14px', borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>今天</button>
             <div style={{ flex: 1 }} />
-            <div style={{ width: 220 }}><Segmented t={t} value={view} onChange={setView} items={[{ key: 'day', label: '日' }, { key: 'week', label: '周' }, { key: 'month', label: '月' }]} /></div>
+            <div style={{ width: 288 }}><Segmented t={t} value={view} onChange={setView} items={[{ key: 'day', label: '日' }, { key: 'week', label: '周' }, { key: 'month', label: '月' }, { key: 'matrix', label: '象限' }]} /></div>
           </div>
           {app.hasPending && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 24px', background: t.accentSoft, borderBottom: `1px solid ${t.border}` }}>
@@ -182,7 +184,9 @@
               <button onClick={app.openRecur} style={{ flexShrink: 0, height: 32, padding: '0 14px', borderRadius: t.radius - 4, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, background: t.accent, color: t.onAccent }}>补充范围</button>
             </div>
           )}
-          <window.WebCalendar t={t} view={view} events={app.events} selDay={app.selDay} onSelectEvent={app.openDetail} onPickDay={(k) => { app.setDay(k); if (view === 'month') setView('day'); }} onSelectSlot={(k) => app.setDay(k)} />
+          {view === 'matrix'
+            ? <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}><window.MatrixView t={t} events={app.events[app.selDay] || []} onOpen={app.openDetail} onInfo={app.showMatrix} /></div>
+            : <window.WebCalendar t={t} view={view} events={app.events} selDay={app.selDay} onSelectEvent={app.openDetail} onPickDay={(k) => { app.setDay(k); if (view === 'month') setView('day'); }} onSelectSlot={(k) => app.setDay(k)} />}
         </div>
         <RightRail t={t} app={app} dayKey={app.selDay} />
       </div>
@@ -320,8 +324,9 @@
       <Modal t={t} open={!!ev} onClose={() => app.setDetail(null)}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <div style={{ width: 5, alignSelf: 'stretch', minHeight: 30, borderRadius: 999, background: col, marginTop: 3 }} />
-          <div style={{ flex: 1 }}><h3 style={{ margin: 0, fontSize: 21, fontWeight: 720, color: t.text }}>{ev.title}</h3><div style={{ marginTop: 6 }}><Chip t={t} color={col} soft><Dot color={col} size={7} />{catLabel(t, ev.cat)}</Chip></div></div>
-          <button onClick={() => app.toggleImportant(ev.id)} style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.important ? 'starFill' : 'star'} size={18} color={ev.important ? 'oklch(0.76 0.14 80)' : t.muted} fill={ev.important} /></button>
+          <div style={{ flex: 1 }}><h3 style={{ margin: 0, fontSize: 21, fontWeight: 720, color: t.text }}>{ev.title}</h3><div style={{ marginTop: 6, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}><Chip t={t} color={col} soft><Dot color={col} size={7} />{catLabel(t, ev.cat)}</Chip><button onClick={() => app.showMatrix()} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, font: 'inherit' }} title="四象限"><window.QuadrantChip t={t} ev={ev} /></button></div></div>
+          <button onClick={() => app.toggleImportant(ev.id)} title="重要" style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.important ? 'starFill' : 'star'} size={18} color={ev.important ? 'oklch(0.76 0.14 80)' : t.muted} fill={ev.important} /></button>
+          <button onClick={() => app.toggleUrgent(ev.id)} title="紧急" style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.urgent ? 'flagFill' : 'flag'} size={18} color={ev.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={ev.urgent} /></button>
         </div>
         <div style={{ marginTop: 12 }}>{meta('clock', '时间', `${ev.t} · ${ev.dur} 分钟`)}{ev.repeat && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${t.border}` }}>
@@ -360,7 +365,7 @@
     const ev = app.editEv;
     const [st, setSt] = useState(null);
     const titleRef = useRef(null), locRef = useRef(null);
-    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important }); } }, [ev]);
+    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent }); } }, [ev]);
     if (!ev || !st) return null;
     const bump = (d) => setSt((s) => { const tot = (s.hh * 60 + s.mm + d + 1440) % 1440; return { ...s, hh: Math.floor(tot / 60), mm: tot % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
@@ -375,11 +380,15 @@
         {row('类别', <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>{CATS.map((c) => { const on = st.cat === c; return <button key={c} onClick={() => setSt({ ...st, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}</div>)}
         {row('地点', ed(locRef, ev.loc || ''))}
         {row('提醒', <div style={{ display: 'flex', gap: 7 }}>{[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}</div>)}
-        {row('重要度', <button onClick={() => setSt({ ...st, important: !st.important })} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.important ? 'transparent' : t.border}`, background: st.important ? 'color-mix(in oklch, oklch(0.76 0.14 80) 18%, transparent)' : 'transparent', color: st.important ? t.text : t.muted }}><Icon name={st.important ? 'starFill' : 'star'} size={17} color={st.important ? 'oklch(0.72 0.14 80)' : t.muted} fill={st.important} />{st.important ? '重要' : '标为重要'}</button>)}
+        {row('优先级', <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onClick={() => setSt({ ...st, important: !st.important })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.important ? 'transparent' : t.border}`, background: st.important ? 'color-mix(in oklch, oklch(0.76 0.14 80) 18%, transparent)' : 'transparent', color: st.important ? t.text : t.muted }}><Icon name={st.important ? 'starFill' : 'star'} size={16} color={st.important ? 'oklch(0.72 0.14 80)' : t.muted} fill={st.important} />重要</button>
+          <button onClick={() => setSt({ ...st, urgent: !st.urgent })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.urgent ? 'transparent' : t.border}`, background: st.urgent ? 'color-mix(in oklch, oklch(0.62 0.19 25) 16%, transparent)' : 'transparent', color: st.urgent ? t.text : t.muted }}><Icon name={st.urgent ? 'flagFill' : 'flag'} size={16} color={st.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={st.urgent} />紧急</button>
+          <window.QuadrantChip t={t} ev={{ important: st.important, urgent: st.urgent }} />
+        </div>)}
         {conflict.length > 0 && <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 14, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}><Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} /><div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span></div></div>}
         <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
           <Btn t={t} kind="ghost" onClick={() => app.setEditEv(null)} style={{ flex: 1 }}>取消</Btn>
-          <Btn t={t} kind="primary" icon="check" onClick={() => { const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title; const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc; app.saveEvent(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important }); app.setEditEv(null); }} style={{ flex: 2 }}>保存</Btn>
+          <Btn t={t} kind="primary" icon="check" onClick={() => { const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title; const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc; app.saveEvent(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important, urgent: st.urgent }); app.setEditEv(null); }} style={{ flex: 2 }}>保存</Btn>
         </div>
       </Modal>
     );
@@ -417,6 +426,7 @@
     const [levelUp, setLevelUp] = useState(null);
     const [batch, setBatch] = useState(null);
     const [batchSel, setBatchSel] = useState([]);
+    const [matrixOpen, setMatrixOpen] = useState(false);
     const [toast, setToastState] = useState(null);
     const toastTimer = useRef(0);
     const celTimer = useRef(0);
@@ -444,7 +454,7 @@
     const hasPending = useMemo(() => Object.values(events).some((arr) => (arr || []).some((e) => e.repeat && !e.repeat.until)), [events]);
     const pendingCount = useMemo(() => Object.values(events).reduce((n, arr) => n + (arr || []).filter((e) => e.repeat && !e.repeat.until).length, 0), [events]);
     const mutate = (day, fn) => setEvents((prev) => { const next = { ...prev, [day]: (prev[day] || []).map((e) => ({ ...e })) }; next[day] = fn(next[day]); return next; });
-    const addEvent = (p) => { const ev = { id: 'v' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; mutate(p.dateKey, (arr) => [...arr, ev]); setSelDay(p.dateKey); awardXp(XP.create); return ev; };
+    const addEvent = (p) => { const ev = { id: 'v' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo', important: !!p.important, urgent: !!p.urgent }; mutate(p.dateKey, (arr) => [...arr, ev]); setSelDay(p.dateKey); awardXp(XP.create); return ev; };
 
     const app = {
       events, selDay, detail, editEv, aiEngine, notify, accentKey, hasPending, pendingCount, burst,
@@ -505,6 +515,8 @@
         setToast(`已把 ${items.length} 件挪到今天 · 开始了就好`, 'redo');
       },
       toggleImportant: (id) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, important: !e.important } : e)); setDetail((d) => d && d.id === id ? { ...d, important: !d.important } : d); },
+      toggleUrgent: (id) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, urgent: !e.urgent } : e)); setDetail((d) => d && d.id === id ? { ...d, urgent: !d.urgent } : d); },
+      showMatrix: () => setMatrixOpen(true),
       saveEvent: (id, patch) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
       cancelEvent: (id) => mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, status: 'cancelled' } : e)),
       deleteEvent: (id) => {
@@ -593,6 +605,20 @@
           <p style={{ margin: '0 0 12px', fontSize: 14.5, lineHeight: 1.65, color: t.text }}>{window.VL.MULTITASK_NOTE}</p>
           <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: t.muted }}>VoiceLog 不会阻止你叠加日程——你最了解自己的节奏。它只是温和提个醒。</p>
           <div style={{ marginTop: 16 }}><Btn t={t} kind="primary" full onClick={() => setMtOpen(false)}>知道了</Btn></div>
+        </Modal>
+        <Modal t={t} open={matrixOpen} onClose={() => setMatrixOpen(false)} width={440}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="grid4" size={20} color={t.accentText} /></div><h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>重要 × 紧急 四象限</h3></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {window.VL.QUAD_ORDER.map((k) => { const q = window.VL.QUADRANTS[k]; return (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: t.radius - 2, background: t.surface2 }}>
+                <span style={{ width: 9, height: 9, borderRadius: 999, background: q.color, flexShrink: 0 }} />
+                <span style={{ fontSize: 13.5, color: t.text, fontWeight: 600, width: 100, flexShrink: 0 }}>{q.label}</span>
+                <span style={{ fontSize: 13.5, color: q.color, fontWeight: 650 }}>{q.advice}</span>
+              </div>
+            ); })}
+          </div>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: t.muted }}>{window.VL.MATRIX_NOTE}</p>
+          <div style={{ marginTop: 16 }}><Btn t={t} kind="primary" full onClick={() => setMatrixOpen(false)}>知道了</Btn></div>
         </Modal>
         <Toast t={t} toast={toast} />
         <window.WebCelebrate t={t} data={celebrate} />

@@ -8,6 +8,7 @@
     const stats = window.VL.growthStats(app.events);
     const insight = window.VL.growthInsight(L, stats);
     const maturity = window.VL.insightMaturity(app.accumulatedDays, stats.recordCount);
+    const quadStats = window.VL.quadrantStats(app.events);
 
     const stat = (v, label, color) => (
       <div style={{ flex: 1, padding: '16px 10px', borderRadius: t.radius - 2, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow, textAlign: 'center' }}>
@@ -55,7 +56,7 @@
               {stat(app.accumulatedDays || 0, '累计天数', t.accentText)}
             </div>
             <div style={{ marginBottom: 18 }}>
-              <window.GrowthReport t={t} stats={stats} maturity={maturity} wide={true} />
+              <window.GrowthReport t={t} stats={stats} maturity={maturity} quadStats={quadStats} wide={true} />
             </div>
             <SectionLabel t={t}>本周洞察</SectionLabel>
             <div style={{ display: 'flex', gap: 11, padding: 15, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>

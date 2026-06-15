@@ -34,11 +34,14 @@
     grid: 'M4 5a1 1 0 0 1 1-1h5v6H4V5Zm10-1h5a1 1 0 0 1 1 1v4h-6V4ZM4 11h6v6H5a1 1 0 0 1-1-1v-5Zm10 0h6v5a1 1 0 0 1-1 1h-5v-6Z',
     repeat: 'M17 3l4 4-4 4M21 7H7a4 4 0 0 0-4 4v1m4 9l-4-4 4-4M3 17h14a4 4 0 0 0 4-4v-1',
     image: 'M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Zm0 11 5-5 4 4 3-3 4 4M9.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
+    flag: 'M6 21V4m0 0h11l-2 3.5L17 11H6',
+    grid4: 'M4 4h6v6H4V4Zm10 0h6v6h-6V4ZM4 14h6v6H4v-6Zm10 0h6v6h-6v-6Z',
   };
   // 填充图标
   const FILL = {
     micFill: 'M12 2a3.5 3.5 0 0 0-3.5 3.5v6a3.5 3.5 0 0 0 7 0v-6A3.5 3.5 0 0 0 12 2Z',
     starFill: 'M12 3.6l2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.6l-5.1 2.7.98-5.68L3.75 9.6l5.7-.83L12 3.6Z',
+    flagFill: 'M6 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 .8 1.6L15.25 7.5 17.8 10.4A1 1 0 0 1 17 12H7v8a1 1 0 0 1-1 1Z',
   };
 
   function Icon({ name, size = 22, color = 'currentColor', sw = 1.9, fill = false, style }) {

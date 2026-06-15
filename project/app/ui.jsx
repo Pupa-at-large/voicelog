@@ -313,6 +313,85 @@
     );
   }
 
+  // 象限小标签：显示某条日程落在哪个象限
+  function QuadrantChip({ t, ev, style }) {
+    const q = window.VL.quadrant(ev);
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 24, padding: '0 9px', borderRadius: 999, fontSize: 12, fontWeight: 600, color: q.color, background: `color-mix(in oklch, ${q.color} 15%, transparent)`, ...style }}>
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: q.color }} />{q.advice}
+      </span>
+    );
+  }
+
+  // 重要×紧急 四象限视图（艾森豪威尔矩阵）：2×2 网格，把当天事按象限摆开
+  function MatrixView({ t, events, onOpen, onInfo, style }) {
+    const Q = window.VL.QUADRANTS;
+    const groups = { do: [], plan: [], delegate: [], reduce: [] };
+    (events || []).filter((e) => e.status !== 'cancelled').forEach((e) => groups[window.VL.quadrant(e).key].push(e));
+    Object.values(groups).forEach((a) => a.sort((x, y) => x.t.localeCompare(y.t)));
+    const cell = (key) => {
+      const q = Q[key]; const items = groups[key];
+      return (
+        <div style={{ flex: 1, minWidth: 0, background: t.surface, border: `1px solid ${t.border}`, borderTop: `3px solid ${q.color}`, borderRadius: t.radius - 2, padding: '10px 11px', display: 'flex', flexDirection: 'column', minHeight: 134, boxShadow: t.shadow }}>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 999, background: q.color, flexShrink: 0 }} />
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: t.text, whiteSpace: 'nowrap' }}>{q.advice}</span>
+              <span style={{ fontSize: 11, color: t.faint, marginLeft: 'auto' }}>{items.length}</span>
+            </div>
+            <div style={{ fontSize: 10.5, color: t.faint, marginTop: 2 }}>{q.label}</div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, overflowY: 'auto', flex: 1 }}>
+            {items.length ? items.map((e) => (
+              <button key={e.id} onClick={() => onOpen && onOpen(e)} style={{ display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', font: 'inherit', cursor: 'pointer', border: 'none', background: t.surface2, borderRadius: 8, padding: '6px 8px' }}>
+                <span style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: catColor(t, e.cat), flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 550, color: e.status === 'done' ? t.faint : t.text, textDecoration: e.status === 'done' ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
+                <span style={{ fontSize: 10.5, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{e.t}</span>
+              </button>
+            )) : <div style={{ fontSize: 11.5, color: t.faint, padding: '10px 0', textAlign: 'center' }}>—</div>}
+          </div>
+        </div>
+      );
+    };
+    return (
+      <div style={{ ...style }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>{cell('do')}{cell('plan')}</div>
+        <div style={{ display: 'flex', gap: 8 }}>{cell('delegate')}{cell('reduce')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+          <span style={{ fontSize: 11.5, color: t.faint }}>← 越往左越紧急 · 越往上越重要</span>
+          {onInfo && <button onClick={onInfo} style={{ border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 11.5, fontWeight: 650, color: t.accentText, padding: 0 }}>· 关于四象限</button>}
+        </div>
+      </div>
+    );
+  }
+
+  // 象限占比条（成长/复盘里用）：四格小时占比 + 成长区(Q2)高亮提示
+  function QuadrantBar({ t, stats, style }) {
+    const Q = window.VL.QUADRANTS, order = window.VL.QUAD_ORDER;
+    const total = stats.total || 0;
+    const planPct = total ? Math.round((stats.byKey.plan.hours / total) * 100) : 0;
+    return (
+      <div style={{ ...style }}>
+        <div style={{ display: 'flex', height: 14, borderRadius: 999, overflow: 'hidden', background: t.chartTrack }}>
+          {order.map((k) => { const w = total ? (stats.byKey[k].hours / total) * 100 : 0; return w > 0 ? <div key={k} title={Q[k].advice} style={{ width: `${w}%`, background: Q[k].color }} /> : null; })}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 10 }}>
+          {order.map((k) => { const q = Q[k], h = stats.byKey[k].hours; const pct = total ? Math.round((h / total) * 100) : 0; return (
+            <div key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: q.color }} />
+              <span style={{ color: t.muted }}>{q.advice}</span>
+              <span style={{ color: t.text, fontWeight: 650 }}>{pct}%</span>
+            </div>
+          ); })}
+        </div>
+        <div style={{ display: 'flex', gap: 9, marginTop: 12, padding: 12, borderRadius: t.radius - 2, background: `color-mix(in oklch, ${Q.plan.color} 12%, transparent)`, border: `1px solid color-mix(in oklch, ${Q.plan.color} 28%, transparent)` }}>
+          <Icon name="sparkle" size={16} color={Q.plan.color} style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>「重要不紧急」是<b>成长区</b>，本期占 <b>{planPct}%</b>。{planPct >= 30 ? '不错——你在为长期投资时间。' : '多往这格投一点，复利在这里发生。'}</div>
+        </div>
+      </div>
+    );
+  }
+
   function SectionLabel({ t, children, style }) {
     return <div style={{
       fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1.5,
@@ -322,6 +401,7 @@
 
   Object.assign(window, {
     Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner, RolloverBanner, BatchReviewList,
+    QuadrantChip, MatrixView, QuadrantBar,
     catColor, catLabel, fmtH,
   });
 })();

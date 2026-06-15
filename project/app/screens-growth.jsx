@@ -27,8 +27,8 @@
     );
   }
 
-  // Typeless 式「它对你的了解」报告：隐私安心卡（可折叠）+ 多段甜甜圈 + 图标化分类表
-  function GrowthReport({ t, stats, maturity, wide }) {
+  // Typeless 式「它对你的了解」报告：隐私安心卡（可折叠）+ 多段甜甜圈 + 图标化分类表 + 四象限
+  function GrowthReport({ t, stats, maturity, quadStats, wide }) {
     const [open, setOpen] = useState(false);
     const total = stats.totalH || 0;
     const table = (
@@ -66,6 +66,15 @@
             {table}
           </div>
         </div>
+        {quadStats && quadStats.total > 0 && (
+          <div style={{ padding: 16, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow, marginTop: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1, textTransform: 'uppercase' }}>四象限 · 时间去向</div>
+              <Icon name="grid4" size={16} color={t.faint} />
+            </div>
+            <window.QuadrantBar t={t} stats={quadStats} />
+          </div>
+        )}
       </div>
     );
   }
@@ -75,6 +84,7 @@
     const stats = window.VL.growthStats(app.events);
     const insight = window.VL.growthInsight(L, stats);
     const maturity = window.VL.insightMaturity(app.accumulatedDays, stats.recordCount);
+    const quadStats = window.VL.quadrantStats(app.events);
 
     const stat = (v, label, color) => (
       <div style={{ flex: 1, padding: '14px 8px', borderRadius: t.radius - 4, background: t.surface2, textAlign: 'center' }}>
@@ -120,7 +130,7 @@
 
           {/* Typeless 式「它对你的了解」报告（隐私卡 + 甜甜圈 + 图标分类表） */}
           <div style={{ marginBottom: 16 }}>
-            <GrowthReport t={t} stats={stats} maturity={maturity} wide={false} />
+            <GrowthReport t={t} stats={stats} maturity={maturity} quadStats={quadStats} wide={false} />
           </div>
 
           {/* 本周洞察 */}

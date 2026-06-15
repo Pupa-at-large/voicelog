@@ -40,6 +40,7 @@
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           {ev.important && <Icon name="starFill" size={12} color={'oklch(0.76 0.14 80)'} fill style={{ flexShrink: 0 }} />}
+          {ev.urgent && <Icon name="flagFill" size={11} color={'oklch(0.62 0.19 25)'} fill style={{ flexShrink: 0 }} />}
           {ev.repeat && <Icon name="repeat" size={11} color={col} sw={2.2} style={{ flexShrink: 0 }} />}
           <span style={{ fontSize: 12.5, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: done ? 'line-through' : 'none' }}>{ev.title}</span>
         </div>
