@@ -44,6 +44,8 @@
     const [run, setRun] = useState(0);
     const [uploadName, setUploadName] = useState('');
     const [extracted, setExtracted] = useState([]);
+    const [batchActions, setBatchActions] = useState([]);
+    const [batchSel, setBatchSel] = useState([]);
     const R = useRef({});
     const titleRef = useRef(null);
     const fileRef = useRef(null);
@@ -71,7 +73,10 @@
       const setP = (p) => { ctx.phase = p; setPhase(p); };
 
       const startParse = (text, curated) => {
-        if (ctx.parsing) return; ctx.parsing = true;
+        if (ctx.parsing) return;
+        // 多意图：一段话里多条 → 走「待执行清单」
+        if (!curated && window.VL.parseBatch) { const acts = window.VL.parseBatch(text); if (acts.length > 1) { ctx.parsing = true; setBatchActions(acts); setBatchSel(acts.map(() => true)); setP('batch'); return; } }
+        ctx.parsing = true;
         setP('parsing');
         ctx.t1 = setTimeout(() => {
           let d = curated || (window.VL.parse ? window.VL.parse(text) : { ...V.parsed });
@@ -143,7 +148,7 @@
           position: 'absolute', left: 0, right: 0, bottom: 0, background: t.surface,
           borderTopLeftRadius: t.radius + 14, borderTopRightRadius: t.radius + 14, boxShadow: t.shadowLg,
           transform: open ? 'translateY(0)' : 'translateY(101%)', transition: 'transform .4s cubic-bezier(.32,.72,0,1)',
-          padding: '12px 20px calc(20px + 22px)', minHeight: phase === 'preview' ? 'auto' : 420,
+          padding: '12px 20px calc(20px + 22px)', minHeight: (phase === 'preview' || phase === 'batch') ? 'auto' : 420,
           display: 'flex', flexDirection: 'column',
         }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: t.borderStrong, margin: '0 auto 6px' }} />
@@ -174,13 +179,22 @@
                 <div style={{ flex: 1, height: 1, background: t.border }} />
               </div>
               <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={onPickFile} />
-              <button onClick={() => fileRef.current && fileRef.current.click()} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8, height: 42, padding: '0 18px', marginTop: 6,
-                borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2,
-                color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600,
-              }}>
-                <Icon name="export" size={17} color={t.accentText} />上传文件 / 图片，让 AI 提取日程
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%', marginTop: 6 }}>
+                <button onClick={() => fileRef.current && fileRef.current.click()} style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, padding: '0 18px',
+                  borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2,
+                  color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600,
+                }}>
+                  <Icon name="export" size={17} color={t.accentText} />上传文件 / 图片，让 AI 提取日程
+                </button>
+                <button onClick={() => { const acts = window.VL.parseBatch(V.batchPhrase); setBatchActions(acts); setBatchSel(acts.map(() => true)); setPhase('batch'); }} style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, padding: '0 18px',
+                  borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2,
+                  color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600,
+                }}>
+                  <Icon name="list" size={17} color={t.accentText} />一段话建多条 · 示例
+                </button>
+              </div>
             </div>
           )}
 
@@ -235,6 +249,26 @@
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <Btn t={t} kind="ghost" onClick={() => { setPhase('listening'); setRun((r) => r + 1); }} style={{ flex: 1 }}>重新上传</Btn>
                 <Btn t={t} kind="primary" icon="check" onClick={() => { const sel = extracted.filter((x) => x._sel); if (sel.length) app.addExtracted(sel); onClose(); }} style={{ flex: 2 }}>加入选中（{extracted.filter((x) => x._sel).length}）</Btn>
+              </div>
+            </div>
+          )}
+
+          {phase === 'batch' && (
+            <div style={{ animation: 'vlin .3s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 2px 6px' }}>
+                <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>待执行清单 · {batchActions.length} 条</span>
+                <Chip t={t} color={t.accentText} soft icon="sparkle">多意图</Chip>
+              </div>
+              <div style={{ display: 'flex', gap: 7, padding: '8px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 12 }}>
+                <Icon name="mic" size={14} color={t.faint} style={{ marginTop: 1, flexShrink: 0 }} />
+                <span style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.5 }}>从一段话里识别出多条意图，核对后一起执行——不会替你静默操作。</span>
+              </div>
+              <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+                <window.BatchReviewList t={t} actions={batchActions} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} />
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" icon="redo" onClick={() => setRun((r) => r + 1)} style={{ flex: 1 }}>重说</Btn>
+                <Btn t={t} kind="primary" icon="check" onClick={() => { const sel = batchActions.filter((_, i) => batchSel[i]); if (sel.length) app.applyBatch(sel); onClose(); }} style={{ flex: 2 }}>确认执行（{batchSel.filter(Boolean).length}）</Btn>
               </div>
             </div>
           )}

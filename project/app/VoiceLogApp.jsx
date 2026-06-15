@@ -185,6 +185,15 @@
         list.forEach(() => awardXp(XP.create));
         setToast(`已加入 ${list.length} 个日程`, 'check');
       },
+      applyBatch: (sel) => {
+        const created = sel.filter((a) => a.kind !== 'complete').length;
+        const completed = sel.filter((a) => a.kind === 'complete').length;
+        setEvents((prev) => window.VL.applyBatchTo(prev, sel).next);
+        for (let i = 0; i < created; i++) awardXp(XP.create);
+        for (let i = 0; i < completed; i++) awardXp(XP.done);
+        setSelectedDay(window.VL.todayKey()); setTab('home');
+        setToast(`已新增 ${created} 条 · 完成 ${completed} 条`, 'check');
+      },
       saveEvent: (id, patch) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
       cancelEvent: (id) => mutate(selectedDay, (arr) => arr.map((e) =>
         e.id === id ? { ...e, status: 'cancelled' } : e)),

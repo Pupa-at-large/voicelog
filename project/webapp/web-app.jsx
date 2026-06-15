@@ -122,7 +122,7 @@
             <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') submit(); }} placeholder="明天三点开会 / 每周三五早上八点英语课…" style={{ flex: 1, height: 42, padding: '0 14px', borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.bg, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none' }} />
             <button onClick={submit} style={{ width: 42, height: 42, flexShrink: 0, borderRadius: t.radius - 2, border: 'none', cursor: 'pointer', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="arrowR" size={19} color={t.onAccent} sw={2.2} /></button>
           </div>
-          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 8 }}>回车即建 · 支持「每周三五」这类重复与「到学期末」截止</div>
+          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 8 }}>回车即建 · 支持「每周三五」重复、「到学期末」截止，一段话还能<b style={{ color: t.muted }}>多条一起建</b></div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
           {rollN > 0 && !rollDismiss && (
@@ -415,6 +415,8 @@
     const [lastActiveDay, setLastActiveDay] = useState(() => (saved && saved.lastActiveDay) || '');
     const [lastReviewDay, setLastReviewDay] = useState(() => (saved && saved.lastReviewDay) || '');
     const [levelUp, setLevelUp] = useState(null);
+    const [batch, setBatch] = useState(null);
+    const [batchSel, setBatchSel] = useState([]);
     const [toast, setToastState] = useState(null);
     const toastTimer = useRef(0);
     const celTimer = useRef(0);
@@ -517,7 +519,13 @@
       purgeTrash: () => { setTrash([]); setToast('回收站已清空', 'trash'); },
       openTrash: () => setTrashOpen(true),
       trash,
-      quickAdd: (text) => { const d = window.VL.parse(text); if (d.repeat && d.repeat.dows && d.repeat.dows.length) { app.addRepeating(d); return; } addEvent(d); const conf = window.VL.overlaps(events[d.dateKey] || [], { id: '__n', t: d.time, dur: d.dur }); setToast(conf.length ? `已加入 · 与「${conf[0].title}」重叠` : `已加入「${d.dateText.split(' · ')[0]}」`, conf.length ? 'bolt' : 'check'); },
+      quickAdd: (text) => {
+        const acts = window.VL.parseBatch(text);
+        if (acts.length > 1) { setBatch(acts); setBatchSel(acts.map(() => true)); return; }
+        const d = window.VL.parse(text); if (d.repeat && d.repeat.dows && d.repeat.dows.length) { app.addRepeating(d); return; }
+        addEvent(d); const conf = window.VL.overlaps(events[d.dateKey] || [], { id: '__n', t: d.time, dur: d.dur }); setToast(conf.length ? `已加入 · 与「${conf[0].title}」重叠` : `已加入「${d.dateText.split(' · ')[0]}」`, conf.length ? 'bolt' : 'check');
+      },
+      openBatch: (acts) => { setBatch(acts); setBatchSel(acts.map(() => true)); },
       addRepeating: (d) => {
         const dk = window.VL.data.dowToKey;
         setEvents((prev) => {
@@ -535,6 +543,15 @@
         setToast(d.repeat.until ? `已加入每周 ${n} 项 · 重复至 ${d.repeat.untilText}` : `已加入每周 ${n} 项 · 范围待补充`, 'repeat');
       },
       addExtracted: (list) => { setEvents((prev) => { const next = { ...prev }; list.forEach((p) => { const ev = { id: 'u' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; next[p.dateKey] = [...(next[p.dateKey] || []).map((e) => ({ ...e })), ev]; }); return next; }); awardXp(XP.create * list.length); setToast(`已加入 ${list.length} 个日程`, 'check'); },
+      applyBatch: (sel) => {
+        const created = sel.filter((a) => a.kind !== 'complete').length;
+        const completed = sel.filter((a) => a.kind === 'complete').length;
+        setEvents((prev) => window.VL.applyBatchTo(prev, sel).next);
+        if (created) awardXp(XP.create * created);
+        if (completed) awardXp(XP.done * completed);
+        setSelDay(window.VL.todayKey()); setTab('cal');
+        setToast(`已新增 ${created} 条 · 完成 ${completed} 条`, 'check');
+      },
       addCourses: (list, repeat) => {
         const dk = window.VL.data.dowToKey;
         setEvents((prev) => {
@@ -569,7 +586,7 @@
         </div>
         <DetailModal t={t} app={app} />
         <EditModal t={t} app={app} />
-        <window.WebVoiceModal t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} onExtracted={app.addExtracted} onCourses={app.addCourses} aiEngine={aiEngine} dayEventsFor={(k) => events[k] || []} />
+        <window.WebVoiceModal t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} onExtracted={app.addExtracted} onCourses={app.addCourses} onBatch={(acts) => { setVoiceOpen(false); app.openBatch(acts); }} aiEngine={aiEngine} dayEventsFor={(k) => events[k] || []} />
         <RecurrenceModal t={t} open={recurOpen} onClose={() => setRecurOpen(false)} count={pendingCount} onConfirm={(u, ut) => { app.setCourseRange(u, ut); setRecurOpen(false); }} />
         <Modal t={t} open={mtOpen} onClose={() => setMtOpen(false)} width={420}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bolt" size={20} color={'oklch(0.6 0.15 60)'} /></div><h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>关于一心多用</h3></div>
@@ -579,6 +596,25 @@
         </Modal>
         <Toast t={t} toast={toast} />
         <window.WebCelebrate t={t} data={celebrate} />
+        <Modal t={t} open={!!batch} onClose={() => setBatch(null)} width={480}>
+          {batch && (() => {
+            const k = batchSel.filter(Boolean).length;
+            return (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="sparkle" size={20} color={t.accentText} /></div>
+                  <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>待执行清单 · 找到 {batch.length} 条</h3>
+                </div>
+                <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.6, color: t.muted }}>一段话里识别出多条意图。核对一下，去掉不要的，确认后一起执行——不会替你静默操作。</p>
+                <window.BatchReviewList t={t} actions={batch} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} />
+                <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                  <Btn t={t} kind="ghost" onClick={() => setBatch(null)} style={{ flex: 1 }}>取消</Btn>
+                  <Btn t={t} kind="primary" icon="check" onClick={() => { const sel = batch.filter((_, i) => batchSel[i]); if (sel.length) app.applyBatch(sel); setBatch(null); }} style={{ flex: 2, opacity: k ? 1 : 0.5, pointerEvents: k ? 'auto' : 'none' }}>确认执行（{k}）</Btn>
+                </div>
+              </div>
+            );
+          })()}
+        </Modal>
         <Modal t={t} open={!!levelUp} onClose={() => setLevelUp(null)} width={360}>
           {levelUp && (
             <div style={{ textAlign: 'center', padding: '6px 4px' }}>

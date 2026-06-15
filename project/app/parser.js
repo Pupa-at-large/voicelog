@@ -153,4 +153,45 @@
 
   window.VL = window.VL || {};
   window.VL.parse = parse;
+
+  // ── 多意图批量解析（PRD「丝滑核心」）──
+  // 一段话拆成多条动作：新增 / 完成（标记已完成或补录为已完成）。
+  // 离线规则版（部署时换 LLM 拆解更稳）；永远返回"待执行清单"供用户确认，绝不静默执行。
+  // 逗号再切用的线索（含时段词，便于"，下午三点…"这种切开）
+  const DATE_CUE = '今天|明天|后天|大后天|昨天|前天|早上|早晨|上午|中午|下午|傍晚|晚上|凌晨|下个?周[一二三四五六日天]|下星期[一二三四五六日天]|这?周[一二三四五六日天]|这?星期[一二三四五六日天]';
+  // 仅用于"日期继承"判定的"真·日期"线索（不含时段词；时段不是某一天）
+  const DAY_HAS = /(今天|今晚|今早|明天|明早|明晚|后天|大后天|昨天|前天|下个?周[一二三四五六日天]|下星期[一二三四五六日天]|这?周[一二三四五六日天]|这?星期[一二三四五六日天]|这?礼拜[一二三四五六日天]|[0-9一二三四五六七八九十]+\s*月\s*[0-9一二三四五六七八九十]+)/;
+  const DONE_RE = /(写完|做完|搞定|弄完|开完|忙完|跑完|完成|交了|交完|读完|看完)(了|啦)?|已经.{0,4}(好|完|交)/;
+
+  function parseBatch(text) {
+    let s = (text || '').trim();
+    if (!s) return [];
+    // 连接词 → 强分隔
+    s = s.replace(/(然后|接着|还有|另外|对了|顺便|再有|以及|其次|最后)/g, '');
+    // 在"逗号 + 紧跟新的时间/日期线索"处再切（区分"一条事件内部的逗号"与"下一条事件"）
+    s = s.replace(new RegExp('[，,、]\\s*(?=(' + DATE_CUE + '|[0-9]{1,2}\\s*[:：点]|[零一二两三四五六七八九十]+\\s*点))', 'g'), '');
+    const segs = s.split(/[。！!？?\n；;]+/).map((x) => x.trim()).filter((x) => x.length >= 2);
+
+    const actions = [];
+    let lastDateKey = null, lastDateText = null;
+    for (const seg of segs) {
+      const hasDate = DAY_HAS.test(seg);
+      const isDone = DONE_RE.test(seg);
+      const d = window.VL.parse(seg);
+      if (!d || !d.title) continue;
+      // 日期继承：无显式日期的分句沿用上一条的日期（"明天十点开会，三点对方案" 都算明天）
+      if (!hasDate && lastDateKey) { d.dateKey = lastDateKey; d.dateText = lastDateText; }
+      else if (hasDate) { lastDateKey = d.dateKey; lastDateText = d.dateText; }
+      if (isDone) {
+        // 完成意图：清掉标题里的"写完了/搞定了"等词
+        let title = d.title.replace(/(我|都|已经)?\s*(写完|做完|搞定|弄完|开完|忙完|跑完|完成|交完|读完|看完|交)(了|啦)?$/g, '').replace(/的$/, '').trim() || d.title;
+        actions.push({ kind: 'complete', title, draft: { ...d, title, status: 'done' }, seg });
+      } else {
+        actions.push({ kind: 'create', title: d.title, draft: d, seg });
+      }
+    }
+    return actions;
+  }
+
+  window.VL.parseBatch = parseBatch;
 })();

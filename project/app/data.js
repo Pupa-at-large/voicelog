@@ -142,6 +142,9 @@
       dateKey: '06-17', dateText: '明天 · 6月17日 周二',
       time: '15:00', loc: '公司', reminder: 30, cat: 'meet', dur: 60,
     },
+    // 多意图批量示例：一段话同时新增多条 + 标记完成（见 parseBatch）
+    batchPhrase: '明天上午十点开产品评审会，下午三点跟设计师对方案。今天上午的周报我写完了。后天晚上八点约朋友吃饭，提前半小时提醒。',
+    batchChunks: ['明天上午十点开产品评审会，', '下午三点跟设计师对方案。', '今天上午的周报我写完了。', '后天晚上八点约朋友吃饭，', '提前半小时提醒。'],
   };
 
   const fmtH = (h) => (Number.isInteger(h) ? h + '' : h.toFixed(1));
@@ -248,6 +251,36 @@
   window.VL.todayKey = function () { const w = (window.VL.data.week || []).find((x) => x.today); return w ? w.key : '06-16'; };
   window.VL.prevKey = function (key) { const o = (window.VL.data.week || []).map((w) => w.key); const i = o.indexOf(key); return i > 0 ? o[i - 1] : null; };
   window.VL.unfinished = function (dayEvents) { return (dayEvents || []).filter((e) => e.status === 'todo'); };
+
+  // 批量执行「待执行清单」：纯函数，返回新 events + 计数（新增 / 完成）。供移动端 + Web 共用、可单测。
+  window.VL.applyBatchTo = function (prev, actions) {
+    const next = {}; Object.keys(prev || {}).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
+    let created = 0, completed = 0;
+    const rid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status });
+    const findMatch = (title, dateKey) => {
+      const days = [dateKey, window.VL.todayKey(), window.VL.prevKey(window.VL.todayKey())].filter(Boolean);
+      const seen = new Set();
+      for (const day of days) {
+        if (seen.has(day)) continue; seen.add(day);
+        const hit = (next[day] || []).find((e) => e.status !== 'done' && e.status !== 'cancelled' && (e.title.includes(title) || title.includes(e.title)));
+        if (hit) return hit;
+      }
+      return null;
+    };
+    (actions || []).forEach((a) => {
+      if (a.kind === 'complete') {
+        const m = findMatch(a.title, a.draft.dateKey);
+        if (m) m.status = 'done';
+        else { next[a.draft.dateKey] = [...(next[a.draft.dateKey] || []), mk(a.draft, 'done')]; }
+        completed += 1;
+      } else {
+        next[a.draft.dateKey] = [...(next[a.draft.dateKey] || []), mk(a.draft, 'todo')];
+        created += 1;
+      }
+    });
+    return { next, created, completed };
+  };
   window.VL.periods = [
     { key: 'day', label: '日' }, { key: 'week', label: '周' },
     { key: 'month', label: '月' }, { key: 'quarter', label: '季' },

@@ -280,6 +280,39 @@
     );
   }
 
+  // 待执行清单：批量语音/文字解析出的多条动作，用户逐条确认（可勾选）后再批量执行——永不静默执行
+  function BatchReviewList({ t, actions, sel, onToggle, style }) {
+    const green = 'oklch(0.6 0.13 150)';
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
+        {actions.map((a, i) => {
+          const on = sel[i];
+          const isDone = a.kind === 'complete';
+          const badgeC = isDone ? green : t.accentText;
+          const d = a.draft;
+          const dateShort = (d.dateText || '').split(' · ')[0];
+          return (
+            <button key={i} onClick={() => onToggle(i)} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, cursor: 'pointer', textAlign: 'left', font: 'inherit', borderRadius: t.radius, background: on ? t.surface : t.surface2, border: `1.5px solid ${on ? (isDone ? green : t.accentText) : t.border}` }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? (isDone ? green : t.accent) : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: badgeC, background: `color-mix(in oklch, ${isDone ? green : t.accent} 16%, transparent)`, padding: '1px 7px', borderRadius: 999 }}>{isDone ? '完成' : '新增'}</span>
+                  <span style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.title}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12.5, color: t.muted }}>{dateShort} {d.time}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>
+                  {d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
+                  {d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   function SectionLabel({ t, children, style }) {
     return <div style={{
       fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1.5,
@@ -288,7 +321,7 @@
   }
 
   Object.assign(window, {
-    Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner, RolloverBanner,
+    Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner, RolloverBanner, BatchReviewList,
     catColor, catLabel, fmtH,
   });
 })();

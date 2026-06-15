@@ -15,7 +15,7 @@
     );
   }
 
-  function WebVoiceModal({ t, open, onClose, onConfirm, onExtracted, onCourses, aiEngine, dayEventsFor }) {
+  function WebVoiceModal({ t, open, onClose, onConfirm, onExtracted, onCourses, onBatch, aiEngine, dayEventsFor }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening');
     const [transcript, setTranscript] = useState('');
@@ -60,7 +60,10 @@
       setPhase('listening'); setTranscript(''); setDraft(null);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
       const startParse = (text, curated) => {
-        if (ctx.parsing) return; ctx.parsing = true; setP('parsing');
+        if (ctx.parsing) return;
+        // 多意图：一段话里有多条 → 走「待执行清单」，不再单条预览
+        if (!curated && onBatch && window.VL.parseBatch) { const acts = window.VL.parseBatch(text); if (acts.length > 1) { ctx.parsing = true; onBatch(acts); return; } }
+        ctx.parsing = true; setP('parsing');
         ctx.t1 = setTimeout(() => { let d = curated || (window.VL.parse ? window.VL.parse(text) : { ...V.parsed }); if (!d || !d.title) d = { ...V.parsed }; setDraft(d); setP('preview'); }, 850);
       };
       const fallback = () => {
@@ -129,6 +132,11 @@
                 <button onClick={() => pickFile('doc')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: t.radius, cursor: 'pointer', textAlign: 'left', font: 'inherit', border: `1px solid ${t.border}`, background: t.surface2 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: t.raised, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="doc" size={19} color={t.muted} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>上传文件 / 截图</div><div style={{ fontSize: 12, color: t.faint, marginTop: 1 }}>从通知、邮件、会议纪要里提取日程</div></div>
+                  <Icon name="chevR" size={18} color={t.faint} />
+                </button>
+                <button onClick={() => onBatch && onBatch(window.VL.parseBatch(V.batchPhrase))} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: t.radius, cursor: 'pointer', textAlign: 'left', font: 'inherit', border: `1px solid ${t.border}`, background: t.surface2 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: t.raised, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="list" size={19} color={t.muted} /></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>一段话建多条 <span style={{ fontSize: 11, fontWeight: 600, color: t.faint }}>示例</span></div><div style={{ fontSize: 12, color: t.faint, marginTop: 1 }}>说一句包含多件事，自动拆成待执行清单</div></div>
                   <Icon name="chevR" size={18} color={t.faint} />
                 </button>
               </div>
