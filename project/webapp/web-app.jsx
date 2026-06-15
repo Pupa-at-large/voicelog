@@ -119,6 +119,7 @@
           <div style={{ fontSize: 11.5, color: t.faint, marginTop: 8 }}>回车即建 · 支持「每周三五」这类重复与「到学期末」截止</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
+          <window.FocusCard t={t} events={list} dayKey={dayKey} onOpen={app.openDetail} style={{ marginBottom: 16 }} />
           <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 12 }}>{w.today ? '今天' : `周${w.dow}`} · 6月{w.day}日 <span style={{ fontSize: 13, fontWeight: 500, color: t.faint }}>{list.length} 项</span></div>
           {list.length ? <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {list.map((ev) => {
