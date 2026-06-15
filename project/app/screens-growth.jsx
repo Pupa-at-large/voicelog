@@ -1,7 +1,7 @@
 /* VoiceLog · 成长（等级 / XP / 时间去向报告）——产品灵魂页 */
 (function () {
-  const { useEffect } = React;
-  const { Icon, Card, Btn, StackBar, AllocRow, Dot, SectionLabel, catColor, catLabel, fmtH } = window;
+  const { useState, useEffect } = React;
+  const { Icon, Card, Btn, Chip, StackBar, AllocRow, Dot, SectionLabel, catColor, catLabel, fmtH } = window;
   const GOLD = window.VL.GOLD;
 
   if (!document.getElementById('vl-growth')) {
@@ -27,11 +27,54 @@
     );
   }
 
+  // Typeless 式「它对你的了解」报告：隐私安心卡（可折叠）+ 多段甜甜圈 + 图标化分类表
+  function GrowthReport({ t, stats, maturity, wide }) {
+    const [open, setOpen] = useState(false);
+    const total = stats.totalH || 0;
+    const table = (
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' }}>
+        {stats.alloc.length ? stats.alloc.map((a, i, arr) => {
+          const pct = total ? Math.round((a.hours / total) * 100) : 0;
+          return (
+            <div key={a.cat} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none' }}>
+              <Dot color={catColor(t, a.cat)} size={9} />
+              <span style={{ flex: 1, fontSize: 13.5, color: t.text, fontWeight: 550 }}>{catLabel(t, a.cat)}</span>
+              <span style={{ fontSize: 13, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{fmtH(a.hours)}h</span>
+              <span style={{ width: 40, textAlign: 'right', fontSize: 13, fontWeight: 680, color: t.text, fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+            </div>
+          );
+        }) : <div style={{ fontSize: 13, color: t.faint, textAlign: 'center', padding: '12px 0' }}>本周还没有数据</div>}
+      </div>
+    );
+    return (
+      <div>
+        <div style={{ padding: '13px 15px', borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon name="shield" size={18} color={t.accentText} style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 14, fontWeight: 650, color: t.text }}>你的数据保持私密</div>
+            <button onClick={() => setOpen((o) => !o)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText, padding: 0 }}>{open ? '显示更少' : '为什么'}</button>
+          </div>
+          {open && <p style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.65, color: t.muted }}>语迹只在你的设备上分析时间模式（像识别习惯，而非记录具体内容）——不上传、不留存、不用于训练。等级与下面这份「了解」都由本机计算，随时可导出带走。</p>}
+        </div>
+        <div style={{ padding: 16, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1, textTransform: 'uppercase' }}>它对你的了解</div>
+            <Chip t={t} color={GOLD} soft icon="sparkle">越用越懂你</Chip>
+          </div>
+          <div style={{ display: 'flex', flexDirection: wide ? 'row' : 'column', alignItems: 'center', gap: wide ? 22 : 16 }}>
+            <window.Donut t={t} alloc={stats.alloc} total={total || 1} size={wide ? 168 : 186} stroke={24} centerTop={maturity + '%'} centerSub={'懂你'} />
+            {table}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function GrowthScreen({ t, app }) {
     const L = window.VL.levelFromXp(app.xp || 0);
     const stats = window.VL.growthStats(app.events);
     const insight = window.VL.growthInsight(L, stats);
-    const max = Math.max(1, ...stats.alloc.map((a) => a.hours));
+    const maturity = window.VL.insightMaturity(app.accumulatedDays, stats.recordCount);
 
     const stat = (v, label, color) => (
       <div style={{ flex: 1, padding: '14px 8px', borderRadius: t.radius - 4, background: t.surface2, textAlign: 'center' }}>
@@ -75,30 +118,16 @@
             {stat(app.accumulatedDays || 0, '累计天数', t.accentText)}
           </div>
 
-          {/* 时间去向 */}
-          {stats.alloc.length > 0 && (
-            <React.Fragment>
-              <SectionLabel t={t}>时间去向 · 本周</SectionLabel>
-              <Card t={t} style={{ marginBottom: 16 }}>
-                <StackBar t={t} alloc={stats.alloc} total={stats.totalH} h={16} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 18 }}>
-                  {stats.alloc.map((a) => <AllocRow key={a.cat} t={t} a={a} total={stats.totalH} max={max} />)}
-                </div>
-              </Card>
-            </React.Fragment>
-          )}
+          {/* Typeless 式「它对你的了解」报告（隐私卡 + 甜甜圈 + 图标分类表） */}
+          <div style={{ marginBottom: 16 }}>
+            <GrowthReport t={t} stats={stats} maturity={maturity} wide={false} />
+          </div>
 
           {/* 本周洞察 */}
           <SectionLabel t={t}>本周洞察</SectionLabel>
           <div style={{ display: 'flex', gap: 11, padding: 14, borderRadius: t.radius, marginBottom: 16, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
             <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: t.text }}>{insight}</p>
-          </div>
-
-          {/* 隐私承诺 */}
-          <div style={{ display: 'flex', gap: 9, padding: '0 2px' }}>
-            <Icon name="shield" size={15} color={t.faint} style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: t.faint }}>数据本地存储，随时导出带走。等级与 XP 只升不降——每一次记录都算数。</p>
           </div>
         </div>
       </div>
@@ -131,5 +160,5 @@
     );
   }
 
-  Object.assign(window, { GrowthScreen, LevelUpOverlay, LevelBadge });
+  Object.assign(window, { GrowthScreen, LevelUpOverlay, LevelBadge, GrowthReport });
 })();

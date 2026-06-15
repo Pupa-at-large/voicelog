@@ -352,6 +352,11 @@
   window.VL.levelFromXp = levelFromXp;
   window.VL.growthStats = growthStats;
   window.VL.growthInsight = growthInsight;
+  // 「它对你的了解」成熟度（借 Typeless 把"AI 懂你"量化）：随累计天数与记录缓慢上升，封顶 95%
+  window.VL.insightMaturity = function (accumulatedDays, recordCount) {
+    const d = accumulatedDays || 0, r = recordCount || 0;
+    return Math.min(95, Math.round(100 * (1 - Math.exp(-((d * 0.6 + r * 1.2) / 90)))));
+  };
   // 成长色：暖金（跨主题统一，呼应 PRD「等级=暖金」）
   window.VL.GOLD = 'oklch(0.78 0.115 82)';
   window.VL.GOLD_SOFT = 'oklch(0.92 0.05 85)';

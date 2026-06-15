@@ -7,7 +7,7 @@
     const L = window.VL.levelFromXp(app.xp || 0);
     const stats = window.VL.growthStats(app.events);
     const insight = window.VL.growthInsight(L, stats);
-    const max = Math.max(1, ...stats.alloc.map((a) => a.hours));
+    const maturity = window.VL.insightMaturity(app.accumulatedDays, stats.recordCount);
 
     const stat = (v, label, color) => (
       <div style={{ flex: 1, padding: '16px 10px', borderRadius: t.radius - 2, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow, textAlign: 'center' }}>
@@ -54,15 +54,9 @@
               {stat(`${stats.completion}%`, '完成率', 'oklch(0.62 0.14 150)')}
               {stat(app.accumulatedDays || 0, '累计天数', t.accentText)}
             </div>
-            <SectionLabel t={t}>时间去向 · 本周</SectionLabel>
-            {stats.alloc.length ? (
-              <Card t={t} style={{ marginBottom: 18 }}>
-                <StackBar t={t} alloc={stats.alloc} total={stats.totalH} h={18} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 18 }}>
-                  {stats.alloc.map((a) => <AllocRow key={a.cat} t={t} a={a} total={stats.totalH} max={max} />)}
-                </div>
-              </Card>
-            ) : <Card t={t} style={{ marginBottom: 18, textAlign: 'center', color: t.faint, padding: 24 }}>本周还没有日程记录</Card>}
+            <div style={{ marginBottom: 18 }}>
+              <window.GrowthReport t={t} stats={stats} maturity={maturity} wide={true} />
+            </div>
             <SectionLabel t={t}>本周洞察</SectionLabel>
             <div style={{ display: 'flex', gap: 11, padding: 15, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
               <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />

@@ -16,7 +16,7 @@
 - [x] **M4 · 每日容量提醒**（借 Sunsama）：`window.VL.DAILY_CAPACITY_H=8` + `dayLoad()`；共享 `CapacityBanner`（`app/ui.jsx`，温和琥珀色、可关、非模态）。接入移动端日程顶部与 Web 右栏。Demo 把周三(06-18)排到 9h（不重叠）以便演示。
 - [x] **M5 · 未完成顺延**（借 Sunsama）：helpers `todayKey/prevKey/unfinished`；共享 `RolloverBanner`（`app/ui.jsx`，温和、不羞辱）；`rolloverUnfinished()` 一键把昨天待办全挪到今天。仅"今天"显示。Demo 给 06-15 留了 2 件未完成。移动端+Web 都接。
 - [x] **M6 · 多意图批量语音**（PRD 丝滑核心）：`parseBatch(text)`（`app/parser.js`）智能分句（强连接词 + "逗号后接新时间线索"切分 + 日期继承）识别 新增/完成 多意图；`applyBatchTo()` 纯函数执行（完成意图先匹配既有日程，匹配不到则补录为已完成）；共享 `BatchReviewList`（可勾选「待执行清单」，永不静默）。接入：Web 快速建程（一段话回车）+ Web 语音弹窗 + 移动端语音浮层（均带示例入口）。`applyBatch` 计 XP。
-- [ ] **M7 · Typeless 成长报告增强**：成长页顶部隐私安心卡 + 多段甜甜圈（`window.Donut` 已存在）+ 图标化分类表 + 「时间洞察成熟度 X%」+ 折叠解释。
+- [x] **M7 · Typeless 成长报告增强**：`insightMaturity()`（懂你 X%，随累计天数/记录上升封顶95）；共享 `GrowthReport`（`app/screens-growth.jsx`）——隐私安心卡（可折叠「为什么」）+ 多段甜甜圈（中心显示懂你%）+ 图标化分类表。移动端竖排、Web 横排接入，替换原 时间去向 卡。
 - [ ] **M8 · 语音信任反馈**（借 Typeless）：解析后一行「已清理 N 处口头语 · 识别到一次更正」（模拟统计 嗯/啊/那个 等）。
 
 ## 提交记录
