@@ -58,24 +58,31 @@
 
 ## 3. LLM（把口语解析成结构化日程 / 多意图）
 
-> 国产模型 2025–2026 经历多轮“价格战”，普遍极便宜。以下为交叉核对的量级（CNY/百万 token），**以官网为准**。
+> 国产模型 2025–2026 多轮”价格战”，普遍极便宜。**以官网为准**。
+> 我们的用量很小（一句话≈输入 100 token、输出 300 token），所以下面给**每 1000 次调用的成本**最有决策意义。
 
-| 模型 | 输入(miss) | 输出 | 免费额度 | 中文/JSON | 国内直连 |
+**按「每 1000 次解析」成本排序（CNY，越上越省）：**
+
+| 模型 | ~每千次调用 | JSON 可靠度 | 免费额度 | 国内直连 | 备注 |
 |---|---|---|---|---|---|
-| **DeepSeek（deepseek-chat / V4-Flash）** | ~¥1 | ~¥2 | 偶有活动 | 强 / 稳 | ✅ |
-| DeepSeek V4-Pro | ~¥3 | ~¥6 | — | 更强 | ✅ |
-| **通义千问 Qwen-Flash/Turbo** | 极低（角分级） | 低 | **额度大方** | 强 / 支持 JSON mode | ✅ |
-| 豆包（字节）lite/pro | 低 | 低 | 有 | 强 | ✅ |
-| **文心 ERNIE-Speed/Lite/Tiny** | **免费** | **免费** | 长期免费 | 中 | ✅ |
-| 文心 ERNIE-4.5-Turbo | ~¥0.8 | ~¥3.2 | — | 强 | ✅ |
-| 智谱 GLM-4-Flash / Kimi / MiniMax | 低 | 低 | 有 | 强 | ✅ |
-| OpenAI gpt-4o-mini / Claude Haiku / Gemini Flash | 低-中（$） | — | — | 强 | ❌ 需代理 |
+| **文心 ERNIE-Speed-8K** | **¥0（永久免费）** | ★★☆ 待实测 | 实名后免费、限 QPS | ✅ | 零成本起步首选 |
+| 智谱 GLM-4-Flash(旧版) | **¥0（免费）** | ★★★★ | 免费、1 并发 | ✅ | 原型够用 |
+| **DeepSeek V4-Flash（系统提示缓存命中）** | **≈¥0.006** | ★★★★ | 注册送 500 万 token/30天 | ✅ | 缓存固定系统提示后近乎免费 |
+| **通义 Qwen-Flash** | **≈¥0.30** | ★★★★ json_schema 成熟 | **新用户 7000 万 token/90天** | ✅ | 快、便宜、SDK 好 |
+| 豆包 Doubao-Lite | ≈¥0.38 | ★★★ | 50 万 token/30天 | ✅ | 字节基建、低延迟 |
+| Qwen-Turbo | ≈¥0.47 | ★★★★ | 同上 | ✅ | |
+| DeepSeek V4-Flash（无缓存） | ≈¥0.71 | ★★★★ | — | ✅ | |
+| Gemini 2.5 Flash-Lite | ≈¥0.16（$0.022）| ★★★★ | 免费档大方 | ❌ 需代理 | 海外最便宜 |
+| GPT-4o-mini | ≈¥1.67（$0.23）| ★★★★★ strict | $5 试用 | ❌ 需代理 | JSON 金标准 |
+| Claude Haiku | ≈¥0.93（$0.128）| ★★★★★ | — | ❌ 需代理 | 质量高 |
 
 **建议**：
-- **最省**：先用 **ERNIE-Speed（免费）** 或 **Qwen-Flash（额度大）** 跑通，零成本验证。
-- **质量性价比**：主力用 **DeepSeek deepseek-chat**（便宜、中文强、function calling/JSON 稳），或 **Qwen-Plus**。
-- ⚠️ **DeepSeek 模型名迁移**：`deepseek-reasoner` 将于 **2026-07-24 弃用**（现指向 V4-Flash 思考模式）；用 `deepseek-chat` 或新 V4 名。
-- 解析要**强制 JSON 输出**（schema/function calling）+ 失败回退到现有规则引擎，永不崩。
+- **零成本验证**：先用 **ERNIE-Speed-8K（永久免费）** 或 **GLM-4-Flash（免费）** 跑通；上线前实测它们的 JSON 稳定性。
+- **主力（性价比+JSON 稳）**：**DeepSeek V4-Flash**（缓存固定系统提示后≈¥0.006/千次，近乎免费）或 **Qwen-Flash**（≈¥0.30/千次，json_schema 工具最成熟、新用户 7000 万免费 token）。两者中文都强、国内直连。
+- **别选 Kimi moonshot-v1 做这个**：输出 ¥14.5/百万，比上面贵 5–10 倍，短抽取无质量优势。
+- 海外（仅当后端走代理、非终端直连）：**Gemini 2.5 Flash-Lite** 最便宜且有免费档；要最稳 JSON 用 **GPT-4o-mini strict**。
+- ⚠️ **DeepSeek 模型名迁移**：`deepseek-reasoner`/`deepseek-chat` 旧别名 **2026-07-24 弃用**；用新的 V4 模型名。
+- 工程上：**强制 JSON 输出**（json_schema / function calling）+ 失败回退到现有规则引擎，永不崩。
 
 ---
 
