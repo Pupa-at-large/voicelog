@@ -82,6 +82,7 @@
 - **别选 Kimi moonshot-v1 做这个**：输出 ¥14.5/百万，比上面贵 5–10 倍，短抽取无质量优势。
 - 海外（仅当后端走代理、非终端直连）：**Gemini 2.5 Flash-Lite** 最便宜且有免费档；要最稳 JSON 用 **GPT-4o-mini strict**。
 - ⚠️ **DeepSeek 模型名迁移**：`deepseek-reasoner`/`deepseek-chat` 旧别名 **2026-07-24 弃用**；用新的 V4 模型名。
+- ⚠️ **Qwen 老别名已无免费额度**（2026-06 实测）：`qwen-flash`/`qwen-plus`/`qwen-max`/`qwen3-max` 调用直接报 `AllocationQuota.FreeTierOnly`；当前有免费额度的是新代号 `qwen3.7-plus`、`qwen3.7-max-2026-06-08`、`qwen3.6-flash-2026-04-16`、`deepseek-v4-flash`、`glm-5.1` 等（百炼控制台「免费额度」页可查）。本仓库 `server/` 与 `native/demo/` 默认已切到 `qwen3.6-flash-2026-04-16`。
 - 工程上：**强制 JSON 输出**（json_schema / function calling）+ 失败回退到现有规则引擎，永不崩。
 
 ---

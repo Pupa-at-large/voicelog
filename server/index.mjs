@@ -7,7 +7,9 @@ import http from 'node:http';
 
 const PORT = process.env.PORT || 8787;
 const QWEN_KEY = process.env.DASHSCOPE_API_KEY || '';
-const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen-flash';
+// 注意：老别名 qwen-flash/qwen-plus/qwen-max 已无免费额度（调用报 FreeTierOnly）。
+// 用当前代有免费额度的代号；可在百炼控制台「免费额度」页查最新可用代号。
+const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen3.6-flash-2026-04-16';
 const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 const TODAY = process.env.VL_TODAY || new Date().toISOString().slice(5, 10); // MM-DD，默认真实今天
 

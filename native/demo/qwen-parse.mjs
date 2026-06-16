@@ -9,7 +9,8 @@
 // 说明：这是「解析+确认」演示，不写库；确认后真正落库在 App 里做。
 
 const API_KEY = process.env.DASHSCOPE_API_KEY;
-const MODEL = process.env.QWEN_MODEL || 'qwen-flash'; // 便宜快；要更强可换 qwen-plus
+// 老别名 qwen-flash/plus/max 已无免费额度（报 FreeTierOnly）；用当前代有免费额度的代号
+const MODEL = process.env.QWEN_MODEL || 'qwen3.6-flash-2026-04-16'; // 便宜快；要更强可换 qwen3.7-plus
 const TODAY = '2026-06-16'; // 与原型一致；接进 App 后用真实当天
 const BASE = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
