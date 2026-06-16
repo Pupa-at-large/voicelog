@@ -351,6 +351,7 @@
             </div>
           </div>
         )}
+        {!done && <window.RescheduleCard t={t} dayEvents={app.events[app.selDay] || []} ev={ev} onPick={(s) => app.rescheduleEvent(ev.id, s.time)} style={{ marginTop: 14 }} />}
         <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
           <Btn t={t} kind={done ? 'ghost' : 'primary'} icon="check" onClick={() => { app.toggleDone(ev.id); app.setDetail(null); }} style={{ flex: 1 }}>{done ? '标记未完成' : '标记完成'}</Btn>
           <Btn t={t} kind="ghost" icon="pencil" onClick={() => app.openEdit(ev)}>编辑</Btn>
@@ -369,7 +370,6 @@
     if (!ev || !st) return null;
     const bump = (d) => setSt((s) => { const tot = (s.hh * 60 + s.mm + d + 1440) % 1440; return { ...s, hh: Math.floor(tot / 60), mm: tot % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
-    const conflict = window.VL.overlaps(app.events[app.selDay] || [], { id: ev.id, t: time, dur: ev.dur });
     const ed = (ref, val) => <span ref={ref} contentEditable suppressContentEditableWarning style={{ fontSize: 15.5, fontWeight: 600, color: t.text, outline: 'none', borderRadius: 6, padding: '7px 11px', background: t.surface2, display: 'inline-block', minWidth: 160 }}>{val}</span>;
     const row = (label, node) => <div style={{ marginBottom: 15 }}><div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600, marginBottom: 7 }}>{label}</div>{node}</div>;
     return (
@@ -385,7 +385,7 @@
           <button onClick={() => setSt({ ...st, urgent: !st.urgent })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.urgent ? 'transparent' : t.border}`, background: st.urgent ? 'color-mix(in oklch, oklch(0.62 0.19 25) 16%, transparent)' : 'transparent', color: st.urgent ? t.text : t.muted }}><Icon name={st.urgent ? 'flagFill' : 'flag'} size={16} color={st.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={st.urgent} />紧急</button>
           <window.QuadrantChip t={t} ev={{ important: st.important, urgent: st.urgent }} />
         </div>)}
-        {conflict.length > 0 && <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 14, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}><Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} /><div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span></div></div>}
+        <window.RescheduleCard t={t} dayEvents={app.events[app.selDay] || []} ev={{ id: ev.id, t: time, dur: ev.dur, status: ev.status }} onPick={(s) => { const [h, m] = s.time.split(':').map(Number); setSt((p) => ({ ...p, hh: h, mm: m })); }} style={{ marginBottom: 14 }} />
         <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
           <Btn t={t} kind="ghost" onClick={() => app.setEditEv(null)} style={{ flex: 1 }}>取消</Btn>
           <Btn t={t} kind="primary" icon="check" onClick={() => { const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title; const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc; app.saveEvent(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important, urgent: st.urgent }); app.setEditEv(null); }} style={{ flex: 2 }}>保存</Btn>
@@ -518,6 +518,7 @@
       toggleUrgent: (id) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, urgent: !e.urgent } : e)); setDetail((d) => d && d.id === id ? { ...d, urgent: !d.urgent } : d); },
       showMatrix: () => setMatrixOpen(true),
       saveEvent: (id, patch) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
+      rescheduleEvent: (id, time) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, t: time } : e)); setDetail((d) => d && d.id === id ? { ...d, t: time } : d); setToast('已改到 ' + time, 'check'); },
       cancelEvent: (id) => mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, status: 'cancelled' } : e)),
       deleteEvent: (id) => {
         const ev = (events[selDay] || []).find((e) => e.id === id); const day = selDay;

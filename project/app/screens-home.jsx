@@ -448,7 +448,7 @@
   function swBtn(bg, fg) { return { width: 72, height: '100%', border: 'none', cursor: 'pointer', background: bg, color: fg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', font: 'inherit', fontWeight: 600 }; }
 
   // ── 日程详情 ──
-  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar, onUrgent, onPostpone, onMatrixInfo }) {
+  function DetailSheet({ t, ev, onClose, onToggle, onCancel, onDelete, onEdit, onStar, onUrgent, onPostpone, onMatrixInfo, app }) {
     if (!ev) return null;
     const done = ev.status === 'done';
     const col = catColor(t, ev.cat);
@@ -489,6 +489,7 @@
             <div style={{ fontSize: 14.5, color: t.text, lineHeight: 1.55 }}>{ev.note}</div>
           </div>
         )}
+        {app && !done && <window.RescheduleCard t={t} dayEvents={app.events[app.selectedDay] || []} ev={ev} onPick={(s) => app.rescheduleEvent(ev.id, s.time)} style={{ marginTop: 14 }} />}
         <div style={{ marginTop: 18 }}>
           <Btn t={t} kind={done ? 'ghost' : 'primary'} icon="check" full onClick={() => { onToggle(ev.id); onClose(); }}>{done ? '标记未完成' : '标记完成'}</Btn>
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
@@ -555,16 +556,7 @@
             <window.QuadrantChip t={t} ev={{ important: st.important, urgent: st.urgent }} />
           </div>
         ))}
-        {(() => {
-          const conflict = app ? window.VL.overlaps(app.events[app.selectedDay] || [], { id: ev.id, t: time, dur: ev.dur }) : [];
-          if (!conflict.length) return null;
-          return (
-            <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 14, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
-              <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
-              <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span></div>
-            </div>
-          );
-        })()}
+        {app && <window.RescheduleCard t={t} dayEvents={app.events[app.selectedDay] || []} ev={{ id: ev.id, t: time, dur: ev.dur, status: ev.status }} onPick={(s) => { const [h, m] = s.time.split(':').map(Number); setSt((p) => ({ ...p, hh: h, mm: m })); }} style={{ marginBottom: 14 }} />}
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
           <Btn t={t} kind="ghost" onClick={onClose} style={{ flex: 1 }}>取消</Btn>
           <Btn t={t} kind="primary" icon="check" onClick={() => {

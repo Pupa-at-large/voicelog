@@ -20,7 +20,9 @@
 - [x] **M8 · 语音信任反馈**（借 Typeless）：`speechTrust(text)` 统计口头语 + 识别自我更正；解析预览里一行温和反馈「已清理 N 处口头语 · 识别到一次更正 · 已帮你理清意图」。Demo 语音改成带口头语+一次更正（嗯…两点…啊不对，是三点）以便演示，解析结果仍正确（15:00）。移动端+Web 语音预览都接。
 - [x] **M9 · 重要紧急四象限（艾森豪威尔矩阵）**：`urgent` 字段 + `important`(已有) → `QUADRANTS`/`quadrant()`/`quadrantStats()`（`app/data.js`）；图标 flag/flagFill/grid4；解析器听出 紧急/重要 词自动归象限并随建程携带；共享 `MatrixView`(2×2 网格视图) + `QuadrantChip` + `QuadrantBar`(成长区Q2高亮)（`app/ui.jsx`）；移动端日程加「象限」视图、详情/编辑加 紧急🚩 切换 + 实时象限；Web 日历加「象限」视图、详情/编辑同步；成长报告加「四象限·时间去向」；四象限说明弹层。demo 06-16 铺满四格。**更新了 PRD（docs/handoff/voicelog_PRD_v1.md，v1.1）**。
 
-## 状态：M1–M9 全部完成 ✅
+- [x] **M10 · 建议式改期（建议不强制）**：纯函数 `suggestSlots(dayEvents, ev)`（`app/data.js`）——在 `SLOT_START`(07:00)–`SLOT_END`(22:00) 内按"占用区间→合并→空档"算法，为每个容得下时长的空档取离原时间最近的可行起点，跳过等于当前时间者，近优先取前 3，返回 `[{time,end,label}]`（label 如「早 1 小时」「晚 2 小时 30 分」）。共享 `SlotSuggestions`(可点选项) + `RescheduleCard`(温和入口：与他人重叠**或**当日超容量时出现，点「换个时间」才展开空档)（`app/ui.jsx`）。接入移动端 `DetailSheet`(点选即时改，`app.rescheduleEvent`) / `EditSheet`(点选回填步进器、保存才生效) 与 Web `DetailModal`/`EditModal`（替换原重叠横幅，处处一致）。**绝不自动重排——只列选项，用户选一个才改时间**（守设计原则①④）。
+
+## 状态：M1–M10 全部完成 ✅
 本轮自主任务（核心 + 打磨）已全部实现并验证。每个里程碑单独提交在分支 `voicelog/growth-and-phase2`。
 
 **最终验证**：20 个文件全部通过页面同款 `@babel/standalone` 转译；含四象限在内的数据层断言全 PASS；demo 零重叠、四象限铺满四格。
@@ -39,11 +41,22 @@
 - `800a021` M6 多意图批量语音 / 待执行清单
 - `f5a40bd` M7 Typeless 成长报告
 - `4a80f92` M8 语音信任反馈
-- （本次）M9 重要紧急四象限 + PRD v1.1
+- （上次）M9 重要紧急四象限 + PRD v1.1
+- （本次）M10 建议式改期 suggestSlots + RescheduleCard（移动端+Web）
+
+## App 化（原生 App · 自主执行中）
+> 用户决定：做能上架 iOS/安卓的真 App（自用优先）。授权自主推进，回来检查。
+- **M1 选型调研** ✅：`docs/handoff/tech-selection-research.md`——ASR(中英夹杂：火山/讯飞)、LLM(DeepSeek/Qwen，附 2026 价格)、技术栈(Expo RN)、同步(PowerSync/WatermelonDB；Realm 已停服)、微信/手机号登录与备案资质、月成本估算。给了明确推荐。
+- **M2 Expo 骨架** ✅（`native/`，不破坏网页原型）：Expo SDK 56 + TS 工程；OKLCH→hex 主题移植（`src/theme/color.ts` 纯函数）；统一 Store（AsyncStorage）；日程主页（主题切换/周条/清单/一键完成/容量提醒/建议式改期）。验证：`npx tsc --noEmit` 通过；OKLCH 转换已核对；**未真机运行**（环境无设备）。
+- 待办：M3 核心功能迁移 + SQLite｜M4 录音→ASR→LLM｜M5 登录+同步｜M6 EAS 出包上架（需账号/备案/软著）。
+- **需用户提供**（攒着等回来）：Apple Developer($99/年)、Google Play($25)、各家 API Key、备案/软著推进、微信开放平台企业资质。
+
+## 规划文档（未执行 · 待对齐）
+- **账号 + 多端同步 + 数据存储**：新增 `docs/handoff/sync-and-identity-design.md`（统一 Store/IndexedDB、本地优先同步层 LWW+tombstone、端到端加密、微信/手机号登录、真实 ASR 缺口、落地路线 P0–P2）。PRD 升至 v1.2，新增「八、账号与多端同步」并标注语音识别现状（原型仅 Web Speech 兜底、国内回退示例）。**仅设计，未写功能代码**。
 
 ## 备注 / 决策
 - 移动端底部标签因放不下 5 个，已将「导出」从标签移到「复盘」页进入（带返回）。
 - XP 规则：记录+5 / 完成+10 / 复盘（每日首次进成长页）+15。老用户首开 seed 320(LV.4)，新用户 0(LV.1)。
 - **提交签名**：环境签名服务器报错(400)，所有提交用 `--no-gpg-sign`；功能无影响。
 - **多意图解析**是离线规则版（PRD 明确部署换 LLM）：处理"逗号后接新时间线索"切分 + 日期继承；自我更正在真实识别下可能误拆两条，是规则引擎已知边界，demo 用 curated 规避。
-- 未做（属"全部含实验性"层、本轮范围外）：建议式改期、Web ⌘K 命令栏、移动端新用户首开页。
+- 未做（属"全部含实验性"层、本轮范围外）：Web ⌘K 命令栏、移动端新用户首开页。（建议式改期已于 M10 完成）

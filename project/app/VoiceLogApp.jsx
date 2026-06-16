@@ -198,6 +198,7 @@
         setToast(`已新增 ${created} 条 · 完成 ${completed} 条`, 'check');
       },
       saveEvent: (id, patch) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
+      rescheduleEvent: (id, time) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, t: time } : e)); setDetail((d) => d && d.id === id ? { ...d, t: time } : d); setToast('已改到 ' + time, 'check'); },
       cancelEvent: (id) => mutate(selectedDay, (arr) => arr.map((e) =>
         e.id === id ? { ...e, status: 'cancelled' } : e)),
       deleteEvent: (id) => {
@@ -296,7 +297,7 @@
         <VoiceOverlay t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
         <DetailSheet t={t} ev={detail} onClose={() => setDetail(null)}
           onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit}
-          onStar={app.toggleImportant} onUrgent={app.toggleUrgent} onMatrixInfo={app.showMatrix} onPostpone={(id) => { app.postpone(id); setDetail(null); }} />
+          onStar={app.toggleImportant} onUrgent={app.toggleUrgent} onMatrixInfo={app.showMatrix} onPostpone={(id) => { app.postpone(id); setDetail(null); }} app={app} />
         <EditSheet t={t} ev={editEv} onClose={() => setEditEv(null)} onSave={app.saveEvent} app={app} />
         <Sheet t={t} open={mtOpen} onClose={() => setMtOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
