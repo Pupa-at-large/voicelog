@@ -230,7 +230,7 @@
         if (!ev) return;
         mutate(selectedDay, (arr) => arr.filter((e) => e.id !== id));
         setEvents((prev) => ({ ...prev, [nextKey]: [...(prev[nextKey] || []).map((e) => ({ ...e })), { ...ev }] }));
-        setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
+        setToast('已顺延到下一天 · 开始了就好', 'redo');
       },
       rolloverUnfinished: () => {
         const toKey = window.VL.todayKey();
@@ -331,7 +331,7 @@
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>
             <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>回收站</h3>
           </div>
-          <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: t.muted }}>删除的日程都先放这里，随时可以找回。</p>
+          <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: t.muted }}>随时可以找回。</p>
           {trash.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
               {trash.map((it) => { const wk = window.VL.data.week.find((x) => x.key === it.day); return (

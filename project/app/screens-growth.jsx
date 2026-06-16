@@ -54,7 +54,7 @@
             <div style={{ flex: 1, fontSize: 14, fontWeight: 650, color: t.text }}>你的数据保持私密</div>
             <button onClick={() => setOpen((o) => !o)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText, padding: 0 }}>{open ? '显示更少' : '为什么'}</button>
           </div>
-          {open && <p style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.65, color: t.muted }}>语迹只在你的设备上分析时间模式（像识别习惯，而非记录具体内容）——不上传、不留存、不用于训练。等级与下面这份「了解」都由本机计算，随时可导出带走。</p>}
+          {open && <p style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.65, color: t.muted }}>只在你的设备上分析时间模式，不上传、不留存、不用于训练。结果本机计算，随时可导出。</p>}
         </div>
         <div style={{ padding: 16, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>

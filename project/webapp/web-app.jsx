@@ -277,7 +277,7 @@
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', maxWidth: 720 }}>
         <h1 style={{ margin: '0 0 22px', fontSize: 26, fontWeight: 760, color: t.text }}>设置</h1>
-        <div style={{ display: 'flex', gap: 13, padding: 16, borderRadius: t.radius, marginBottom: 20, background: t.accentSoft }}><Icon name="shield" size={22} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} /><div><div style={{ fontSize: 15, fontWeight: 700, color: t.accentText }}>本地优先</div><div style={{ fontSize: 13, color: t.accentText, opacity: 0.85, marginTop: 3, lineHeight: 1.5 }}>所有日程与复盘都存在你自己的机器上，核心功能离线即可运行，不依赖任何云服务。</div></div></div>
+        <div style={{ display: 'flex', gap: 13, padding: 16, borderRadius: t.radius, marginBottom: 20, background: t.accentSoft }}><Icon name="shield" size={22} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} /><div><div style={{ fontSize: 15, fontWeight: 700, color: t.accentText }}>本地优先</div><div style={{ fontSize: 13, color: t.accentText, opacity: 0.85, marginTop: 3, lineHeight: 1.5 }}>所有数据都存在你自己的机器上，离线可用，不依赖云服务。</div></div></div>
 
         <SectionLabel t={t}>外观 · 视觉方向</SectionLabel>
         <Card t={t} style={{ marginBottom: 16 }}>
@@ -344,7 +344,7 @@
               <span style={{ fontSize: 13.5, fontWeight: 700, color: t.text }}>{ev.progress.done} / {ev.progress.total}</span>
             </div>
             <div style={{ display: 'flex', gap: 4 }}>{Array.from({ length: ev.progress.total }).map((_, i) => <div key={i} style={{ flex: 1, height: 7, borderRadius: 999, background: i < ev.progress.done ? catColor(t, ev.cat) : t.chartTrack, transition: 'background .4s' }} />)}</div>
-            <div style={{ fontSize: 12, color: t.muted, lineHeight: 1.55, marginTop: 10 }}>长期任务不必一次做完。<b style={{ color: t.text }}>开始了就好</b>，每推进一步都算数。</div>
+            <div style={{ fontSize: 12, color: t.muted, lineHeight: 1.55, marginTop: 10 }}>长期任务不必一次做完，<b style={{ color: t.text }}>每一步都算数</b>。</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <Btn t={t} kind="primary" icon="plus" onClick={() => app.advanceProgress(ev.id)} style={{ flex: 1, opacity: ev.progress.done >= ev.progress.total ? 0.5 : 1, pointerEvents: ev.progress.done >= ev.progress.total ? 'none' : 'auto' }}>推进一步</Btn>
               <Btn t={t} kind="ghost" icon="redo" onClick={() => app.postpone(ev.id)}>延期一天</Btn>
@@ -447,7 +447,7 @@
       const late = selDay === '06-16' && ev.t < '16:00';
       let msg;
       if (ev.goalDone) msg = '目标达成 · 全部进度完成！';
-      else if (late) msg = '晚一点也算数 · late better than never';
+      else if (late) msg = '晚一点也算数';
       else { const pool = ['完成！做了就是胜利', '又往前推了一点，挺好', '搞定一件，给自己点个赞', '保持这个节奏']; msg = pool[Math.floor(Math.random() * pool.length)]; }
       flashCelebrate({ msg, streak: doneToday > 0 ? doneToday : 1, goal: !!ev.goalDone });
     };
@@ -497,7 +497,7 @@
         mutate(selDay, (arr) => arr.filter((e) => e.id !== id));
         setEvents((prev) => ({ ...prev, [nextKey]: [...(prev[nextKey] || []).map((e) => ({ ...e })), { ...ev }] }));
         setDetail(null);
-        setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
+        setToast('已顺延到下一天 · 开始了就好', 'redo');
       },
       rolloverUnfinished: () => {
         const toKey = window.VL.todayKey();
@@ -631,7 +631,7 @@
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="sparkle" size={20} color={t.accentText} /></div>
                   <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>待执行清单 · 找到 {batch.length} 条</h3>
                 </div>
-                <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.6, color: t.muted }}>一段话里识别出多条意图。核对一下，去掉不要的，确认后一起执行——不会替你静默操作。</p>
+                <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.6, color: t.muted }}>从一段话里识别出多条意图，核对后一起执行。</p>
                 <window.BatchReviewList t={t} actions={batch} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} />
                 <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                   <Btn t={t} kind="ghost" onClick={() => setBatch(null)} style={{ flex: 1 }}>取消</Btn>
@@ -656,7 +656,7 @@
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>
             <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>回收站</h3>
           </div>
-          <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: t.muted }}>删除的日程都先放这里，随时可以找回。</p>
+          <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: t.muted }}>随时可以找回。</p>
           {trash.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
               {trash.map((it) => { const wk = window.VL.data.week.find((x) => x.key === it.day); return (

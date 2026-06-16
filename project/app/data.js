@@ -266,7 +266,7 @@
     const total = Object.values(out).reduce((s, q) => s + q.hours, 0);
     return { byKey: out, total };
   };
-  window.VL.MATRIX_NOTE = '把事情按「重要」和「紧急」两个维度分四格：重要又紧急的立即做；重要但不紧急的，才是真正带来成长的区，值得计划着多投入；紧急但不重要的尽量快办或交出去；既不重要也不紧急的，少做一点。语迹不替你判定——你来标，它帮你看清。';
+  window.VL.MATRIX_NOTE = '按「重要 × 紧急」分四格：重要又紧急→马上做；重要不紧急→成长区，值得多投入；紧急不重要→快办或交出去；都不是→少做。你来标，它帮你看清。';
   // 每日容量（小时）：单日排程超过它时温和提醒「今天排太满了」（借 Sunsama 的"过度安排"提示）
   window.VL.DAILY_CAPACITY_H = 8;
   // 某天已排（未取消）的小时数
@@ -369,7 +369,7 @@
     const parts = [];
     if (stats.done) parts.push(`本周已完成 ${stats.done} 项`);
     if (L.next) parts.push(`再积累 ${L.remain} XP 就能升到 LV.${L.next.lv}`);
-    parts.push('late better than never——你一直在向上');
+    parts.push('你一直在向上');
     return parts.join('，') + '。';
   }
 

@@ -44,7 +44,7 @@
             </div>
             <div style={{ display: 'flex', gap: 9, marginTop: 20, padding: '10px 0 0', borderTop: `1px solid ${t.border}` }}>
               <Icon name="shield" size={15} color={t.faint} style={{ flexShrink: 0, marginTop: 1 }} />
-              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: t.faint }}>数据本地存储，随时导出带走。等级与 XP 只升不降——每一次记录都算数。</p>
+              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: t.faint }}>数据本地存储，随时可导出。等级与 XP 只升不降。</p>
             </div>
           </div>
 

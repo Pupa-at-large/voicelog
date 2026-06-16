@@ -256,7 +256,7 @@
         <Icon name="clock" size={16} color={'oklch(0.6 0.13 65)'} style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>这天已排 {fmtH(hours)} 小时</div>
-          <div style={{ fontSize: 12.5, color: t.muted, marginTop: 2, lineHeight: 1.5 }}>超出你的容量（约 {cap} 小时）。排得太满容易把整块时间切碎——要不要把不紧要的挪到别天？你最懂自己的节奏。</div>
+          <div style={{ fontSize: 12.5, color: t.muted, marginTop: 2, lineHeight: 1.5 }}>超出你的容量（约 {cap} 小时）。要不要把不紧要的挪到别天？</div>
         </div>
         {onDismiss && <button onClick={onDismiss} title="知道了" style={{ width: 24, height: 24, flexShrink: 0, borderRadius: 999, border: 'none', cursor: 'pointer', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}><Icon name="x" size={14} color={t.faint} /></button>}
       </div>
@@ -270,7 +270,7 @@
         <Icon name="redo" size={16} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13.5, fontWeight: 650, color: t.accentText }}>昨天有 {count} 件没做完</div>
-          <div style={{ fontSize: 12.5, color: t.accentText, opacity: 0.85, marginTop: 2, lineHeight: 1.5 }}>挪到今天继续吗？开始了就好，late better than never。</div>
+          <div style={{ fontSize: 12.5, color: t.accentText, opacity: 0.85, marginTop: 2, lineHeight: 1.5 }}>挪到今天继续吗？开始了就好。</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
             <button onClick={onMove} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700, background: t.accent, color: t.onAccent }}>全部挪到今天</button>
             <button onClick={onDismiss} style={{ height: 30, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: 'none', background: 'transparent', color: t.accentText }}>先不用</button>
@@ -386,7 +386,7 @@
         </div>
         <div style={{ display: 'flex', gap: 9, marginTop: 12, padding: 12, borderRadius: t.radius - 2, background: `color-mix(in oklch, ${Q.plan.color} 12%, transparent)`, border: `1px solid color-mix(in oklch, ${Q.plan.color} 28%, transparent)` }}>
           <Icon name="sparkle" size={16} color={Q.plan.color} style={{ flexShrink: 0, marginTop: 1 }} />
-          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>「重要不紧急」是<b>成长区</b>，本期占 <b>{planPct}%</b>。{planPct >= 30 ? '不错——你在为长期投资时间。' : '多往这格投一点，复利在这里发生。'}</div>
+          <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>「重要不紧急」是<b>成长区</b>，本期占 <b>{planPct}%</b>。{planPct >= 30 ? '保持得不错。' : '可以多投一点。'}</div>
         </div>
       </div>
     );

@@ -261,7 +261,7 @@
               </div>
               <div style={{ display: 'flex', gap: 7, padding: '8px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 12 }}>
                 <Icon name="mic" size={14} color={t.faint} style={{ marginTop: 1, flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.5 }}>从一段话里识别出多条意图，核对后一起执行——不会替你静默操作。</span>
+                <span style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.5 }}>从一段话里识别出多条意图，核对后一起执行。</span>
               </div>
               <div style={{ maxHeight: 340, overflowY: 'auto' }}>
                 <window.BatchReviewList t={t} actions={batchActions} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} />
@@ -666,7 +666,6 @@
                   <div style={{ width: 72, height: 72, borderRadius: 24, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="calendar" size={32} color={t.faint} sw={1.6} /></div>
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 650, color: t.text }}>这天还很空</div>
-                    <div style={{ fontSize: 13.5, color: t.muted, marginTop: 4, lineHeight: 1.5 }}>说一句话，就能建个日程</div>
                   </div>
                   <Btn t={t} kind="primary" icon="mic" onClick={app.openVoice}>说一句试试</Btn>
                 </div>

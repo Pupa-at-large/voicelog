@@ -176,7 +176,7 @@
             <Icon name="shield" size={22} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: t.accentText }}>本地优先</div>
-              <div style={{ fontSize: 13, color: t.accentText, opacity: 0.85, marginTop: 3, lineHeight: 1.5 }}>所有日程与复盘都存在你自己的机器上，核心功能离线即可运行，不依赖任何云服务。</div>
+              <div style={{ fontSize: 13, color: t.accentText, opacity: 0.85, marginTop: 3, lineHeight: 1.5 }}>所有数据都存在你自己的机器上，离线可用，不依赖云服务。</div>
             </div>
           </div>
 
