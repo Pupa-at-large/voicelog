@@ -28,6 +28,7 @@
     flame: 'M12 3c1 3-2 4-2 7a2 2 0 0 0 4 0c2 2 3 3 3 6a5 5 0 0 1-10 0c0-3 2-4 2-6 1 1 2 1 3-1Z',
     sun: 'M12 5V3m0 18v-2m7-7h2M3 12h2m12.5-5.5 1.5-1.5M5 19l1.5-1.5m11 0L19 19M5 5l1.5 1.5M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z',
     bolt: 'M13 3 5 13h6l-1 8 8-10h-6l1-8Z',
+    info: 'M12 11v5m0-9h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
     star: 'M12 3.6l2.55 5.17 5.7.83-4.13 4.02.98 5.68L12 16.6l-5.1 2.7.98-5.68L3.75 9.6l5.7-.83L12 3.6Z',
     minus: 'M5 12h14',
     list: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01',
@@ -44,10 +45,10 @@
     flagFill: 'M6 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 .8 1.6L15.25 7.5 17.8 10.4A1 1 0 0 1 17 12H7v8a1 1 0 0 1-1 1Z',
   };
 
-  function Icon({ name, size = 22, color = 'currentColor', sw = 1.9, fill = false, style }) {
+  function Icon({ name, size = 22, color = 'currentColor', sw = 1.9, fill = false, style, onClick }) {
     const d = (fill ? FILL[name] : P[name]) || P[name];
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" style={{ display: 'block', flexShrink: 0, ...style }}
+      <svg width={size} height={size} viewBox="0 0 24 24" onClick={onClick} style={{ display: 'block', flexShrink: 0, ...style }}
         fill={fill ? color : 'none'} stroke={fill ? 'none' : color}
         strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
         <path d={d} />

@@ -299,11 +299,10 @@
                 const conflict = app ? window.VL.overlaps(app.events[draft.dateKey] || [], { id: '__new', t: draft.time, dur: draft.dur }) : [];
                 if (!conflict.length) return null;
                 return (
-                  <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
-                    <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
-                    <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>
-                      与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span>
-                    </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
+                    <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0 }} />
+                    <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠</div>
+                    <Icon name="info" size={14} color={t.faint} onClick={() => app && app.showMultitask()} style={{ flexShrink: 0, cursor: 'pointer' }} />
                   </div>
                 );
               })()}
@@ -559,9 +558,10 @@
           const conflict = app ? window.VL.overlaps(app.events[app.selectedDay] || [], { id: ev.id, t: time, dur: ev.dur }) : [];
           if (!conflict.length) return null;
           return (
-            <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 14, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
-              <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
-              <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 14, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
+              <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0 }} />
+              <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.55, color: t.text }}>与「{conflict.map((c) => c.title).join('、')}」时间重叠</div>
+              <Icon name="info" size={14} color={t.faint} onClick={() => app && app.showMultitask()} style={{ flexShrink: 0, cursor: 'pointer' }} />
             </div>
           );
         })()}
