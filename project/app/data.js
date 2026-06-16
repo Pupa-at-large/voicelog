@@ -242,6 +242,47 @@
   };
   window.VL.MULTITASK_NOTE = '一心多用时，前额叶要在任务间反复切换，认知负担更重、出错更多，长期还可能削弱专注力。能错开就错开，让需要专注的事各自独占一段时间。';
 
+  // ── 建议式改期：找空档（artifact 不会自动重排，只列选项给用户挑）──
+  // 在 SLOT_START–SLOT_END 内，为 ev 找最多 3 个「不与他人重叠」的空档，优先离原时间近的。
+  // 纯函数：返回 [{ time:'HH:MM', end:'HH:MM', label }]。每个空档取离原时间最近的可行起点，互不重复。
+  window.VL.SLOT_START = 7 * 60;   // 07:00
+  window.VL.SLOT_END = 22 * 60;    // 22:00
+  window.VL.suggestSlots = function (dayEvents, ev) {
+    const W0 = window.VL.SLOT_START, W1 = window.VL.SLOT_END;
+    const dur = (ev && ev.dur) || 60;
+    if (dur <= 0 || dur > W1 - W0) return [];
+    const orig = toMin(ev.t);
+    // 占用区间（排除自身与已取消），裁剪到 [W0,W1] 后合并
+    const busy = (dayEvents || [])
+      .filter((x) => x.id !== ev.id && x.status !== 'cancelled')
+      .map((x) => { const s = toMin(x.t); return [Math.max(W0, s), Math.min(W1, s + (x.dur || 60))]; })
+      .filter(([s, e]) => e > s)
+      .sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    busy.forEach(([s, e]) => {
+      const last = merged[merged.length - 1];
+      if (last && s <= last[1]) last[1] = Math.max(last[1], e);
+      else merged.push([s, e]);
+    });
+    // 计算空档（容得下 dur 的才算）
+    const gaps = []; let cursor = W0;
+    merged.forEach(([s, e]) => { if (s - cursor >= dur) gaps.push([cursor, s]); cursor = Math.max(cursor, e); });
+    if (W1 - cursor >= dur) gaps.push([cursor, W1]);
+    // 每个空档取离原时间最近的起点；跳过等于当前时间的（无意义）
+    const fmt = (m) => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    const starts = gaps
+      .map(([s, e]) => Math.max(s, Math.min(orig, e - dur)))
+      .filter((start) => start !== orig)
+      .sort((a, b) => Math.abs(a - orig) - Math.abs(b - orig))
+      .slice(0, 3);
+    return starts.map((start) => {
+      const diff = start - orig, abs = Math.abs(diff);
+      const h = Math.floor(abs / 60), m = abs % 60;
+      const span = [h ? h + ' 小时' : '', m ? m + ' 分' : ''].filter(Boolean).join(' ');
+      return { time: fmt(start), end: fmt(start + dur), label: diff < 0 ? `早 ${span}` : `晚 ${span}` };
+    });
+  };
+
   // ── 重要 × 紧急 四象限（艾森豪威尔矩阵）──
   // important（⭐已有）× urgent（🚩新增）→ 四格。Q2「重要不紧急」是成长区，呼应产品灵魂。
   const QUADRANTS = {

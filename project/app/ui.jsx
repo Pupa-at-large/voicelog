@@ -392,6 +392,54 @@
     );
   }
 
+  // 建议式改期 · 空档选项：把 suggestSlots 的结果列成可点选项（绝不自动改，用户点了才改）
+  function SlotSuggestions({ t, slots, onPick, style }) {
+    if (!slots || !slots.length) {
+      return <div style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.55, ...style }}>07:00–22:00 内暂时找不到完整空档。换一天，或把时长缩短一点试试。</div>;
+    }
+    return (
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, ...style }}>
+        {slots.map((s, i) => (
+          <button key={i} onClick={() => onPick(s)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${t.border}`, background: t.surface, color: t.text }}>
+            <Icon name="clock" size={14} color={t.accentText} />
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{s.time} – {s.end}</span>
+            {s.label && <span style={{ fontSize: 12, color: t.faint, fontWeight: 500 }}>· {s.label}</span>}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  // 建议式改期入口：当 ev 与他人重叠、或所在日超容量时温和提示「换个时间」，点开列空档让用户挑。
+  // 遵守设计原则①④：用户做主、不替他重排、不说教。onPick(slot) 由调用方决定如何应用（详情即时改 / 编辑回填）。
+  function RescheduleCard({ t, dayEvents, ev, onPick, style }) {
+    const [open, setOpen] = React.useState(false);
+    const list = dayEvents || [];
+    if (!ev || ev.status === 'cancelled') return null;
+    const conflict = window.VL.overlaps(list, ev);
+    const load = window.VL.dayLoad(list);
+    const over = load > window.VL.DAILY_CAPACITY_H;
+    if (!conflict.length && !over) return null;
+    const slots = window.VL.suggestSlots(list, ev);
+    const amber = 'oklch(0.72 0.15 70)';
+    const reason = conflict.length
+      ? `与「${conflict.map((c) => c.title).join('、')}」时间重叠`
+      : `这天已排 ${fmtH(load)} 小时，有点满`;
+    return (
+      <div style={{ padding: 12, borderRadius: t.radius - 2, background: `color-mix(in oklch, ${amber} 12%, transparent)`, border: `1px solid color-mix(in oklch, ${amber} 32%, transparent)`, ...style }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9 }}>
+          <Icon name={conflict.length ? 'bolt' : 'clock'} size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>{reason}</div>
+            <div style={{ fontSize: 12.5, color: t.muted, marginTop: 2, lineHeight: 1.5 }}>要不要换个不冲突的时间？你来挑，语迹不替你决定。</div>
+          </div>
+          {!open && <button onClick={() => setOpen(true)} style={{ flexShrink: 0, height: 30, padding: '0 13px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700, background: t.accent, color: t.onAccent }}>换个时间</button>}
+        </div>
+        {open && <div style={{ marginTop: 10 }}><SlotSuggestions t={t} slots={slots} onPick={onPick} /></div>}
+      </div>
+    );
+  }
+
   function SectionLabel({ t, children, style }) {
     return <div style={{
       fontSize: 12.5, fontWeight: 650, color: t.faint, letterSpacing: 1.5,
@@ -401,7 +449,7 @@
 
   Object.assign(window, {
     Card, Btn, Segmented, Chip, Dot, Ring, StackBar, AllocRow, Donut, Sheet, SectionLabel, FocusCard, CapacityBanner, RolloverBanner, BatchReviewList,
-    QuadrantChip, MatrixView, QuadrantBar,
+    QuadrantChip, MatrixView, QuadrantBar, SlotSuggestions, RescheduleCard,
     catColor, catLabel, fmtH,
   });
 })();
