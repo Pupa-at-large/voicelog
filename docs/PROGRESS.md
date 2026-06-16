@@ -44,6 +44,13 @@
 - （上次）M9 重要紧急四象限 + PRD v1.1
 - （本次）M10 建议式改期 suggestSlots + RescheduleCard（移动端+Web）
 
+## App 化（原生 App · 自主执行中）
+> 用户决定：做能上架 iOS/安卓的真 App（自用优先）。授权自主推进，回来检查。
+- **M1 选型调研** ✅：`docs/handoff/tech-selection-research.md`——ASR(中英夹杂：火山/讯飞)、LLM(DeepSeek/Qwen，附 2026 价格)、技术栈(Expo RN)、同步(PowerSync/WatermelonDB；Realm 已停服)、微信/手机号登录与备案资质、月成本估算。给了明确推荐。
+- **M2 Expo 骨架** ✅（`native/`，不破坏网页原型）：Expo SDK 56 + TS 工程；OKLCH→hex 主题移植（`src/theme/color.ts` 纯函数）；统一 Store（AsyncStorage）；日程主页（主题切换/周条/清单/一键完成/容量提醒/建议式改期）。验证：`npx tsc --noEmit` 通过；OKLCH 转换已核对；**未真机运行**（环境无设备）。
+- 待办：M3 核心功能迁移 + SQLite｜M4 录音→ASR→LLM｜M5 登录+同步｜M6 EAS 出包上架（需账号/备案/软著）。
+- **需用户提供**（攒着等回来）：Apple Developer($99/年)、Google Play($25)、各家 API Key、备案/软著推进、微信开放平台企业资质。
+
 ## 规划文档（未执行 · 待对齐）
 - **账号 + 多端同步 + 数据存储**：新增 `docs/handoff/sync-and-identity-design.md`（统一 Store/IndexedDB、本地优先同步层 LWW+tombstone、端到端加密、微信/手机号登录、真实 ASR 缺口、落地路线 P0–P2）。PRD 升至 v1.2，新增「八、账号与多端同步」并标注语音识别现状（原型仅 Web Speech 兜底、国内回退示例）。**仅设计，未写功能代码**。
 
