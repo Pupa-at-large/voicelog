@@ -22,7 +22,7 @@ node native/demo/qwen-parse.mjs --mock
 | 变量 | 必填 | 默认 | 说明 |
 |---|---|---|---|
 | `DASHSCOPE_API_KEY` | 是 | — | 阿里云百炼(DashScope) API Key |
-| `QWEN_MODEL` | 否 | `qwen-plus` | 可换 `qwen-turbo` / `qwen-max` / `qwen3-max` … |
+| `QWEN_MODEL` | 否 | `qwen3.7-plus` | 想快用 `qwen3.6-flash-2026-04-16`，想最强用 `qwen3.7-max-2026-06-08` |
 | `DASHSCOPE_BASE` | 否 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | OpenAI 兼容端点 |
 
 ## 设计要点
@@ -32,11 +32,16 @@ node native/demo/qwen-parse.mjs --mock
 - 一条 few-shot 示例稳定输出格式；`response_format: json_object` 强制 JSON。
 - 模型只吐 `MM-DD` 日期键，中文日期 / emoji / 象限提示由脚本统一渲染，避免口径漂移。
 
-## 已知前置：账号额度
+## 模型选择 & 一个坑
 
-若报 `AllocationQuota.FreeTierOnly`（free tier exhausted），是**账号计费**问题、
-非脚本问题：该 Key 处于「仅免费额度」模式且免费额度已用尽。到百炼控制台关闭
-「仅免费额度」/ 开通按量付费即可直接跑通；脚本会识别此错误并打印修复提示。
+百炼的**老别名**（`qwen-plus` / `qwen-turbo` / `qwen-max` / `qwen3-max` 等）现已
+**无免费额度**，直接调会报 `AllocationQuota.FreeTierOnly`。有免费额度的是**新一代**
+模型代码：`qwen3.7-plus`、`qwen3.7-max-2026-06-08`、`qwen3.6-flash-2026-04-16`、
+`deepseek-v4-flash`、`glm-5.1` 等（控制台「免费额度」页可查每个模型代码与余量）。
+脚本默认已用 `qwen3.7-plus`；若仍遇到 `FreeTierOnly`，脚本会打印修复提示。
+
+速度参考（含隐藏的 reasoning tokens）：`qwen3.6-flash` ≈ 6–7s，`qwen3.7-plus`/`max`
+≈ 24–27s。语音场景追求即时反馈时优先 flash。
 
 > 注：国际站端点 `dashscope-intl.aliyuncs.com` 在本远程环境的网络出口白名单之外，
 > 仅国内站 `dashscope.aliyuncs.com` 可达。

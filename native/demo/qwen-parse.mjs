@@ -11,11 +11,13 @@
  * 用法:
  *   DASHSCOPE_API_KEY=sk-xxx node native/demo/qwen-parse.mjs "明天下午三点跟产品开个评审，很重要"
  *   DASHSCOPE_API_KEY=sk-xxx node native/demo/qwen-parse.mjs        # 用内置示例
- *   QWEN_MODEL=qwen-turbo DASHSCOPE_API_KEY=sk-xxx node native/demo/qwen-parse.mjs "..."
+ *   QWEN_MODEL=qwen3.6-flash-2026-04-16 DASHSCOPE_API_KEY=sk-xxx node native/demo/qwen-parse.mjs "..."
  *
  * 环境变量:
  *   DASHSCOPE_API_KEY  必填，阿里云百炼(DashScope) API Key
- *   QWEN_MODEL         可选，默认 qwen-plus（可换 qwen-turbo / qwen-max / qwen3-max …）
+ *   QWEN_MODEL         可选，默认 qwen3.7-plus（精度高、略慢）；
+ *                      想快用 qwen3.6-flash-2026-04-16，想最强用 qwen3.7-max-2026-06-08
+ *                      （注意：qwen-plus/qwen-turbo/qwen-max 等老别名已无免费额度）
  *   DASHSCOPE_BASE     可选，默认 https://dashscope.aliyuncs.com/compatible-mode/v1
  */
 
@@ -143,7 +145,7 @@ function renderList(actions) {
 // ── 主流程 ─────────────────────────────────────────────────────────────
 async function main() {
   const apiKey = process.env.DASHSCOPE_API_KEY;
-  const model = process.env.QWEN_MODEL || 'qwen-plus';
+  const model = process.env.QWEN_MODEL || 'qwen3.7-plus';
   const base = process.env.DASHSCOPE_BASE || 'https://dashscope.aliyuncs.com/compatible-mode/v1';
 
   const text = process.argv.slice(2).filter((a) => !a.startsWith('--')).join(' ').trim()
