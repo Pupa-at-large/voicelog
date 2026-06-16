@@ -435,4 +435,21 @@
   // 成长色：暖金（跨主题统一，呼应 PRD「等级=暖金」）
   window.VL.GOLD = 'oklch(0.78 0.115 82)';
   window.VL.GOLD_SOFT = 'oklch(0.92 0.05 85)';
+
+  // ── 后端代理地址（口语 → 千问 真·AI 解析，见 server/）。──
+  // 来源优先级：URL 的 ?server=... （写入并持久化）→ localStorage。没配置则为空，
+  // 语音解析自动回退到本地规则引擎（离线可用、零回归）。
+  (function () {
+    let url = '';
+    try {
+      const q = new URLSearchParams(location.search).get('server');
+      if (q && q.trim()) { url = q.trim(); try { localStorage.setItem('voicelog:serverUrl', url); } catch (e) {} }
+      else { try { url = localStorage.getItem('voicelog:serverUrl') || ''; } catch (e) { url = ''; } }
+    } catch (e) { url = ''; }
+    window.VL.serverUrl = url;
+  })();
+  window.VL.setServerUrl = function (u) {
+    u = (u || '').trim(); window.VL.serverUrl = u;
+    try { u ? localStorage.setItem('voicelog:serverUrl', u) : localStorage.removeItem('voicelog:serverUrl'); } catch (e) {}
+  };
 })();

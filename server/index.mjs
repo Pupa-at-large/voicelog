@@ -36,6 +36,7 @@ async function parseUtterance(text) {
       model: QWEN_MODEL,
       messages: [{ role: 'system', content: SYSTEM }, { role: 'user', content: text }],
       response_format: { type: 'json_object' },
+      enable_thinking: false, // qwen3 系列默认会"思考"，短抽取无收益却慢 5 倍、贵几百倍——关掉
       temperature: 0.2,
     }),
   });

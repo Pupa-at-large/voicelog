@@ -198,4 +198,49 @@
   }
 
   window.VL.parseBatch = parseBatch;
+
+  // ── 远程 AI 解析（接 server/ 的 /parse → 通义千问）──
+  // 把千问返回的 action 映射成内部草稿（字段与 parse() 输出同构），
+  // 让单条预览 / 编辑 / 批量「待执行清单」复用现有 UI；返回与 parseBatch 同构的数组。
+  const SERVER_CATS = ['meet', 'deep', 'life', 'learn', 'misc'];
+  function mapServerAction(a) {
+    if (!a || !a.title) return null;
+    const date = String(a.date || '').trim();
+    const today = (window.VL.todayKey && window.VL.todayKey()) || '06-16';
+    const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.slice(5) : today;
+    const order = ((window.VL.data && window.VL.data.week) || []).map((w) => w.key);
+    const di = order.indexOf(dateKey), ti = order.indexOf(today);
+    let prefix = null;
+    if (di >= 0 && ti >= 0) { const diff = di - ti; prefix = diff === 0 ? '今天' : diff === 1 ? '明天' : diff === 2 ? '后天' : null; }
+    const time = /^\d{1,2}:\d{2}$/.test(a.time || '') ? a.time : '09:00';
+    const draft = {
+      title: String(a.title).trim(),
+      dateKey, dateText: dateTextOf(dateKey, prefix), time,
+      loc: a.loc || null, reminder: Number(a.reminder) || 0,
+      cat: SERVER_CATS.indexOf(a.cat) >= 0 ? a.cat : 'misc',
+      dur: Number(a.dur) || 60, urgent: !!a.urgent, important: !!a.important,
+    };
+    if (a.kind === 'complete') return { kind: 'complete', title: draft.title, draft: { ...draft, status: 'done' }, seg: draft.title };
+    return { kind: 'create', title: draft.title, draft, seg: draft.title };
+  }
+  window.VL.mapServerAction = mapServerAction;
+
+  async function parseRemote(text) {
+    const base = (window.VL.serverUrl || '').replace(/\/+$/, '');
+    if (!base) throw new Error('未配置后端地址');
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 15000);
+    try {
+      const r = await fetch(base + '/parse', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text }), signal: ctrl.signal,
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      const acts = (data.actions || []).map(mapServerAction).filter(Boolean);
+      if (!acts.length) throw new Error('空结果');
+      return acts;
+    } finally { clearTimeout(to); }
+  }
+  window.VL.parseRemote = parseRemote;
 })();

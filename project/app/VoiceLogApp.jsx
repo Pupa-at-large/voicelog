@@ -105,7 +105,7 @@
     const [mtOpen, setMtOpen] = useState(false);
     const [reminderEv, setReminderEv] = useState(null);
     const [toast, setToastState] = useState(null);
-    const [aiEngine, setAiEngine] = useState(false);
+    const [aiEngine, setAiEngine] = useState(!!(window.VL && window.VL.serverUrl));
     const [notify, setNotify] = useState(true);
     const [exportPeriod, setExportPeriod] = useState('day');
     const toastTimer = useRef(0);

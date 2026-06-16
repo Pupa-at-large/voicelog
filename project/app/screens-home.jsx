@@ -72,8 +72,11 @@
       setPhase('listening'); setTranscript(''); setDraft(null);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
 
-      const startParse = (text, curated) => {
-        if (ctx.parsing) return;
+      const showActs = (acts) => {
+        if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
+        else { setBatchActions(acts); setBatchSel(acts.map(() => true)); setP('batch'); }
+      };
+      const ruleParse = (text, curated) => {
         // 多意图：一段话里多条 → 走「待执行清单」
         if (!curated && window.VL.parseBatch) { const acts = window.VL.parseBatch(text); if (acts.length > 1) { ctx.parsing = true; setBatchActions(acts); setBatchSel(acts.map(() => true)); setP('batch'); return; } }
         ctx.parsing = true;
@@ -83,6 +86,19 @@
           if (!d || !d.title) d = { ...V.parsed };
           setDraft(d); setP('preview');
         }, 850);
+      };
+      const startParse = async (text, curated) => {
+        if (ctx.parsing) return;
+        // 开启「AI 解析」且配置了后端 → 先走千问真·AI 解析；失败/未配置自动回退本地规则引擎
+        if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
+          ctx.parsing = true; setP('parsing');
+          try {
+            const acts = await window.VL.parseRemote(text);
+            if (ctx.phase !== 'parsing') return; // 解析期间已关闭/切换
+            showActs(acts); return;
+          } catch (e) { ctx.parsing = false; /* 回退规则引擎 */ }
+        }
+        ruleParse(text, curated);
       };
       const fallbackDemo = () => {
         if (ctx.fellBack) return; ctx.fellBack = true; ctx.real = false;

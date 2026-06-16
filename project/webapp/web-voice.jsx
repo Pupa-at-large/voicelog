@@ -59,12 +59,26 @@
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
       setPhase('listening'); setTranscript(''); setDraft(null);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
-      const startParse = (text, curated) => {
-        if (ctx.parsing) return;
+      const showActs = (acts) => {
+        if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
+        else if (onBatch) { ctx.parsing = true; onBatch(acts); }
+        else { setDraft(acts[0].draft); setP('preview'); }
+      };
+      const ruleParse = (text, curated) => {
         // 多意图：一段话里有多条 → 走「待执行清单」，不再单条预览
         if (!curated && onBatch && window.VL.parseBatch) { const acts = window.VL.parseBatch(text); if (acts.length > 1) { ctx.parsing = true; onBatch(acts); return; } }
         ctx.parsing = true; setP('parsing');
         ctx.t1 = setTimeout(() => { let d = curated || (window.VL.parse ? window.VL.parse(text) : { ...V.parsed }); if (!d || !d.title) d = { ...V.parsed }; setDraft(d); setP('preview'); }, 850);
+      };
+      const startParse = async (text, curated) => {
+        if (ctx.parsing) return;
+        // 开启「AI 解析」且配置了后端 → 先走千问真·AI 解析；失败/未配置自动回退规则引擎
+        if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
+          ctx.parsing = true; setP('parsing');
+          try { const acts = await window.VL.parseRemote(text); if (ctx.phase !== 'parsing') return; showActs(acts); return; }
+          catch (e) { ctx.parsing = false; }
+        }
+        ruleParse(text, curated);
       };
       const fallback = () => {
         if (ctx.fellBack) return; ctx.fellBack = true; setMode('demo'); setTranscript('');

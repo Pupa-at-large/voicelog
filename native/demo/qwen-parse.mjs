@@ -51,6 +51,7 @@ const body = {
     { role: 'user', content: utterance },
   ],
   response_format: { type: 'json_object' },
+  enable_thinking: false, // qwen3 默认"思考"，短抽取无收益却慢几倍、贵几百倍——关掉
   temperature: 0.2,
 };
 

@@ -48,7 +48,11 @@
 > 用户决定：做能上架 iOS/安卓的真 App（自用优先）。授权自主推进，回来检查。
 - **M1 选型调研** ✅：`docs/handoff/tech-selection-research.md`——ASR(中英夹杂：火山/讯飞)、LLM(DeepSeek/Qwen，附 2026 价格)、技术栈(Expo RN)、同步(PowerSync/WatermelonDB；Realm 已停服)、微信/手机号登录与备案资质、月成本估算。给了明确推荐。
 - **M2 Expo 骨架** ✅（`native/`，不破坏网页原型）：Expo SDK 56 + TS 工程；OKLCH→hex 主题移植（`src/theme/color.ts` 纯函数）；统一 Store（AsyncStorage）；日程主页（主题切换/周条/清单/一键完成/容量提醒/建议式改期）。验证：`npx tsc --noEmit` 通过；OKLCH 转换已核对；**未真机运行**（环境无设备）。
-- 待办：M3 核心功能迁移 + SQLite｜M4 录音→ASR→LLM｜M5 登录+同步｜M6 EAS 出包上架（需账号/备案/软著）。
+- **M4a 网页原型接真·AI 解析（千问）** ✅：语音识别本就是真的（浏览器 Web Speech），缺口只在"解析"——现把识别出的文字走 `server/` 的 `/parse` → 通义千问，规则引擎自动兜底（失败/未配置零回归）。
+  - 客户端：`data.js` 读 `?server=`/localStorage 存后端地址（`VL.serverUrl`/`setServerUrl`）；`parser.js` 新增 `parseRemote`+`mapServerAction`（千问 action→内部草稿，复用现有预览/批量 UI）；移动端 `screens-home.jsx` 与 Web `web-voice.jsx` 的 `startParse` 改为"先千问、失败回退规则"；配了后端自动打开「AI 解析」。
+  - 后端：`server/index.mjs` 默认模型从已失效的 `qwen-flash` 切到 `qwen3.6-flash-2026-04-16`，并加 `enable_thinking:false`（实测 15.7s/1759 tok → 3.4s/5 tok）。`server/DEPLOY.md` 给 Render/Railway 上线步骤拿 https 网址。
+  - 验证：node 逻辑断言 16/16；4 个改动 jsx 过项目 Babel；本机 server+真千问 端到端 4.2s 映射正确（含 create/complete）。**未真机/浏览器实跑**（环境无浏览器）。**待用户**：部署后端拿 https 网址，开 `m.html?server=...`。
+- 待办：M3 核心功能迁移 + SQLite｜M4b 录音→云 ASR（火山/讯飞，接 Key）｜M5 登录+同步｜M6 EAS 出包上架（需账号/备案/软著）。
 - **需用户提供**（攒着等回来）：Apple Developer($99/年)、Google Play($25)、各家 API Key、备案/软著推进、微信开放平台企业资质。
 
 ## 规划文档（未执行 · 待对齐）

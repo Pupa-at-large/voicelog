@@ -410,7 +410,7 @@
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
     const [voiceOpen, setVoiceOpen] = useState(false);
-    const [aiEngine, setAiEngine] = useState(false);
+    const [aiEngine, setAiEngine] = useState(!!(window.VL && window.VL.serverUrl));
     const [notify, setNotify] = useState(true);
     const [mtOpen, setMtOpen] = useState(false);
     const [recurOpen, setRecurOpen] = useState(false);
