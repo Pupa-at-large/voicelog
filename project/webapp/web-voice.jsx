@@ -91,9 +91,10 @@
         try {
           const rec = new SR(); ctx.rec = rec; ctx.real = true; setMode('real');
           rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = false;
-          rec.onresult = (e) => { let f = '', it = ''; for (let k = 0; k < e.results.length; k++) { const r = e.results[k]; if (r.isFinal) f += r[0].transcript; else it += r[0].transcript; } ctx.finalText = f; setTranscript(f + it); };
+          rec.onresult = (e) => { let f = '', it = ''; for (let k = 0; k < e.results.length; k++) { const r = e.results[k]; if (r.isFinal) f += r[0].transcript; else it += r[0].transcript; } ctx.finalText = f; ctx.interimText = it; setTranscript(f + it); };
           rec.onerror = () => fallback();
-          rec.onend = () => { if (ctx.phase !== 'listening') return; const x = (ctx.finalText || '').trim(); if (x) startParse(x, null); else if (!ctx.fellBack) fallback(); };
+          // 手动停止时常还没"定稿"，用 interim 兜底，避免回退到示例文本
+          rec.onend = () => { if (ctx.phase !== 'listening') return; const x = (ctx.finalText || ctx.interimText || '').trim(); if (x) startParse(x, null); else if (!ctx.fellBack) fallback(); };
           rec.start(); started = true;
         } catch (e) { started = false; }
       }

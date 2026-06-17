@@ -126,12 +126,13 @@
               const r = e.results[k];
               if (r.isFinal) final += r[0].transcript; else interim += r[0].transcript;
             }
-            ctx.finalText = final; setTranscript(final + interim);
+            ctx.finalText = final; ctx.interimText = interim; setTranscript(final + interim);
           };
           rec.onerror = () => fallbackDemo();
           rec.onend = () => {
             if (ctx.phase !== 'listening') return;
-            const txt = (ctx.finalText || '').trim();
+            // 手动停止时引擎常还没"定稿"，用 interim 兜底，避免回退到示例文本
+            const txt = (ctx.finalText || ctx.interimText || '').trim();
             if (txt) startParse(txt, null); else if (!ctx.fellBack) fallbackDemo();
           };
           rec.start(); started = true;
