@@ -84,7 +84,7 @@
     );
   }
 
-  function VoiceLogApp({ theme }) {
+  function VoiceLogApp({ theme, themeKey, onTheme }) {
     const saved = useRef(loadState(theme.key)).current;
     const [tab, setTab] = useState('home');
     const [selectedDay, setSelectedDay] = useState(window.VL.todayKey());
@@ -151,6 +151,7 @@
 
     const app = {
       events, selectedDay, aiEngine, notify, exportPeriod, accentKey,
+      themeKey, setTheme: onTheme,
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelectedDay,
       setToast,

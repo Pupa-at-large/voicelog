@@ -180,6 +180,26 @@
             </div>
           </div>
 
+          {/* 外观 · 主题（云/暖/夜）——从原顶部悬浮条搬进设置 */}
+          {app.setTheme && (
+            <React.Fragment>
+              <SectionLabel t={t}>外观 · 主题</SectionLabel>
+              <Card t={t} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {[['cloud', '云', '晴空浅色'], ['dawn', '暖', '晨曦暖色'], ['night', '夜', '夜间深色']].map(([k, name, desc]) => {
+                    const on = app.themeKey === k;
+                    return (
+                      <button key={k} onClick={() => app.setTheme(k)} style={{ flex: 1, cursor: 'pointer', font: 'inherit', padding: '12px 8px', borderRadius: t.radius - 2, border: `1.5px solid ${on ? t.accent : t.border}`, background: on ? t.accentSoft : t.surface2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 17, fontWeight: 720, color: on ? t.accentText : t.text }}>{name}</span>
+                        <span style={{ fontSize: 11, color: on ? t.accentText : t.faint }}>{desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Card>
+            </React.Fragment>
+          )}
+
           {/* 外观 · 主题色自调 */}
           <SectionLabel t={t}>外观 · 主题色</SectionLabel>
           <Card t={t} style={{ marginBottom: 16 }}>
