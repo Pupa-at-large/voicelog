@@ -103,6 +103,18 @@
     }, [open, run]);
 
     const engine = aiEngine ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' } : { label: '规则解析', color: 'oklch(0.70 0.14 70)' };
+    // 预览可编辑日期/时间（与移动端一致）
+    const draftISO = draft ? (window.VL.todayDateObj().getFullYear() + '-' + draft.dateKey) : '';
+    const setDraftDate = (iso) => {
+      if (!iso) return; const d = new Date(iso + 'T00:00:00'); if (isNaN(d.getTime())) return;
+      const key = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const diff = Math.round((d - window.VL.todayDateObj()) / 86400000);
+      const prefix = diff === 0 ? '今天' : diff === 1 ? '明天' : diff === 2 ? '后天' : diff === -1 ? '昨天' : null;
+      const dow = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+      const dateText = (prefix ? prefix + ' · ' : '') + `${d.getMonth() + 1}月${d.getDate()}日 周${dow}`;
+      setDraft((dr) => ({ ...dr, dateKey: key, dateText }));
+    };
+    const inputStyle = { font: 'inherit', fontSize: 15, fontWeight: 600, color: t.text, background: 'transparent', border: 'none', outline: 'none', padding: 0, colorScheme: t.mode === 'dark' ? 'dark' : 'light' };
     const DOW5 = [[1, '一'], [2, '二'], [3, '三'], [4, '四'], [5, '五']];
     const liveCourses = courses.filter((c) => !excluded[c._id]);
     const times = Array.from(new Set(courses.map((c) => c.time))).sort();
@@ -289,7 +301,8 @@
               })()}
               <div style={{ border: `1px solid ${t.border}`, borderRadius: t.radius, overflow: 'hidden', background: t.raised }}>
                 {field('标题', <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>, 'pencil')}
-                {field('时间', <div><div style={{ fontSize: 15.5, fontWeight: 600, color: t.text }}>{draft.time}</div><div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>{draft.dateText}</div></div>, 'clock')}
+                {field('日期', <div><input type="date" value={draftISO} onChange={(e) => setDraftDate(e.target.value)} style={inputStyle} /><div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>{draft.dateText}</div></div>, 'clock')}
+                {field('时间', <input type="time" value={draft.time} onChange={(e) => setDraft((dr) => ({ ...dr, time: e.target.value || dr.time }))} style={{ ...inputStyle, fontSize: 15.5 }} />, 'clock')}
                 {field('地点', <span style={{ fontSize: 15, color: draft.loc ? t.text : t.faint }}>{draft.loc || '未识别 · 可不填'}</span>, 'pin')}
                 {field('提醒', <div style={{ display: 'flex', gap: 6 }}>{[0, 15, 30].map((m) => <button key={m} onClick={() => setDraft({ ...draft, reminder: m })} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${draft.reminder === m ? 'transparent' : t.border}`, background: draft.reminder === m ? t.accentSoft : 'transparent', color: draft.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}</div>)}
                 {field('类别', <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{CATS.map((c) => { const on = draft.cat === c; return <button key={c} onClick={() => setDraft({ ...draft, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}</div>, null, true)}

@@ -158,6 +158,19 @@
       </div>
     );
 
+    // 预览可编辑日期/时间：把"解析对不对"交给用户当场纠正后再加入
+    const draftISO = draft ? (window.VL.todayDateObj().getFullYear() + '-' + draft.dateKey) : '';
+    const setDraftDate = (iso) => {
+      if (!iso) return; const d = new Date(iso + 'T00:00:00'); if (isNaN(d.getTime())) return;
+      const key = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const diff = Math.round((d - window.VL.todayDateObj()) / 86400000);
+      const prefix = diff === 0 ? '今天' : diff === 1 ? '明天' : diff === 2 ? '后天' : diff === -1 ? '昨天' : null;
+      const dow = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+      const dateText = (prefix ? prefix + ' · ' : '') + `${d.getMonth() + 1}月${d.getDate()}日 周${dow}`;
+      setDraft((dr) => ({ ...dr, dateKey: key, dateText }));
+    };
+    const inputStyle = { font: 'inherit', fontSize: 15, fontWeight: 600, color: t.text, background: 'transparent', border: 'none', outline: 'none', padding: 0, colorScheme: t.mode === 'dark' ? 'dark' : 'light' };
+
     return (
       <div style={{ position: 'absolute', inset: 0, zIndex: 50, pointerEvents: open ? 'auto' : 'none' }}>
         <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(8,10,14,0.46)', opacity: open ? 1 : 0, transition: 'opacity .3s' }} />
@@ -328,11 +341,14 @@
                 {field('标题', (
                   <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>
                 ), { icon: 'pencil' })}
-                {field('时间', (
+                {field('日期', (
                   <div>
-                    <div style={{ fontSize: 15.5, fontWeight: 600, color: t.text }}>{draft.time}</div>
+                    <input type="date" value={draftISO} onChange={(e) => setDraftDate(e.target.value)} style={inputStyle} />
                     <div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>{draft.dateText}</div>
                   </div>
+                ), { icon: 'clock' })}
+                {field('时间', (
+                  <input type="time" value={draft.time} onChange={(e) => setDraft((dr) => ({ ...dr, time: e.target.value || dr.time }))} style={{ ...inputStyle, fontSize: 15.5 }} />
                 ), { icon: 'clock' })}
                 {field('地点', <span style={{ fontSize: 15, color: draft.loc ? t.text : t.faint }}>{draft.loc || '未识别 · 可不填'}</span>, { icon: 'pin' })}
                 {field('提醒', (
