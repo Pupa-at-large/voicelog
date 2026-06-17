@@ -263,18 +263,45 @@
     );
   }
 
-  // 未完成顺延提示：把昨天没做完的温和地拉到今天（借 Sunsama；不羞辱，late better than never）
-  function RolloverBanner({ t, count, onMove, onDismiss, style }) {
+  // 未完成顺延提示：把没做完的温和地拉到今天（借 Sunsama；不羞辱，late better than never）
+  // items: [{key, ev}]，含前几天累积的待办。点开可逐条勾选要挪哪些。
+  function RolloverBanner({ t, items, onMove, onDismiss, style }) {
+    const list = items || [];
+    const [open, setOpen] = React.useState(false);
+    const [sel, setSel] = React.useState(() => list.map(() => true));
+    React.useEffect(() => { setSel(list.map(() => true)); }, [list.length]);
+    const picks = list.filter((_, i) => sel[i]).map((p) => ({ key: p.key, id: p.ev.id }));
+    const lbl = (k) => (window.VL.dateText ? window.VL.dateText(k) : k);
+    const days = new Set(list.map((p) => p.key)).size;
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 14px', borderRadius: t.radius, background: t.accentSoft, ...style }}>
-        <Icon name="redo" size={16} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13.5, fontWeight: 650, color: t.accentText }}>昨天有 {count} 件没做完</div>
-          <div style={{ fontSize: 12.5, color: t.accentText, opacity: 0.85, marginTop: 2, lineHeight: 1.5 }}>挪到今天继续吗？开始了就好，late better than never。</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
-            <button onClick={onMove} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700, background: t.accent, color: t.onAccent }}>全部挪到今天</button>
-            <button onClick={onDismiss} style={{ height: 30, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: 'none', background: 'transparent', color: t.accentText }}>先不用</button>
+      <div style={{ padding: '12px 14px', borderRadius: t.radius, background: t.accentSoft, ...style }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <Icon name="redo" size={16} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 650, color: t.accentText }}>有 {list.length} 件没做完{days > 1 ? `（跨 ${days} 天累积）` : ''}</div>
+            <div style={{ fontSize: 12.5, color: t.accentText, opacity: 0.85, marginTop: 2, lineHeight: 1.5 }}>挪到今天继续吗？开始了就好，late better than never。</div>
+            <button onClick={() => setOpen((v) => !v)} style={{ marginTop: 6, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              {open ? '收起' : '看看是哪几件'} <Icon name={open ? 'chevD' : 'chevR'} size={13} color={t.accentText} />
+            </button>
           </div>
+        </div>
+        {open && (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
+            {list.map((p, i) => (
+              <button key={p.key + '·' + p.ev.id} onClick={() => setSel((s) => s.map((v, j) => (j === i ? !v : v)))} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: t.radius - 4, cursor: 'pointer', font: 'inherit', textAlign: 'left', border: `1px solid ${sel[i] ? t.accent : t.border}`, background: t.surface }}>
+                <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: sel[i] ? 'none' : `2px solid ${t.borderStrong}`, background: sel[i] ? t.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{sel[i] && <Icon name="check" size={13} color={t.onAccent} sw={2.6} />}</span>
+                <span style={{ width: 7, height: 7, borderRadius: 999, background: catColor(t, p.ev.cat), flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.ev.title}</div>
+                  <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{lbl(p.key)} · {p.ev.t}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <button onClick={() => picks.length && onMove(picks)} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: picks.length ? 'pointer' : 'default', opacity: picks.length ? 1 : 0.45, font: 'inherit', fontSize: 12.5, fontWeight: 700, background: t.accent, color: t.onAccent }}>{open ? `挪到今天（${picks.length}）` : '全部挪到今天'}</button>
+          <button onClick={onDismiss} style={{ height: 30, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: 'none', background: 'transparent', color: t.accentText }}>先不用</button>
         </div>
       </div>
     );

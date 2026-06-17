@@ -609,11 +609,11 @@
     const { week } = window.VL.data;
     const [view, setView] = useState('list');
     const [capDismiss, setCapDismiss] = useState({});
-    const [rollDismiss, setRollDismiss] = useState(false);
     const sel = app.selectedDay;
     const todayKey = window.VL.todayKey();
-    const prevKey = window.VL.prevKey(todayKey);
-    const rollN = (sel === todayKey && prevKey) ? (app.events[prevKey] || []).filter((e) => e.status === 'todo').length : 0;
+    // 今天之前所有未完成（含前几天累积）；仅在「今天」视图、且未在贪睡期内显示
+    const pending = (sel === todayKey) ? window.VL.pendingBefore(app.events, todayKey) : [];
+    const rollSnoozed = Date.now() < (app.rolloverSnoozeUntil || 0);
     const list = (app.events[sel] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
     const conflictIds = new Set();
     list.forEach((ev) => { if (ev.status !== 'cancelled' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
@@ -674,8 +674,8 @@
               </div>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 24px' }}>
-              {rollN > 0 && !rollDismiss && (
-                <window.RolloverBanner t={t} count={rollN} onMove={() => { app.rolloverUnfinished(); setRollDismiss(true); }} onDismiss={() => setRollDismiss(true)} style={{ marginBottom: 12 }} />
+              {pending.length > 0 && !rollSnoozed && (
+                <window.RolloverBanner t={t} items={pending} onMove={(picks) => app.rolloverUnfinished(picks)} onDismiss={() => app.snoozeRollover()} style={{ marginBottom: 12 }} />
               )}
               {totalH > window.VL.DAILY_CAPACITY_H && !capDismiss[sel] && (
                 <window.CapacityBanner t={t} hours={totalH} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [sel]: true }))} style={{ marginBottom: 12 }} />

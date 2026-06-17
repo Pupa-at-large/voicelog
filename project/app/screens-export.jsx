@@ -233,7 +233,26 @@
 
           <SectionLabel t={t}>提醒</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
-            <Row t={t} icon="bell" title="浏览器到点提醒" sub="到点在页面内提醒，并发送系统通知" right={<Toggle t={t} on={app.notify} onChange={app.setNotify} />} last />
+            <Row t={t} icon="bell" title="浏览器到点提醒" sub="到点在页面内提醒，并发送系统通知" right={<Toggle t={t} on={app.notify} onChange={app.setNotify} />} />
+            {app.setRolloverSnoozeMins && (
+              <div style={{ padding: '13px 16px', borderTop: `1px solid ${t.border}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <Icon name="redo" size={17} color={t.muted} />
+                  <span style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>顺延提醒「先不用」后</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 10px 27px', lineHeight: 1.5 }}>没做完的事点「先不用」后，多久再温和地提醒你一次</div>
+                <div style={{ display: 'flex', gap: 8, paddingLeft: 27, flexWrap: 'wrap' }}>
+                  {[[120, '2 小时后', '默认'], [240, '4 小时后', ''], [-1, '今天不再', '']].map(([m, label, tag]) => {
+                    const on = app.rolloverSnoozeMins === m;
+                    return (
+                      <button key={m} onClick={() => app.setRolloverSnoozeMins(m)} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>
+                        {label}{tag ? ` · ${tag}` : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </Card>
 
           <SectionLabel t={t}>回收站</SectionLabel>

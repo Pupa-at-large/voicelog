@@ -108,6 +108,9 @@
     const [aiEngine, setAiEngine] = useState(!!(window.VL && window.VL.serverUrl));
     const [notify, setNotify] = useState(true);
     const [exportPeriod, setExportPeriod] = useState('day');
+    // 顺延横幅"先不用"贪睡：默认 120 分钟后再提醒；可在「我的」改成今天不再(-1)/其它时长
+    const [rolloverSnoozeMins, setRolloverSnoozeMins] = useState(() => (saved && typeof saved.rolloverSnoozeMins === 'number') ? saved.rolloverSnoozeMins : 120);
+    const [rolloverSnoozeUntil, setRolloverSnoozeUntil] = useState(() => (saved && saved.rolloverSnoozeUntil) || 0);
     const toastTimer = useRef(0);
     const remTimer = useRef(0);
 
@@ -117,8 +120,8 @@
       return { ...theme, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft };
     }, [theme, accentKey]);
     useEffect(() => {
-      try { localStorage.setItem(SKEY(theme.key), JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay })); } catch (e) {}
-    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay]);
+      try { localStorage.setItem(SKEY(theme.key), JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil })); } catch (e) {}
+    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil]);
 
     // 任意 XP 行为都记一次「活跃」，累计天数只增不减
     const markActive = () => {
@@ -234,21 +237,33 @@
         setEvents((prev) => ({ ...prev, [nextKey]: [...(prev[nextKey] || []).map((e) => ({ ...e })), { ...ev }] }));
         setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
       },
-      rolloverUnfinished: () => {
+      // picks: [{key, id}] 勾选要挪的项；不传 = 全部今天之前的待办（含前几天累积）
+      rolloverUnfinished: (picks) => {
         const toKey = window.VL.todayKey();
-        const fromKey = window.VL.prevKey(toKey);
-        if (!fromKey) return;
-        const items = (events[fromKey] || []).filter((e) => e.status === 'todo');
-        if (!items.length) return;
+        const all = window.VL.pendingBefore(events, toKey);
+        const chosen = (picks && picks.length)
+          ? all.filter((p) => picks.some((q) => q.key === p.key && q.id === p.ev.id))
+          : all;
+        if (!chosen.length) return;
         setEvents((prev) => {
-          const next = { ...prev };
-          next[fromKey] = (prev[fromKey] || []).filter((e) => e.status !== 'todo').map((e) => ({ ...e }));
-          next[toKey] = [...(prev[toKey] || []).map((e) => ({ ...e })), ...items.map((e) => ({ ...e }))];
+          const next = {}; Object.keys(prev).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
+          const moveIds = {}; chosen.forEach((p) => { (moveIds[p.key] = moveIds[p.key] || {})[p.ev.id] = 1; });
+          Object.keys(moveIds).forEach((k) => { next[k] = (next[k] || []).filter((e) => !moveIds[k][e.id]); });
+          next[toKey] = [...(next[toKey] || []), ...chosen.map((p) => ({ ...p.ev }))];
           return next;
         });
         setSelectedDay(toKey);
-        setToast(`已把 ${items.length} 件挪到今天 · 开始了就好`, 'redo');
+        setToast(`已把 ${chosen.length} 件挪到今天 · 开始了就好`, 'redo');
       },
+      rolloverSnoozeUntil, rolloverSnoozeMins,
+      snoozeRollover: () => {
+        let until;
+        if (rolloverSnoozeMins < 0) { const d = new Date(); d.setHours(23, 59, 59, 999); until = d.getTime(); }
+        else until = Date.now() + rolloverSnoozeMins * 60000;
+        setRolloverSnoozeUntil(until);
+        setToast(rolloverSnoozeMins < 0 ? '今天先不提醒了' : (rolloverSnoozeMins >= 60 ? rolloverSnoozeMins / 60 + ' 小时' : rolloverSnoozeMins + ' 分钟') + '后再提醒你', 'bell');
+      },
+      setRolloverSnoozeMins: (m) => { setRolloverSnoozeMins(m); setRolloverSnoozeUntil(0); setToast('已更新顺延提醒设置', 'check'); },
       goExport: (p) => { setExportPeriod(p); setTab('export'); },
       setTab,
       demoReminder: () => {

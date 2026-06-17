@@ -343,6 +343,28 @@
   window.VL.todayKey = function () { const w = (window.VL.data.week || []).find((x) => x.today); return w ? w.key : '06-16'; };
   window.VL.prevKey = function (key) { const o = (window.VL.data.week || []).map((w) => w.key); const i = o.indexOf(key); return i > 0 ? o[i - 1] : null; };
   window.VL.unfinished = function (dayEvents) { return (dayEvents || []).filter((e) => e.status === 'todo'); };
+  // MM-DD 键 → 最接近今天的那个 Date（处理跨年）
+  window.VL.keyDate = function (key) {
+    const base = window.VL.todayDateObj ? window.VL.todayDateObj() : new Date();
+    const parts = String(key || '').split('-'); const mo = +parts[0], da = +parts[1];
+    if (!mo || !da) return base;
+    let d = new Date(base.getFullYear(), mo - 1, da);
+    const diff = (d - base) / 86400000;
+    if (diff > 182) d = new Date(base.getFullYear() - 1, mo - 1, da);
+    else if (diff < -182) d = new Date(base.getFullYear() + 1, mo - 1, da);
+    return d;
+  };
+  // 今天之前所有"待办(todo)"——含前几天累积的，按日期升序。返回 [{key, ev}]
+  window.VL.pendingBefore = function (eventsObj, todayKey) {
+    const today = window.VL.keyDate(todayKey || window.VL.todayKey());
+    const out = [];
+    Object.keys(eventsObj || {}).forEach((k) => {
+      if (window.VL.keyDate(k) >= today) return;
+      (eventsObj[k] || []).forEach((e) => { if (e.status === 'todo') out.push({ key: k, ev: e }); });
+    });
+    out.sort((a, b) => window.VL.keyDate(a.key) - window.VL.keyDate(b.key));
+    return out;
+  };
 
   // 批量执行「待执行清单」：纯函数，返回新 events + 计数（新增 / 完成）。供移动端 + Web 共用、可单测。
   window.VL.applyBatchTo = function (prev, actions) {
