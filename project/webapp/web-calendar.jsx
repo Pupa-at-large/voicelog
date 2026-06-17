@@ -1,9 +1,9 @@
 /* VoiceLog Web · 日历网格（周 / 月 / 日，支持重叠分栏 + 重要星标） */
 (function () {
   const { Icon, catColor, catLabel } = window;
-  const WK = ['06-15', '06-16', '06-17', '06-18', '06-19', '06-20', '06-21'];
+  const WK = window.VL.WEEK_KEYS;
   const DOWH = ['日', '一', '二', '三', '四', '五', '六'];
-  const TODAY = '06-16';
+  const TODAY = window.VL.todayKey();
   const mins = (s) => { const [a, b] = s.split(':').map(Number); return a * 60 + b; };
   const live = (a) => (a || []).filter((e) => e.status !== 'cancelled');
 
@@ -65,14 +65,17 @@
     const base = 7, end = 22, HH = 52;
 
     if (view === 'month') {
-      const cells = []; for (let d = 1; d <= 30; d++) cells.push(d); while (cells.length % 7) cells.push(null);
+      const _b = window.VL.todayDateObj(); const _Y = _b.getFullYear(), _M = _b.getMonth();
+      const _lead = new Date(_Y, _M, 1).getDay(), _dim = new Date(_Y, _M + 1, 0).getDate();
+      const _mm = String(_M + 1).padStart(2, '0');
+      const cells = []; for (let i = 0; i < _lead; i++) cells.push(null); for (let d = 1; d <= _dim; d++) cells.push(d); while (cells.length % 7) cells.push(null);
       return (
         <div style={{ flex: 1, overflow: 'auto', padding: 4 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', borderLeft: `1px solid ${t.border}`, borderTop: `1px solid ${t.border}` }}>
             {DOWH.map((d) => <div key={'h' + d} style={{ padding: '8px 10px', fontSize: 12.5, fontWeight: 600, color: t.faint, borderRight: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, background: t.surface2 }}>周{d}</div>)}
             {cells.map((d, i) => {
               if (!d) return <div key={i} style={{ minHeight: 116, borderRight: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, background: t.surface2 }} />;
-              const key = '06-' + String(d).padStart(2, '0');
+              const key = _mm + '-' + String(d).padStart(2, '0');
               const evs = live(events[key]).slice().sort((a, b) => a.t.localeCompare(b.t));
               const today = key === TODAY;
               return (

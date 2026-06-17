@@ -7,7 +7,7 @@
     const [period, setPeriod] = useState('day');
     const r = window.VL.getReview(period, app.events);
     const max = Math.max(1, ...r.alloc.map((a) => a.hours));
-    const dayList = (app.events['06-16'] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+    const dayList = (app.events[window.VL.todayKey()] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

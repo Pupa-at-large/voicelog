@@ -28,7 +28,7 @@
     const [courses, setCourses] = useState([]);
     const [excluded, setExcluded] = useState({});
     const [recurKey, setRecurKey] = useState('semester');
-    const [customUntil, setCustomUntil] = useState('2026-07-10');
+    const [customUntil, setCustomUntil] = useState(window.VL.SEMESTER_END);
     const R = useRef({});
     const titleRef = useRef(null);
     const fileRef = useRef(null);
@@ -252,7 +252,7 @@
                 })}
               </div>
               {recurKey === 'custom' && (
-                <input type="date" value={customUntil} min="2026-06-15" onChange={(e) => setCustomUntil(e.target.value)} style={{ width: '100%', height: 40, padding: '0 13px', borderRadius: t.radius - 4, border: `1px solid ${t.border}`, background: t.bg, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none', marginBottom: 4 }} />
+                <input type="date" value={customUntil} min={window.VL.todayISO()}onChange={(e) => setCustomUntil(e.target.value)} style={{ width: '100%', height: 40, padding: '0 13px', borderRadius: t.radius - 4, border: `1px solid ${t.border}`, background: t.bg, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none', marginBottom: 4 }} />
               )}
               {recurKey === 'later' && (
                 <div style={{ display: 'flex', gap: 9, padding: 11, borderRadius: t.radius - 4, background: t.surface2 }}>

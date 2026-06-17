@@ -87,7 +87,7 @@
   function VoiceLogApp({ theme }) {
     const saved = useRef(loadState(theme.key)).current;
     const [tab, setTab] = useState('home');
-    const [selectedDay, setSelectedDay] = useState('06-16');
+    const [selectedDay, setSelectedDay] = useState(window.VL.todayKey());
     const [events, setEvents] = useState(() => (saved && saved.events) ? saved.events : clone(window.VL.data.events));
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
     // 成长系统：XP（只升不降）+ 累计天数；首次落在 LV.4 区间，贴近设计稿
@@ -251,7 +251,7 @@
       goExport: (p) => { setExportPeriod(p); setTab('export'); },
       setTab,
       demoReminder: () => {
-        const e = (events['06-16'] || []).find((x) => x.id === 'e3') || (events[selectedDay] || [])[0];
+        const e = (events[window.VL.todayKey()] || []).find((x) => x.id === 'e3') || (events[selectedDay] || [])[0];
         if (e) setReminderEv(e);
       },
     };

@@ -23,8 +23,8 @@
   function RecurrenceModal({ t, open, onClose, count, onConfirm }) {
     const opts = (window.VL.RECUR_OPTIONS || []).filter((o) => o.key !== 'later');
     const [key, setKey] = useState('semester');
-    const [custom, setCustom] = useState('2026-07-10');
-    useEffect(() => { if (open) { setKey('semester'); setCustom('2026-07-10'); } }, [open]);
+    const [custom, setCustom] = useState(window.VL.SEMESTER_END);
+    useEffect(() => { if (open) { setKey('semester'); setCustom(window.VL.SEMESTER_END); } }, [open]);
     const fmtDate = (s) => { const p = s.split('-'); return `${+p[1]}月${+p[2]}日`; };
     const sel = opts.find((o) => o.key === key) || opts[0];
     const until = key === 'custom' ? custom : sel.until;
@@ -52,7 +52,7 @@
             );
           })}
         </div>
-        {key === 'custom' && <input type="date" value={custom} min="2026-06-15" onChange={(e) => setCustom(e.target.value)} style={{ width: '100%', height: 40, padding: '0 13px', borderRadius: t.radius - 4, border: `1px solid ${t.border}`, background: t.bg, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none', marginBottom: 4 }} />}
+        {key === 'custom' && <input type="date" value={custom} min={window.VL.todayISO()}onChange={(e) => setCustom(e.target.value)} style={{ width: '100%', height: 40, padding: '0 13px', borderRadius: t.radius - 4, border: `1px solid ${t.border}`, background: t.bg, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none', marginBottom: 4 }} />}
         <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
           <Btn t={t} kind="ghost" onClick={onClose} style={{ flex: 1 }}>稍后</Btn>
           <Btn t={t} kind="primary" icon="check" onClick={() => onConfirm(until, untilText)} style={{ flex: 2 }}>重复至 {untilText}</Btn>
@@ -166,14 +166,21 @@
   // ── 日历视图 ──
   function CalView({ t, app }) {
     const [view, setView] = useState('week');
-    const selDayNum = (window.VL.data.week.find((x) => x.key === app.selDay) || {}).day;
-    const ranges = { week: '6月15日 – 21日', month: '2026 年 6 月', day: '6月' + selDayNum + '日', matrix: '6月' + selDayNum + '日 · 四象限' };
+    const _selW = window.VL.data.week.find((x) => x.key === app.selDay) || {};
+    const selDayNum = _selW.day;
+    const _wk = window.VL.data.week, _td = window.VL.todayDateObj();
+    const ranges = {
+      week: `${_wk[0].month}月${_wk[0].day}日 – ${_wk[6].month}月${_wk[6].day}日`,
+      month: `${_td.getFullYear()} 年 ${_td.getMonth() + 1} 月`,
+      day: `${_selW.month}月${selDayNum}日`,
+      matrix: `${_selW.month}月${selDayNum}日 · 四象限`,
+    };
     return (
       <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: `1px solid ${t.border}` }}>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 750, color: t.text }}>{ranges[view]}</h1>
-            <button onClick={() => { app.setDay('06-16'); }} style={{ height: 34, padding: '0 14px', borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>今天</button>
+            <button onClick={() => { app.setDay(window.VL.todayKey()); }} style={{ height: 34, padding: '0 14px', borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>今天</button>
             <div style={{ flex: 1 }} />
             <div style={{ width: 288 }}><Segmented t={t} value={view} onChange={setView} items={[{ key: 'day', label: '日' }, { key: 'week', label: '周' }, { key: 'month', label: '月' }, { key: 'matrix', label: '象限' }]} /></div>
           </div>
@@ -406,7 +413,7 @@
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
     const [events, setEvents] = useState(() => fresh ? {} : ((saved && saved.events) ? saved.events : clone(window.VL.data.events)));
     const [tab, setTab] = useState('cal');
-    const [selDay, setSelDay] = useState('06-16');
+    const [selDay, setSelDay] = useState(window.VL.todayKey());
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
     const [voiceOpen, setVoiceOpen] = useState(false);
@@ -443,8 +450,9 @@
     const setToast = (msg, icon, action) => { setToastState({ msg, icon, action }); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToastState(null), action ? 4200 : 2400); };
     const flashCelebrate = (d) => { setCelebrate({ ...d, key: Date.now() }); clearTimeout(celTimer.current); celTimer.current = setTimeout(() => setCelebrate(null), d.goal ? 2100 : 1900); };
     const fireCelebrate = (ev) => {
-      const doneToday = (events['06-16'] || []).filter((e) => e.status === 'done').length + (selDay === '06-16' ? 1 : 0);
-      const late = selDay === '06-16' && ev.t < '16:00';
+      const _tk = window.VL.todayKey();
+      const doneToday = (events[_tk] || []).filter((e) => e.status === 'done').length + (selDay === _tk ? 1 : 0);
+      const late = selDay === _tk && ev.t < '16:00';
       let msg;
       if (ev.goalDone) msg = '目标达成 · 全部进度完成！';
       else if (late) msg = '晚一点也算数 · late better than never';
@@ -550,7 +558,7 @@
           });
           return next;
         });
-        setSelDay(dk[d.repeat.dows[0]] || '06-16'); setTab('cal');
+        setSelDay(dk[d.repeat.dows[0]] || window.VL.todayKey()); setTab('cal');
         const n = d.repeat.dows.length;
         awardXp(XP.create * n);
         setToast(d.repeat.until ? `已加入每周 ${n} 项 · 重复至 ${d.repeat.untilText}` : `已加入每周 ${n} 项 · 范围待补充`, 'repeat');
@@ -576,7 +584,7 @@
           });
           return next;
         });
-        setSelDay('06-16'); setTab('cal');
+        setSelDay(window.VL.todayKey()); setTab('cal');
         awardXp(XP.create * list.length);
         setToast(repeat.until ? `已加入 ${list.length} 节课 · 每周重复至 ${repeat.untilText}` : `已加入 ${list.length} 节课 · 重复范围待补充`, 'check');
       },

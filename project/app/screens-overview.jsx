@@ -3,9 +3,9 @@
   const { useState, useRef, useEffect } = React;
   const { Icon, Segmented, catColor, catLabel } = window;
 
-  const HKEYS = ['06-15', '06-16', '06-17', '06-18', '06-19', '06-20', '06-21'];
-  const DOWH = ['日', '一', '二', '三', '四', '五', '六'];
-  const TODAY = '06-16';
+  const HKEYS = window.VL.WEEK_KEYS;           // 真实 7 天窗口
+  const DOWH = ['日', '一', '二', '三', '四', '五', '六']; // 月视图列头固定 日…六
+  const TODAY = window.VL.todayKey();
   const LEVELS = [{ key: 'month', label: '月' }, { key: 'week', label: '周' }, { key: 'day', label: '日' }];
   const mins = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
   const live = (arr) => (arr || []).filter((e) => e.status !== 'cancelled');
@@ -27,7 +27,7 @@
     return (
       <div style={{ flex: 1, overflowY: 'auto' }} data-vlpop>
         <div style={{ padding: '2px 18px 6px', fontSize: 13, color: t.muted }}>
-          6月{w.day}日 周{w.dow} · {evs.length} 项
+          {w.month}月{w.day}日 周{w.dow} · {evs.length} 项
         </div>
         <div style={{ padding: '6px 16px 28px' }}>
           <div style={{ position: 'relative', marginLeft: 46, height: (end - base + 1) * HH }}>
@@ -100,10 +100,14 @@
 
   // 月：日历热力
   function MonthView({ t, app, onPick }) {
+    const _b = window.VL.todayDateObj();
+    const _Y = _b.getFullYear(), _M = _b.getMonth();
+    const lead = new Date(_Y, _M, 1).getDay();            // 当月 1 号是周几
+    const daysInMonth = new Date(_Y, _M + 1, 0).getDate(); // 当月天数
+    const _mm = String(_M + 1).padStart(2, '0');
     const cells = [];
-    const lead = 0; // 6月1日 = 周日
     for (let i = 0; i < lead; i++) cells.push(null);
-    for (let d = 1; d <= 30; d++) cells.push(d);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(d);
     while (cells.length % 7) cells.push(null);
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 24px' }} data-vlpop>
@@ -113,7 +117,7 @@
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
           {cells.map((d, i) => {
             if (!d) return <div key={i} />;
-            const key = '06-' + String(d).padStart(2, '0');
+            const key = _mm + '-' + String(d).padStart(2, '0');
             const evs = live(app.events[key]);
             const cats = [...new Set(evs.map((e) => e.cat))];
             const today = key === TODAY;

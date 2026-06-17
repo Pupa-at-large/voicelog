@@ -1,7 +1,38 @@
 /* VoiceLog · 示例数据 */
 (function () {
-  // 当天 = 2026-06-16 周一（与示例复盘一致）
-  const events = {
+  // ── 日期锚点：跟随真实「今天」（本地时区，跨午夜自动翻天）──
+  // 原型本是冻结在 6/16(周一) 那一周的静态 demo；这里把"7 天窗口 + 种子数据"按
+  // "相对今天的偏移"动态平移：窗口 = 今天-1 … 今天+5（保留"昨天有未完成、今天排满"的结构）。
+  // 测试可用 ?today=YYYY-MM-DD 或 localStorage 'voicelog:today' 覆盖。
+  const DOWC = ['日', '一', '二', '三', '四', '五', '六'];
+  const _pad = (n) => String(n).padStart(2, '0');
+  const _mmdd = (d) => _pad(d.getMonth() + 1) + '-' + _pad(d.getDate());
+  const _iso = (d) => d.getFullYear() + '-' + _pad(d.getMonth() + 1) + '-' + _pad(d.getDate());
+  const _TODAY = (function () {
+    let s = '';
+    try { s = (new URLSearchParams(location.search).get('today') || localStorage.getItem('voicelog:today') || '').trim(); } catch (e) {}
+    const d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(s + 'T00:00:00') : new Date();
+    d.setHours(0, 0, 0, 0); return d;
+  })();
+  const _dayAt = (n) => { const d = new Date(_TODAY.getTime()); d.setDate(d.getDate() + n); return d; };
+  const relKey = (n) => _mmdd(_dayAt(n));
+  const _fmtMD = (d) => `${d.getMonth() + 1}月${d.getDate()}日`;
+  const _OFF = { '06-15': -1, '06-16': 0, '06-17': 1, '06-18': 2, '06-19': 3, '06-20': 4, '06-21': 5 };
+  const remap = (k) => (k in _OFF ? relKey(_OFF[k]) : k);
+  const remapEvents = (seed) => { const o = {}; Object.keys(seed).forEach((k) => { o[remap(k)] = seed[k]; }); return o; };
+
+  // 7 天窗口（今天在 index 1）；dow/day/month 均按真实日期算
+  const week = [-1, 0, 1, 2, 3, 4, 5].map((n) => { const d = _dayAt(n); return { key: _mmdd(d), dow: DOWC[d.getDay()], day: d.getDate(), month: d.getMonth() + 1, today: n === 0 }; });
+  const dowToKey = {}; week.forEach((w) => { dowToKey[DOWC.indexOf(w.dow)] = w.key; });
+  // 日期文案："今天 · 6月17日 周二"（窗口外只给"M月D日"）
+  function dateTextOf(key, prefix) {
+    const w = week.find((x) => x.key === key);
+    const base = w ? `${w.month}月${w.day}日 周${w.dow}` : key;
+    return prefix ? `${prefix} · ${base}` : base;
+  }
+
+  // 种子日程（键用原始偏移写，加载时平移到真实窗口）
+  const _eventsSeed = {
     // 昨天（周日）：留了几件没做完，用来演示「未完成顺延到今天」
     '06-15': [
       { id: 'd1', t: '10:00', dur: 60, title: '整理上周周报', cat: 'deep', status: 'todo' },
@@ -39,22 +70,12 @@
         reminder: 10, status: 'todo' },
     ],
   };
-
-  // 周条：6/15(日) … 6/21(六)，今天 6/16
-  const week = [
-    { key: '06-15', dow: '日', day: 15 },
-    { key: '06-16', dow: '一', day: 16, today: true },
-    { key: '06-17', dow: '二', day: 17 },
-    { key: '06-18', dow: '三', day: 18 },
-    { key: '06-19', dow: '四', day: 19 },
-    { key: '06-20', dow: '五', day: 20 },
-    { key: '06-21', dow: '六', day: 21 },
-  ];
+  const events = remapEvents(_eventsSeed);
 
   // 复盘数据（五个周期）
   const review = {
     day: {
-      label: '每日复盘', range: '2026-06-16',
+      label: '每日复盘', range: _iso(_TODAY),
       total: 4.0, count: 4, done: 1, cancelled: 0, todo: 3, rate: 25,
       alloc: [
         { cat: 'meet', hours: 2.0, items: 2 },
@@ -139,7 +160,7 @@
     chunks: ['嗯，', '明天下午两点…', '啊不对，是三点', '跟老王开会，', '提前半小时提醒我，', '在公司'],
     parsed: {
       title: '跟老王开会',
-      dateKey: '06-17', dateText: '明天 · 6月17日 周二',
+      dateKey: relKey(1), dateText: dateTextOf(relKey(1), '明天'),
       time: '15:00', loc: '公司', reminder: 30, cat: 'meet', dur: 60,
     },
     // 多意图批量示例：一段话同时新增多条 + 标记完成（见 parseBatch）
@@ -186,24 +207,22 @@
     if (total > 0 && meet / total >= 0.5) insights.push('会议扎堆，把能异步处理的挪出来、给专注时段让位会更高效。');
     else if (byCat.deep) insights.push('有完整的深度工作时段，挺好，继续守住它。');
 
-    return { label: '每日复盘', range: '2026-06-16', total, count, done, cancelled, todo, rate, alloc, insights };
+    return { label: '每日复盘', range: _iso(_TODAY), total, count, done, cancelled, todo, rate, alloc, insights };
   }
 
   function getReview(period, eventsObj) {
-    if (period === 'day') return computeDay((eventsObj && eventsObj['06-16']) || []);
+    if (period === 'day') return computeDay((eventsObj && eventsObj[relKey(0)]) || []);
     return review[period];
   }
 
   // 文件 / 图片上传 → 大模型自动提取的日程（样例）
   const upload = [
-    { title: '项目评审会', dateKey: '06-19', dateText: '周五 · 6月19日 周五', time: '10:00', loc: '会议室 A', reminder: 15, cat: 'meet', dur: 90 },
-    { title: '客户对接电话', dateKey: '06-19', dateText: '周五 · 6月19日 周五', time: '14:00', loc: '线上', reminder: 10, cat: 'meet', dur: 60 },
-    { title: '提交季度报告', dateKey: '06-20', dateText: '周六 · 6月20日 周六', time: '18:00', loc: null, reminder: 30, cat: 'deep', dur: 60 },
+    { title: '项目评审会', dateKey: remap('06-19'), dateText: dateTextOf(remap('06-19')), time: '10:00', loc: '会议室 A', reminder: 15, cat: 'meet', dur: 90 },
+    { title: '客户对接电话', dateKey: remap('06-19'), dateText: dateTextOf(remap('06-19')), time: '14:00', loc: '线上', reminder: 10, cat: 'meet', dur: 60 },
+    { title: '提交季度报告', dateKey: remap('06-20'), dateText: dateTextOf(remap('06-20')), time: '18:00', loc: null, reminder: 30, cat: 'deep', dur: 60 },
   ];
 
-  // 课表图片 → 大模型识别出的「每周重复」课程（样例）
-  // dow: 0=日 1=一 … 6=六 ；与 week 数组一致
-  const dowToKey = { 0: '06-15', 1: '06-16', 2: '06-17', 3: '06-18', 4: '06-19', 5: '06-20', 6: '06-21' };
+  // 课表图片 → 大模型识别出的「每周重复」课程（样例）。dow: 0=日…6=六；dowToKey 已在顶部按真实窗口构建
   const courseSchedule = [
     { title: '高等数学', dow: 1, time: '08:00', dur: 100, loc: '理教 305', teacher: '李建国' },
     { title: '数据结构', dow: 3, time: '10:00', dur: 100, loc: '二教 401', teacher: '王敏' },
@@ -213,18 +232,24 @@
     { title: '大学英语', dow: 5, time: '08:00', dur: 100, loc: '文史楼 208', teacher: 'Linda' },
     { title: '线性代数', dow: 5, time: '10:00', dur: 100, loc: '理教 201', teacher: '张伟' },
   ];
-  const SEMESTER_END = '2026-07-10';
+  const SEMESTER_END = _iso(_dayAt(24));
+  const _w8 = _dayAt(56), _w16 = _dayAt(112);
   // 重复范围选项（课表导入 + 之后补充共用）。until 为 null 表示"暂不设置"
   const RECUR_OPTIONS = [
-    { key: 'semester', label: '本学期末', sub: '7月10日', until: SEMESTER_END, untilText: '7月10日（学期末）', ai: true },
-    { key: 'w8', label: '重复 8 周', sub: '到 8月11日', until: '2026-08-11', untilText: '8月11日' },
-    { key: 'w16', label: '重复 16 周', sub: '到 10月6日', until: '2026-10-06', untilText: '10月6日' },
+    { key: 'semester', label: '本学期末', sub: _fmtMD(_dayAt(24)), until: SEMESTER_END, untilText: _fmtMD(_dayAt(24)) + '（学期末）', ai: true },
+    { key: 'w8', label: '重复 8 周', sub: '到 ' + _fmtMD(_w8), until: _iso(_w8), untilText: _fmtMD(_w8) },
+    { key: 'w16', label: '重复 16 周', sub: '到 ' + _fmtMD(_w16), until: _iso(_w16), untilText: _fmtMD(_w16) },
     { key: 'custom', label: '自定义日期', sub: '手动选', until: null, untilText: null },
     { key: 'later', label: '暂不设置 · 之后再补', sub: '先按学期暂存', until: null, untilText: null },
   ];
 
   window.VL = window.VL || {};
   window.VL.data = { events, week, review, voice, upload, courseSchedule, dowToKey };
+  window.VL.relKey = relKey;
+  window.VL.todayISO = function () { return _iso(_TODAY); };
+  window.VL.todayDateObj = function () { return new Date(_TODAY.getTime()); };
+  window.VL.WEEK_KEYS = week.map((w) => w.key);
+  window.VL.dateText = dateTextOf;
   window.VL.SEMESTER_END = SEMESTER_END;
   window.VL.RECUR_OPTIONS = RECUR_OPTIONS;
   window.VL.computeDay = computeDay;

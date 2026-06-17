@@ -20,8 +20,9 @@
     return v;
   }
 
-  // 周几 → 本周日期键
-  const DOW2KEY = { 日: '06-15', 天: '06-15', 一: '06-16', 二: '06-17', 三: '06-18', 四: '06-19', 五: '06-20', 六: '06-21' };
+  // 周几 → 本周日期键（按真实窗口动态构建，见 data.js 的 dowToKey）
+  const _d2k = (window.VL.data && window.VL.data.dowToKey) || {};
+  const DOW2KEY = { 日: _d2k[0], 天: _d2k[0], 一: _d2k[1], 二: _d2k[2], 三: _d2k[3], 四: _d2k[4], 五: _d2k[5], 六: _d2k[6] };
 
   function dateTextOf(key, prefix) {
     const w = (window.VL.data.week || []).find((x) => x.key === key);
@@ -56,18 +57,21 @@
         else {
           const dd = rest.match(/到\s*([0-9]{1,2}|[一二三四五六七八九十]+)\s*月\s*([0-9]{1,2}|[一二三四五六七八九十]+)\s*[日号]/);
           if (dd) { const mo = cnInt(dd[1]), day = cnInt(dd[2]); if (mo && day) { until = `2026-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`; untilText = `${mo}月${day}日`; rest = rest.replace(dd[0], ' '); } }
-          else { const wm = rest.match(/(?:持续|连续|共)?\s*([0-9]+|[两二三四五六七八九十]+)\s*(?:个)?\s*(?:周|星期|礼拜)/); if (wm) { const w = cnInt(wm[1]); if (w) { const b = new Date('2026-06-15T00:00:00'); b.setDate(b.getDate() + w * 7); until = b.toISOString().slice(0, 10); untilText = `${w}周后`; rest = rest.replace(wm[0], ' '); } } }
+          else { const wm = rest.match(/(?:持续|连续|共)?\s*([0-9]+|[两二三四五六七八九十]+)\s*(?:个)?\s*(?:周|星期|礼拜)/); if (wm) { const w = cnInt(wm[1]); if (w) { const b = window.VL.todayDateObj ? window.VL.todayDateObj() : new Date(); b.setDate(b.getDate() + w * 7); until = b.toISOString().slice(0, 10); untilText = `${w}周后`; rest = rest.replace(wm[0], ' '); } } }
         }
         repeat = { freq, dows, until, untilText };
       }
     }
 
     // ── 日期 ──
-    let dateKey = '06-16', datePrefix = '今天';
-    if (/大后天/.test(rest)) { dateKey = '06-19'; datePrefix = '大后天'; strip(/大后天/); }
-    else if (/后天/.test(rest)) { dateKey = '06-18'; datePrefix = '后天'; strip(/后天/); }
-    else if (/明天|明儿/.test(rest)) { dateKey = '06-17'; datePrefix = '明天'; strip(/明天|明儿/); }
-    else if (/今天|今儿|今晚|今早/.test(rest)) { dateKey = '06-16'; datePrefix = '今天'; strip(/今天|今儿/); }
+    const _rk = (n) => (window.VL.relKey ? window.VL.relKey(n) : '06-16');
+    let dateKey = _rk(0), datePrefix = '今天';
+    if (/大后天/.test(rest)) { dateKey = _rk(3); datePrefix = '大后天'; strip(/大后天/); }
+    else if (/后天/.test(rest)) { dateKey = _rk(2); datePrefix = '后天'; strip(/后天/); }
+    else if (/明天|明儿/.test(rest)) { dateKey = _rk(1); datePrefix = '明天'; strip(/明天|明儿/); }
+    else if (/明晚/.test(rest)) { dateKey = _rk(1); datePrefix = '明天'; rest = rest.replace('明晚', '晚上'); } // 明天晚上
+    else if (/明早/.test(rest)) { dateKey = _rk(1); datePrefix = '明天'; rest = rest.replace('明早', '早上'); } // 明天早上
+    else if (/今天|今儿|今晚|今早/.test(rest)) { dateKey = _rk(0); datePrefix = '今天'; strip(/今天|今儿/); }
     else {
       const m = rest.match(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)([一二三四五六日天])/);
       if (m && DOW2KEY[m[1]]) { dateKey = DOW2KEY[m[1]]; datePrefix = (/下/.test(m[0]) ? '下周' : '周') + m[1]; strip(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)[一二三四五六日天]/); }
@@ -231,9 +235,13 @@
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 15000);
     try {
+      const _n = new Date();
+      const _hm = String(_n.getHours()).padStart(2, '0') + ':' + String(_n.getMinutes()).padStart(2, '0');
       const r = await fetch(base + '/parse', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: text }), signal: ctrl.signal,
+        // 把客户端真实的"今天/现在"一并发给后端，避免服务器时区/日期与前端对不上
+        body: JSON.stringify({ text: text, today: window.VL.todayISO ? window.VL.todayISO() : undefined, now: _hm }),
+        signal: ctrl.signal,
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const data = await r.json();
