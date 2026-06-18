@@ -85,24 +85,28 @@
     else if (/晚上|夜里|今晚|傍晚/.test(rest)) ampm = 'pm';
     strip(/凌晨|早上|早晨|上午|中午|下午|午后|晚上|夜里|今晚|傍晚/);
 
-    // ── 时间 ──
-    let hh = null, mm = 0, hasTime = false;
-    let m = strip(/([0-9]{1,2})\s*[:：]\s*([0-9]{1,2})/);
-    if (m) { hh = parseInt(m[1], 10); mm = parseInt(m[2], 10); hasTime = true; }
-    else {
-      m = strip(/([0-9]{1,2}|[零一二两三四五六七八九十]+)\s*[点时](?:\s*(半|一刻|三刻|[0-9一二两三四五六七八九十]+)\s*分?)?/);
-      if (m) {
-        hh = cnInt(m[1]); hasTime = hh != null;
-        const f = m[2];
-        if (f === '半') mm = 30; else if (f === '一刻') mm = 15; else if (f === '三刻') mm = 45;
-        else if (f) { const v = cnInt(f.replace('分', '')); if (v != null) mm = v; }
-      }
-    }
-    if (hasTime) {
-      if (ampm === 'pm' && hh < 12) hh += 12;
-      else if (ampm === 'noon') hh = 12;
-      else if (ampm === 'am' && hh === 12) hh = 0;
-    } else { hh = 9; mm = 0; }
+    // ── 时间（支持"X点到Y点"时间段 → 算出时长）──
+    const grabTime = () => {
+      let r = strip(/([0-9]{1,2})\s*[:：]\s*([0-9]{1,2})/);
+      if (r) return { hh: parseInt(r[1], 10), mm: parseInt(r[2], 10) };
+      r = strip(/([0-9]{1,2}|[零一二两三四五六七八九十]+)\s*[点时](?:\s*(半|一刻|三刻|[0-9一二两三四五六七八九十]+)\s*分?)?/);
+      if (!r) return null;
+      const hh0 = cnInt(r[1]); if (hh0 == null) return null;
+      let mm0 = 0; const f = r[2];
+      if (f === '半') mm0 = 30; else if (f === '一刻') mm0 = 15; else if (f === '三刻') mm0 = 45;
+      else if (f) { const v = cnInt(f.replace('分', '')); if (v != null) mm0 = v; }
+      return { hh: hh0, mm: mm0 };
+    };
+    let m;
+    let hh = null, mm = 0, hasTime = false, dur = 60;
+    const _t1 = grabTime();
+    if (_t1) { hh = _t1.hh; mm = _t1.mm; hasTime = true; }
+    // 结束时间（到/至/~/-，且后面跟数字）→ 时长
+    let _end = null;
+    if (hasTime && /[到至~\-–]\s*[0-9零一二两三四五六七八九十]/.test(rest)) { strip(/\s*[到至~\-–]\s*/); _end = grabTime(); }
+    const _adj = (h) => ((ampm === 'pm' && h < 12) ? h + 12 : (ampm === 'noon') ? 12 : (ampm === 'am' && h === 12) ? 0 : h);
+    if (hasTime) { hh = _adj(hh); if (_end) _end.hh = _adj(_end.hh); } else { hh = 9; mm = 0; }
+    if (_end) { const d = (_end.hh * 60 + _end.mm) - (hh * 60 + mm); if (d > 0) dur = d; }
     const time = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 
     // ── 提醒 ──
@@ -142,12 +146,14 @@
       base = base.replace(/提醒我?一?下?|提醒|帮我?|[，,。、；;]/g, '').trim();
       title = base || loc || '新日程';
     }
+    // 再剥一层：开头人称（我/我要…）、结尾语气词（了/啦…），让"我19点到20点自习了"→"自习"
+    title = title.replace(/^(我要|我想|我得|我去|我在|我们|我|帮我)/, '').replace(/(了|啦|吧|呀|哦|嘛)+$/, '').trim() || title;
 
     // ── 重要 / 紧急（喂入四象限）──
     const urgent = /紧急|尽快|赶紧|赶快|马上|立刻|立马|加急|催|今天就?要|今天必须|deadline|截止|ddl/i.test(raw);
     const importantKw = /重要|关键|必须|一定要?|别忘|千万|要紧|优先/.test(raw);
 
-    const out = { title, dateKey, dateText: dateTextOf(dateKey, datePrefix), time, loc, reminder, cat, dur: 60, urgent, important: importantKw };
+    const out = { title, dateKey, dateText: dateTextOf(dateKey, datePrefix), time, loc, reminder, cat, dur, urgent, important: importantKw };
     if (repeat && repeat.dows.length) {
       const DOWL = ['日', '一', '二', '三', '四', '五', '六'];
       const dk = (window.VL.data && window.VL.data.dowToKey) || {};
@@ -233,7 +239,7 @@
     const base = (window.VL.serverUrl || '').replace(/\/+$/, '');
     if (!base) throw new Error('未配置后端地址');
     const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 15000);
+    const to = setTimeout(() => ctrl.abort(), 30000); // 容忍免费后端冷启动(~50s 仍可能超时→回退规则)
     try {
       const _n = new Date();
       const _hm = String(_n.getHours()).padStart(2, '0') + ':' + String(_n.getMinutes()).padStart(2, '0');

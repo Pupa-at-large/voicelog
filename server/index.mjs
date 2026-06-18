@@ -19,6 +19,8 @@ const SERVER_TODAY = process.env.VL_TODAY
 
 const SYSTEM = (today, now) => `你是中文日程助理。把用户一段口语解析成「待执行清单」，只输出 JSON，不要多余文字。
 今天是 ${today}${now ? `，现在 ${now}` : ''}。把"今天/明天/后天/明晚/下周三"等换算成具体日期 YYYY-MM-DD（"明晚"=明天晚上）。清理口头语。一段话可能含多条意图。
+"X点到Y点/X:00到Y:00"表示从 X 到 Y：time=开始(X)，dur=分钟差值（如19点到20点→time"19:00",dur60）。
+title 必须是干净的事务名，不含人称(我/我要)、时间词、语气词(了/啦)，例如"我19点到20点自习了"→title"自习"。
 输出：{"actions":[{"kind":"create|complete","title":"","date":"YYYY-MM-DD","time":"HH:MM","dur":60,"cat":"meet|deep|life|learn|misc","loc":null,"reminder":0,"important":false,"urgent":false}],"cleaned":""}`;
 
 function cors(res) {

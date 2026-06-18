@@ -18,6 +18,7 @@
   function WebVoiceModal({ t, open, onClose, onConfirm, onExtracted, onCourses, onBatch, aiEngine, dayEventsFor }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening');
+    const [engineUsed, setEngineUsed] = useState(null); // 'ai' | 'rule' | null
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real');
     const [draft, setDraft] = useState(null);
@@ -57,7 +58,7 @@
     useEffect(() => {
       if (!open) return;
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
-      setPhase('listening'); setTranscript(''); setDraft(null);
+      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
       const showActs = (acts) => {
         if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
@@ -65,6 +66,7 @@
         else { setDraft(acts[0].draft); setP('preview'); }
       };
       const ruleParse = (text, curated) => {
+        if (!curated) setEngineUsed('rule');
         // 多意图：一段话里有多条 → 走「待执行清单」，不再单条预览
         if (!curated && onBatch && window.VL.parseBatch) { const acts = window.VL.parseBatch(text); if (acts.length > 1) { ctx.parsing = true; onBatch(acts); return; } }
         ctx.parsing = true; setP('parsing');
@@ -75,7 +77,7 @@
         // 开启「AI 解析」且配置了后端 → 先走千问真·AI 解析；失败/未配置自动回退规则引擎
         if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
           ctx.parsing = true; setP('parsing');
-          try { const acts = await window.VL.parseRemote(text); if (ctx.phase !== 'parsing') return; showActs(acts); return; }
+          try { const acts = await window.VL.parseRemote(text); if (ctx.phase !== 'parsing') return; setEngineUsed('ai'); showActs(acts); return; }
           catch (e) { ctx.parsing = false; }
         }
         ruleParse(text, curated);
@@ -102,7 +104,8 @@
       return () => { try { ctx.rec && ctx.rec.stop(); } catch (e) {} clearInterval(ctx.sim); clearTimeout(ctx.t1); clearTimeout(ctx.t2); clearTimeout(utRef.current); };
     }, [open, run]);
 
-    const engine = aiEngine ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' } : { label: '规则解析', color: 'oklch(0.70 0.14 70)' };
+    const engineOn = engineUsed ? engineUsed === 'ai' : aiEngine;
+    const engine = engineOn ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' } : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
     // 预览可编辑日期/时间（与移动端一致）
     const draftISO = draft ? (window.VL.todayDateObj().getFullYear() + '-' + draft.dateKey) : '';
     const setDraftDate = (iso) => {

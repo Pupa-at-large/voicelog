@@ -38,6 +38,7 @@
   function VoiceOverlay({ t, open, onClose, onConfirm, aiEngine, app }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening'); // listening | parsing | preview | extracting | extracted
+    const [engineUsed, setEngineUsed] = useState(null); // 实际用了哪个引擎：'ai' | 'rule' | null
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real'); // real | demo
     const [draft, setDraft] = useState(null);
@@ -69,7 +70,7 @@
     useEffect(() => {
       if (!open) return;
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
-      setPhase('listening'); setTranscript(''); setDraft(null);
+      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
 
       const showActs = (acts) => {
@@ -77,6 +78,7 @@
         else { setBatchActions(acts); setBatchSel(acts.map(() => true)); setP('batch'); }
       };
       const ruleParse = (text, curated) => {
+        if (!curated) setEngineUsed('rule');
         // 多意图：一段话里多条 → 走「待执行清单」
         if (!curated && window.VL.parseBatch) { const acts = window.VL.parseBatch(text); if (acts.length > 1) { ctx.parsing = true; setBatchActions(acts); setBatchSel(acts.map(() => true)); setP('batch'); return; } }
         ctx.parsing = true;
@@ -95,8 +97,8 @@
           try {
             const acts = await window.VL.parseRemote(text);
             if (ctx.phase !== 'parsing') return; // 解析期间已关闭/切换
-            showActs(acts); return;
-          } catch (e) { ctx.parsing = false; /* 回退规则引擎 */ }
+            setEngineUsed('ai'); showActs(acts); return;
+          } catch (e) { ctx.parsing = false; /* 回退规则引擎，下面会标记 rule */ }
         }
         ruleParse(text, curated);
       };
@@ -146,9 +148,11 @@
       };
     }, [open, run]);
 
-    const engine = aiEngine
+    // 徽章诚实化：显示"实际用了哪个引擎"——开了 AI 但云端没响应回退时，明确标注
+    const engineOn = engineUsed ? engineUsed === 'ai' : aiEngine;
+    const engine = engineOn
       ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' }
-      : { label: '规则解析', color: 'oklch(0.70 0.14 70)' };
+      : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
 
     const field = (label, value, opts) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderBottom: opts && opts.last ? 'none' : `1px solid ${t.border}` }}>
@@ -233,6 +237,7 @@
               <div style={{ width: 40, height: 40, borderRadius: 999, border: `3px solid ${t.chartTrack}`, borderTopColor: t.accent, animation: 'vlspin .8s linear infinite' }} />
               <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在解析…</span>
               <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
+              {aiEngine && !engineUsed && <span style={{ fontSize: 12, color: t.faint, marginTop: -4 }}>首次唤醒云端可能要等几十秒…</span>}
             </div>
           )}
 
