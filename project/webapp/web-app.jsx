@@ -593,7 +593,7 @@
         setToast(`已设置课表重复至 ${untilText}`, 'repeat');
       },
     };
-    const onConfirmVoice = (p) => { if (p.repeat && p.repeat.dows && p.repeat.dows.length) { app.addRepeating(p); setVoiceOpen(false); setTab('cal'); return; } addEvent(p); setVoiceOpen(false); setTab('cal'); setToast(`已加入「${p.dateText.split(' · ')[0]}」`, 'check'); };
+    const onConfirmVoice = (p, reschedules) => { if (p.repeat && p.repeat.dows && p.repeat.dows.length) { app.addRepeating(p); setVoiceOpen(false); setTab('cal'); return; } if (reschedules && reschedules.length) { const map = {}; reschedules.forEach((r) => { map[r.id] = r.time; }); mutate(p.dateKey, (arr) => arr.map((e) => (map[e.id] ? { ...e, t: map[e.id] } : e))); } addEvent(p); setVoiceOpen(false); setTab('cal'); setToast(`已加入「${p.dateText.split(' · ')[0]}」`, 'check'); };
 
     return (
       <div style={{ position: 'absolute', inset: 0, background: t.bg, color: t.text, fontFamily: t.font, display: 'flex', overflow: 'hidden', WebkitFontSmoothing: 'antialiased' }}>

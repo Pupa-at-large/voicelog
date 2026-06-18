@@ -39,6 +39,7 @@
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening'); // listening | parsing | preview | extracting | extracted
     const [engineUsed, setEngineUsed] = useState(null); // 实际用了哪个引擎：'ai' | 'rule' | null
+    const [existResched, setExistResched] = useState(null); // 冲突时选择"挪旧的"：{id,title,time}
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real'); // real | demo
     const [draft, setDraft] = useState(null);
@@ -70,7 +71,7 @@
     useEffect(() => {
       if (!open) return;
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
-      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null);
+      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
 
       const showActs = (acts) => {
@@ -331,14 +332,33 @@
                 );
               })()}
               {(() => {
-                const conflict = app ? window.VL.overlaps(app.events[draft.dateKey] || [], { id: '__new', t: draft.time, dur: draft.dur }) : [];
+                if (!app) return null;
+                const dayEvs = app.events[draft.dateKey] || [];
+                const conflict = window.VL.overlaps(dayEvs, { id: '__new', t: draft.time, dur: draft.dur });
                 if (!conflict.length) return null;
+                const C = conflict[0];
+                const newSlots = window.VL.suggestSlots(dayEvs, { id: '__new', t: draft.time, dur: draft.dur });
+                const oldSlots = window.VL.suggestSlots(dayEvs.filter((e) => e.id !== C.id).concat([{ id: '__new', t: draft.time, dur: draft.dur }]), C);
+                const amber = 'oklch(0.72 0.15 70)';
+                // 弹窗只驱动一个目标：选一种解决冲突的方式（说教沉到复盘，绝不自动改）
                 return (
-                  <div style={{ display: 'flex', gap: 9, padding: 12, borderRadius: t.radius - 2, marginBottom: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 14%, transparent)', border: `1px solid color-mix(in oklch, oklch(0.72 0.15 70) 35%, transparent)` }}>
-                    <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} style={{ flexShrink: 0, marginTop: 1 }} />
-                    <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.text }}>
-                      与「{conflict.map((c) => c.title).join('、')}」时间重叠。<span style={{ color: t.muted }}>{window.VL.MULTITASK_NOTE}</span>
+                  <div style={{ padding: 12, borderRadius: t.radius - 2, marginBottom: 12, background: `color-mix(in oklch, ${amber} 12%, transparent)`, border: `1px solid color-mix(in oklch, ${amber} 32%, transparent)` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}>
+                      <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} />
+                      <span style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>和「{conflict.map((c) => c.title).join('、')}」{C.t} 撞了，怎么办？</span>
                     </div>
+                    <div style={{ fontSize: 12, color: t.faint, margin: '0 0 5px' }}>把『{draft.title}』错开到：</div>
+                    <window.SlotSuggestions t={t} slots={newSlots} onPick={(s) => { setDraft((dr) => ({ ...dr, time: s.time })); setExistResched(null); }} />
+                    {oldSlots && oldSlots.length > 0 && (
+                      <div style={{ marginTop: 10 }}>
+                        <div style={{ fontSize: 12, color: t.faint, margin: '0 0 5px' }}>或把『{C.title}』挪到：</div>
+                        <window.SlotSuggestions t={t} slots={oldSlots} onPick={(s) => setExistResched({ id: C.id, title: C.title, time: s.time })} />
+                      </div>
+                    )}
+                    {existResched && existResched.id === C.id && (
+                      <div style={{ marginTop: 9, fontSize: 12.5, color: t.accentText, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="check" size={13} color={t.accentText} />确认后把『{existResched.title}』挪到 {existResched.time}</div>
+                    )}
+                    <div style={{ fontSize: 12, color: t.faint, marginTop: 9 }}>不想动？直接「加入日程」= 两个都留。</div>
                   </div>
                 );
               })()}
@@ -378,7 +398,7 @@
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <Btn t={t} kind="ghost" icon="redo" onClick={() => setRun((r) => r + 1)} style={{ flex: 1 }}>重说</Btn>
-                <Btn t={t} kind="primary" icon="check" onClick={() => { const title = titleRef.current ? titleRef.current.textContent.trim() : draft.title; onConfirm({ ...draft, title: title || draft.title }); }} style={{ flex: 2 }}>加入日程</Btn>
+                <Btn t={t} kind="primary" icon="check" onClick={() => { const title = titleRef.current ? titleRef.current.textContent.trim() : draft.title; onConfirm({ ...draft, title: title || draft.title }, existResched ? [{ id: existResched.id, time: existResched.time }] : null); }} style={{ flex: 2 }}>加入日程</Btn>
               </div>
             </div>
           )}

@@ -272,13 +272,21 @@
       },
     };
 
-    const onConfirmVoice = (parsed) => {
+    const onConfirmVoice = (parsed, reschedules) => {
       const ev = {
         id: 'v' + Date.now(), t: parsed.time, dur: parsed.dur || 60, title: parsed.title,
         cat: parsed.cat, loc: parsed.loc, reminder: parsed.reminder, status: 'todo',
         important: !!parsed.important, urgent: !!parsed.urgent,
       };
-      mutate(parsed.dateKey, (arr) => [...arr, ev]);
+      // 冲突时若选了"挪旧的"：先把已有行程改到新时间（点了才改，绝不自动），再加入新事项
+      mutate(parsed.dateKey, (arr) => {
+        let out = arr;
+        if (reschedules && reschedules.length) {
+          const map = {}; reschedules.forEach((r) => { map[r.id] = r.time; });
+          out = out.map((e) => (map[e.id] ? { ...e, t: map[e.id] } : e));
+        }
+        return [...out, ev];
+      });
       awardXp(XP.create);
       setVoiceOpen(false);
       setSelectedDay(parsed.dateKey);
