@@ -654,10 +654,25 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
+          {/* 品牌行：内联 SVG 声波标志 + 名字 + 标语（跨主题随主色） */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: t.shadow }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="9" width="2.6" height="6" rx="1.3" fill={t.onAccent} />
+                <rect x="8" y="4.5" width="2.6" height="15" rx="1.3" fill={t.onAccent} />
+                <rect x="13" y="7.5" width="2.6" height="9" rx="1.3" fill={t.onAccent} />
+                <rect x="18" y="10.5" width="2.6" height="3" rx="1.3" fill={t.onAccent} />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 760, color: t.text, letterSpacing: -0.2, lineHeight: 1.1 }}>语迹 <span style={{ color: t.accentText, fontWeight: 700 }}>VoiceLog</span></div>
+              <div style={{ fontSize: 10.5, color: t.faint, marginTop: 1 }}>时间是你最大的资产</div>
+            </div>
+          </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 13, color: t.accentText, fontWeight: 650, letterSpacing: 0.3 }}>{cur.today ? '今天' : `周${cur.dow}`}</div>
-              <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>6月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
+              <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>{cur.month}月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button onClick={app.goGrowth} title="成长" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 12px 0 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, boxShadow: t.shadow }}>
