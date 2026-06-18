@@ -84,6 +84,40 @@
     );
   }
 
+  // 首开欢迎页（大 Logo + 名字 + 标语）。只在第一次进入时出现，点"开始使用"后记住。
+  function WelcomeScreen({ t, onStart }) {
+    const feats = [
+      ['micFill', '语音建程', '一句口语 → AI 解析成日程，确认后才落库'],
+      ['sparkle', '复盘成长', '奖励"做了"而非"做完"，等级只升不降'],
+      ['shield', '本地优先', '数据都在你自己机器上，可导出、不锁定'],
+    ];
+    return (
+      <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: t.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 30px', textAlign: 'center', overflowY: 'auto', animation: 'vlin .45s ease' }}>
+        <div style={{ width: 88, height: 88, borderRadius: 24, background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, flexShrink: 0 }}>
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+            <rect x="2.5" y="9" width="3" height="6" rx="1.5" fill={t.onAccent} />
+            <rect x="7.5" y="4" width="3" height="16" rx="1.5" fill={t.onAccent} />
+            <rect x="12.5" y="6.5" width="3" height="11" rx="1.5" fill={t.onAccent} />
+            <rect x="17.5" y="10" width="3" height="4" rx="1.5" fill={t.onAccent} />
+          </svg>
+        </div>
+        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, letterSpacing: -0.5, color: t.text }}>语迹 <span style={{ color: t.accentText }}>VoiceLog</span></h1>
+        <div style={{ fontSize: 17, fontWeight: 600, color: t.text, marginTop: 12 }}>时间是你最大的资产</div>
+        <p style={{ fontSize: 14, color: t.muted, lineHeight: 1.6, maxWidth: 300, margin: '12px 0 0' }}>说一句话，就记下你的安排。不催你、不打分，专注复盘与成长——让时间真正属于你。</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320, margin: '28px 0 30px' }}>
+          {feats.map(([ic, title, sub]) => (
+            <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 13, textAlign: 'left' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ic} size={19} color={t.accentText} /></div>
+              <div><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>{title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 1, lineHeight: 1.4 }}>{sub}</div></div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onStart} style={{ width: '100%', maxWidth: 320, height: 52, borderRadius: 16, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 16, fontWeight: 700, background: t.accent, color: t.onAccent, boxShadow: t.shadowLg, flexShrink: 0 }}>开始使用</button>
+        <div style={{ fontSize: 11.5, color: t.faint, marginTop: 14 }}>本地优先 · 无需注册即可开始</div>
+      </div>
+    );
+  }
+
   function VoiceLogApp({ theme, themeKey, onTheme }) {
     const saved = useRef(loadState(theme.key)).current;
     const [tab, setTab] = useState('home');
@@ -113,6 +147,7 @@
     const [rolloverSnoozeUntil, setRolloverSnoozeUntil] = useState(() => (saved && saved.rolloverSnoozeUntil) || 0);
     const [timeFmt, setTimeFmt] = useState(() => (saved && saved.timeFmt) || '24'); // '24' | '12'
     window.VL.timeFmt = timeFmt; // 让所有显示处的 fmtTime/fmtRange 读到当前制式
+    const [showWelcome, setShowWelcome] = useState(() => { try { return !localStorage.getItem('voicelog:welcomed'); } catch (e) { return false; } });
     const toastTimer = useRef(0);
     const remTimer = useRef(0);
 
@@ -377,6 +412,7 @@
           </div>
         </Sheet>
         <LevelUpOverlay t={t} level={levelUp} onClose={() => setLevelUp(null)} />
+        {showWelcome && <WelcomeScreen t={t} onStart={() => { try { localStorage.setItem('voicelog:welcomed', '1'); } catch (e) {} setShowWelcome(false); }} />}
       </div>
     );
   }
