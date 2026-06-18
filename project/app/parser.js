@@ -34,6 +34,8 @@
   function parse(text) {
     const raw = (text || '').trim();
     let rest = raw;
+    // 去口头语（与 speechTrust 同一份，"就是"太常用故不删），避免"嗯/那个"混进标题
+    rest = rest.replace(/(嗯|呃|额|啊|哦|唉)+/g, ' ').replace(/那个|这个/g, ' ');
     const strip = (re) => { const m = rest.match(re); if (m) { rest = rest.replace(m[0], ' '); return m; } return null; };
 
     // ── 重复（每周X / 周X多天 / 每天 / …到X为止）──
@@ -72,6 +74,12 @@
     else if (/明晚/.test(rest)) { dateKey = _rk(1); datePrefix = '明天'; rest = rest.replace('明晚', '晚上'); } // 明天晚上
     else if (/明早/.test(rest)) { dateKey = _rk(1); datePrefix = '明天'; rest = rest.replace('明早', '早上'); } // 明天早上
     else if (/今天|今儿|今晚|今早/.test(rest)) { dateKey = _rk(0); datePrefix = '今天'; strip(/今天|今儿/); }
+    else if (/([0-9]+|[一二两三四五六七八九十]+)\s*天\s*(后|以后|之后|前|以前|之前)/.test(rest)) {
+      const dm = rest.match(/([0-9]+|[一二两三四五六七八九十]+)\s*天\s*(后|以后|之后|前|以前|之前)/);
+      const n = cnInt(dm[1]) || 0; const off = /前/.test(dm[2]) ? -n : n;
+      dateKey = _rk(off); datePrefix = off === 0 ? '今天' : (off < 0 ? `${-off}天前` : `${off}天后`);
+      strip(/([0-9]+|[一二两三四五六七八九十]+)\s*天\s*(后|以后|之后|前|以前|之前)/);
+    }
     else {
       const m = rest.match(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)([一二三四五六日天])/);
       if (m && DOW2KEY[m[1]]) { dateKey = DOW2KEY[m[1]]; datePrefix = (/下/.test(m[0]) ? '下周' : '周') + m[1]; strip(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)[一二三四五六日天]/); }
