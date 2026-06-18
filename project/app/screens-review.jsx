@@ -73,7 +73,7 @@
                 {dayList.map((ev, i, arr) => (
                   <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none', opacity: ev.status === 'cancelled' ? 0.55 : 1 }}>
                     <Dot color={catColor(t, ev.cat)} />
-                    <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums', width: 42 }}>{ev.t}</span>
+                    <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums', minWidth: 42 }}>{window.VL.fmtTime(ev.t)}</span>
                     <span style={{ flex: 1, fontSize: 14.5, color: t.text, fontWeight: 550, textDecoration: ev.status !== 'todo' ? 'line-through' : 'none', opacity: ev.status === 'done' ? 0.6 : 1 }}>{ev.title}</span>
                     <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: ev.status === 'done' ? 'oklch(0.6 0.13 150)' : t.faint, background: ev.status === 'done' ? 'color-mix(in oklch, oklch(0.6 0.13 150) 14%, transparent)' : t.surface2 }}>{ev.status === 'done' ? '完成' : ev.status === 'cancelled' ? '取消' : '待办'}</span>
                   </div>

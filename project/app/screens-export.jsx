@@ -223,6 +223,21 @@
             </div>
           </Card>
 
+          {app.setTimeFmt && (
+            <React.Fragment>
+              <SectionLabel t={t}>时间显示</SectionLabel>
+              <Card t={t} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>时间制式</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>示例 {window.VL.fmtRange('19:00', 60, app.timeFmt)}</div>
+                  </div>
+                  <Segmented t={t} size="sm" value={app.timeFmt} onChange={app.setTimeFmt} items={[{ key: '24', label: '24 小时' }, { key: '12', label: '12 小时' }]} />
+                </div>
+              </Card>
+            </React.Fragment>
+          )}
+
           <SectionLabel t={t}>解析引擎</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
             <Row t={t} icon={app.aiEngine ? 'sparkle' : 'bolt'} title={app.aiEngine ? 'AI 解析' : '规则解析'} sub={app.aiEngine ? '已接入大模型 · 口语理解更强、复盘更有洞察' : '离线规则引擎 · 无需联网、开箱即用'} right={<Dot color={app.aiEngine ? 'oklch(0.62 0.15 150)' : 'oklch(0.70 0.14 70)'} size={10} ring />} last />

@@ -147,7 +147,7 @@
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: done || cancelled ? t.faint : t.text, textDecoration: done || cancelled ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3 }}>
-                      <span style={{ fontSize: 11.5, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{ev.t}</span>
+                      <span style={{ fontSize: 11.5, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtRange(ev.t, ev.dur)}</span>
                       {ev.loc && <span style={{ fontSize: 11.5, color: t.faint }}>{ev.loc}</span>}
                       {conf && <span onClick={(e) => { e.stopPropagation(); app.showMultitask(); }} style={{ fontSize: 11, fontWeight: 600, color: 'oklch(0.58 0.15 60)', background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', padding: '1px 7px', borderRadius: 999 }}>重叠</span>}
                     </div>
@@ -306,6 +306,23 @@
           </div>
         </Card>
 
+        {app.setTimeFmt && (<React.Fragment>
+          <SectionLabel t={t}>时间显示</SectionLabel>
+          <Card t={t} style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>时间制式</div>
+                <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>示例 {window.VL.fmtRange('19:00', 60, app.timeFmt)}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[['24', '24 小时'], ['12', '12 小时']].map(([k, label]) => { const on = app.timeFmt === k; return (
+                  <button key={k} onClick={() => app.setTimeFmt(k)} style={{ height: 34, padding: '0 15px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : t.surface, color: on ? t.accentText : t.muted }}>{label}</button>
+                ); })}
+              </div>
+            </div>
+          </Card>
+        </React.Fragment>)}
+
         <SectionLabel t={t}>解析引擎</SectionLabel>
         <Card t={t} pad={0} style={{ marginBottom: 8, overflow: 'hidden' }}><Row icon={app.aiEngine ? 'sparkle' : 'bolt'} title={app.aiEngine ? 'AI 解析' : '规则解析'} sub={app.aiEngine ? '已接入大模型 · 口语理解更强、复盘更有洞察' : '离线规则引擎 · 无需联网、开箱即用'} right={<Toggle on={app.aiEngine} onChange={app.setAi} />} last /></Card>
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, marginTop: 16 }}>
@@ -335,7 +352,7 @@
           <button onClick={() => app.toggleImportant(ev.id)} title="重要" style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.important ? 'starFill' : 'star'} size={18} color={ev.important ? 'oklch(0.76 0.14 80)' : t.muted} fill={ev.important} /></button>
           <button onClick={() => app.toggleUrgent(ev.id)} title="紧急" style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.urgent ? 'flagFill' : 'flag'} size={18} color={ev.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={ev.urgent} /></button>
         </div>
-        <div style={{ marginTop: 12 }}>{meta('clock', '时间', `${ev.t} · ${ev.dur} 分钟`)}{ev.repeat && (
+        <div style={{ marginTop: 12 }}>{meta('clock', '时间', `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟`)}{ev.repeat && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${t.border}` }}>
             <Icon name="repeat" size={17} color={t.faint} />
             <span style={{ fontSize: 14, color: t.muted, width: 52 }}>重复</span>
@@ -411,6 +428,8 @@
     const saved = useRef(fresh ? null : load()).current;
     const [baseKey, setBaseKey] = useState(() => (saved && saved.baseKey) || theme.key);
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
+    const [timeFmt, setTimeFmt] = useState(() => (saved && saved.timeFmt) || '24'); // '24' | '12'
+    window.VL.timeFmt = timeFmt;
     const [events, setEvents] = useState(() => fresh ? {} : ((saved && saved.events) ? saved.events : clone(window.VL.data.events)));
     const [tab, setTab] = useState('cal');
     const [selDay, setSelDay] = useState(window.VL.todayKey());
@@ -441,7 +460,7 @@
 
     const base = window.VL.themes[baseKey] || theme;
     const t = useMemo(() => { const a = base.accents.find((x) => x.key === accentKey) || base.accents[0]; return { ...base, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft }; }, [base, accentKey]);
-    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay })); } catch (e) {} }, [events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, fresh]);
+    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt })); } catch (e) {} }, [events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt, fresh]);
 
     const markActive = () => { const today = todayStr(); setLastActiveDay((p) => { if (p !== today) setAccDays((d) => d + 1); return today; }); };
     const awardXp = (amount) => { markActive(); setXp((p) => { const nv = p + amount; if (window.VL.levelFromXp(nv).lv > window.VL.levelFromXp(p).lv) setLevelUp(window.VL.levelFromXp(nv)); return nv; }); };
@@ -475,6 +494,7 @@
       openVoice: () => setVoiceOpen(true),
       showMultitask: () => setMtOpen(true),
       setBase: (k) => { setBaseKey(k); setToast('已切换视觉方向', 'check'); },
+      timeFmt, setTimeFmt: (f) => { setTimeFmt(f); setToast(f === '12' ? '已切换为 12 小时制' : '已切换为 24 小时制', 'check'); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },
       setNotify: (v) => { setNotify(v); setToast(v ? '已开启到点提醒' : '已关闭提醒', 'bell'); },

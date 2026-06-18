@@ -111,6 +111,8 @@
     // 顺延横幅"先不用"贪睡：默认 120 分钟后再提醒；可在「我的」改成今天不再(-1)/其它时长
     const [rolloverSnoozeMins, setRolloverSnoozeMins] = useState(() => (saved && typeof saved.rolloverSnoozeMins === 'number') ? saved.rolloverSnoozeMins : 120);
     const [rolloverSnoozeUntil, setRolloverSnoozeUntil] = useState(() => (saved && saved.rolloverSnoozeUntil) || 0);
+    const [timeFmt, setTimeFmt] = useState(() => (saved && saved.timeFmt) || '24'); // '24' | '12'
+    window.VL.timeFmt = timeFmt; // 让所有显示处的 fmtTime/fmtRange 读到当前制式
     const toastTimer = useRef(0);
     const remTimer = useRef(0);
 
@@ -120,8 +122,8 @@
       return { ...theme, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft };
     }, [theme, accentKey]);
     useEffect(() => {
-      try { localStorage.setItem(SKEY(theme.key), JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil })); } catch (e) {}
-    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil]);
+      try { localStorage.setItem(SKEY(theme.key), JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt })); } catch (e) {}
+    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt]);
 
     // 任意 XP 行为都记一次「活跃」，累计天数只增不减
     const markActive = () => {
@@ -264,6 +266,7 @@
         setToast(rolloverSnoozeMins < 0 ? '今天先不提醒了' : (rolloverSnoozeMins >= 60 ? rolloverSnoozeMins / 60 + ' 小时' : rolloverSnoozeMins + ' 分钟') + '后再提醒你', 'bell');
       },
       setRolloverSnoozeMins: (m) => { setRolloverSnoozeMins(m); setRolloverSnoozeUntil(0); setToast('已更新顺延提醒设置', 'check'); },
+      timeFmt, setTimeFmt: (f) => { setTimeFmt(f); setToast(f === '12' ? '已切换为 12 小时制' : '已切换为 24 小时制', 'check'); },
       goExport: (p) => { setExportPeriod(p); setTab('export'); },
       setTab,
       demoReminder: () => {

@@ -52,7 +52,7 @@
                     {e.important && <Icon name="starFill" size={13} color={'oklch(0.76 0.14 80)'} fill style={{ flexShrink: 0 }} />}
                     <div style={{ fontSize: 13.5, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: done ? 'line-through' : 'none' }}>{e.title}</div>
                   </div>
-                  <div style={{ fontSize: 11.5, color: t.muted, marginTop: 2 }}>{e.t} · {catLabel(t, e.cat)}{e.loc ? ` · ${e.loc}` : ''}</div>
+                  <div style={{ fontSize: 11.5, color: t.muted, marginTop: 2 }}>{window.VL.fmtRange(e.t, e.dur)} · {catLabel(t, e.cat)}{e.loc ? ` · ${e.loc}` : ''}</div>
                 </div>
               );
             })}

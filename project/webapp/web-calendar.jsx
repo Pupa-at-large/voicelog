@@ -44,7 +44,7 @@
           {ev.repeat && <Icon name="repeat" size={11} color={col} sw={2.2} style={{ flexShrink: 0 }} />}
           <span style={{ fontSize: 12.5, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: done ? 'line-through' : 'none' }}>{ev.title}</span>
         </div>
-        {h > 40 && <div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>{ev.t}{ev.loc ? ` · ${ev.loc}` : ''}</div>}
+        {h > 40 && <div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>{window.VL.fmtRange(ev.t, ev.dur)}{ev.loc ? ` · ${ev.loc}` : ''}</div>}
       </div>
     );
   }

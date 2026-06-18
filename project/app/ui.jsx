@@ -233,7 +233,7 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: isNow ? t.accentText : t.faint, textTransform: 'uppercase' }}>{label}</span>
             {isNow && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'oklch(0.62 0.2 25)', boxShadow: '0 0 0 3px color-mix(in oklch, oklch(0.62 0.2 25) 25%, transparent)' }} />}
-            <span style={{ fontSize: 12, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{ev.t} · {isNow ? remain(ev) : rel(ev)}</span>
+            <span style={{ fontSize: 12, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtRange(ev.t, ev.dur)} · {isNow ? remain(ev) : rel(ev)}</span>
           </div>
           <div style={{ fontSize: 15.5, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{ev.important ? '★ ' : ''}{ev.title}{ev.loc ? <span style={{ fontSize: 12.5, fontWeight: 500, color: t.muted }}> · {ev.loc}</span> : null}</div>
         </div>
@@ -293,7 +293,7 @@
                 <span style={{ width: 7, height: 7, borderRadius: 999, background: catColor(t, p.ev.cat), flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.ev.title}</div>
-                  <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{lbl(p.key)} · {p.ev.t}</div>
+                  <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{lbl(p.key)} · {window.VL.fmtTime(p.ev.t)}</div>
                 </div>
               </button>
             ))}
@@ -373,7 +373,7 @@
               <button key={e.id} onClick={() => onOpen && onOpen(e)} style={{ display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', font: 'inherit', cursor: 'pointer', border: 'none', background: t.surface2, borderRadius: 8, padding: '6px 8px' }}>
                 <span style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: catColor(t, e.cat), flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 550, color: e.status === 'done' ? t.faint : t.text, textDecoration: e.status === 'done' ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
-                <span style={{ fontSize: 10.5, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{e.t}</span>
+                <span style={{ fontSize: 10.5, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{window.VL.fmtTime(e.t)}</span>
               </button>
             )) : <div style={{ fontSize: 11.5, color: t.faint, padding: '10px 0', textAlign: 'center' }}>—</div>}
           </div>

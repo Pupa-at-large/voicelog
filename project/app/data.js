@@ -250,6 +250,28 @@
   window.VL.todayDateObj = function () { return new Date(_TODAY.getTime()); };
   window.VL.WEEK_KEYS = week.map((w) => w.key);
   window.VL.dateText = dateTextOf;
+
+  // ── 时间显示：内部一律存 24 小时 "HH:MM"，只在显示时格式化。──
+  // window.VL.timeFmt 由 App 按设置写入（'24' | '12'）；默认 24。
+  window.VL.timeFmt = '24';
+  window.VL.fmtTime = function (hhmm, fmt) {
+    fmt = fmt || window.VL.timeFmt || '24';
+    if (!/^\d{1,2}:\d{2}$/.test(hhmm || '')) return hhmm || '';
+    if (fmt === '24') return hhmm;
+    const [h, m] = hhmm.split(':').map(Number);
+    const ap = h < 6 ? '凌晨' : h < 12 ? '上午' : h < 13 ? '中午' : h < 18 ? '下午' : '晚上';
+    let h12 = h % 12; if (h12 === 0) h12 = 12;
+    return ap + h12 + ':' + String(m).padStart(2, '0');
+  };
+  window.VL.endTime = function (hhmm, dur) {
+    if (!/^\d{1,2}:\d{2}$/.test(hhmm || '')) return hhmm || '';
+    const [h, m] = hhmm.split(':').map(Number); const tot = h * 60 + m + (dur || 0);
+    return String(Math.floor(tot / 60) % 24).padStart(2, '0') + ':' + String(tot % 60).padStart(2, '0');
+  };
+  // "几点到几点"：起点–终点（终点=起点+时长）
+  window.VL.fmtRange = function (hhmm, dur, fmt) {
+    return window.VL.fmtTime(hhmm, fmt) + '–' + window.VL.fmtTime(window.VL.endTime(hhmm, dur), fmt);
+  };
   window.VL.SEMESTER_END = SEMESTER_END;
   window.VL.RECUR_OPTIONS = RECUR_OPTIONS;
   window.VL.computeDay = computeDay;

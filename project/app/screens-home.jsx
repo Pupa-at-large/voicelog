@@ -373,7 +373,12 @@
                   </div>
                 ), { icon: 'clock' })}
                 {field('时间', (
-                  <input type="time" value={draft.time} onChange={(e) => setDraft((dr) => ({ ...dr, time: e.target.value || dr.time }))} style={{ ...inputStyle, fontSize: 15.5 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
+                    <span style={{ color: t.faint }}>到</span>
+                    <input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
+                    <span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span>
+                  </div>
                 ), { icon: 'clock' })}
                 {field('地点', <span style={{ fontSize: 15, color: draft.loc ? t.text : t.faint }}>{draft.loc || '未识别 · 可不填'}</span>, { icon: 'pin' })}
                 {field('提醒', (
@@ -415,7 +420,7 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bell" size={19} color={t.accentText} /></div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: t.faint, fontWeight: 600 }}>{ev ? `提前 ${ev.reminder} 分钟 · ${ev.t}` : ''}</div>
+              <div style={{ fontSize: 12, color: t.faint, fontWeight: 600 }}>{ev ? `提前 ${ev.reminder} 分钟 · ${window.VL.fmtTime(ev.t)}` : ''}</div>
               <div style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev ? ev.title : ''}{ev && ev.loc ? ` · ${ev.loc}` : ''}</div>
             </div>
           </div>
@@ -465,8 +470,8 @@
     return (
       <div style={{ display: 'flex', gap: 12 }}>
         <div style={{ width: 48, flexShrink: 0, textAlign: 'right', paddingTop: 14 }}>
-          <div style={{ fontSize: 15, fontWeight: 650, color: done || cancelled ? t.faint : t.text, fontVariantNumeric: 'tabular-nums' }}>{ev.t}</div>
-          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{ev.dur}分</div>
+          <div style={{ fontSize: 15, fontWeight: 650, color: done || cancelled ? t.faint : t.text, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtTime(ev.t)}</div>
+          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtTime(window.VL.endTime(ev.t, ev.dur))}</div>
         </div>
         <div style={{ flex: 1, minWidth: 0, position: 'relative', borderRadius: t.radius, overflow: 'hidden', boxShadow: t.shadow }}>
           {/* 右侧操作：编辑 / 删除 */}
@@ -537,7 +542,7 @@
           <button onClick={() => onEdit(ev)} style={{ height: 38, padding: '0 13px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name="pencil" size={15} color={t.text} />编辑</button>
         </div>
         <div style={{ marginTop: 10 }}>
-          {meta('clock', '时间', `${ev.t} · ${ev.dur} 分钟`)}
+          {meta('clock', '时间', `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟`)}
           {ev.loc && meta('pin', '地点', ev.loc)}
           {meta('bell', '提醒', ev.reminder ? `提前 ${ev.reminder} 分钟` : '不提醒')}
         </div>
