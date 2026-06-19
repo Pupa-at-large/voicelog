@@ -230,13 +230,13 @@
         setToast(`已加入 ${list.length} 个日程`, 'check');
       },
       applyBatch: (sel) => {
-        const created = sel.filter((a) => a.kind !== 'complete').length;
-        const completed = sel.filter((a) => a.kind === 'complete').length;
-        setEvents((prev) => window.VL.applyBatchTo(prev, sel).next);
-        for (let i = 0; i < created; i++) awardXp(XP.create);
-        for (let i = 0; i < completed; i++) awardXp(XP.done);
+        const r = window.VL.applyBatchTo(events, sel);
+        setEvents(r.next);
+        for (let i = 0; i < r.created; i++) awardXp(XP.create);
+        for (let i = 0; i < r.completed; i++) awardXp(XP.done);
         setSelectedDay(window.VL.todayKey()); setTab('home');
-        setToast(`已新增 ${created} 条 · 完成 ${completed} 条`, 'check');
+        const parts = [r.created && `新增 ${r.created}`, r.completed && `完成 ${r.completed}`, r.rescheduled && `改期 ${r.rescheduled}`, r.cancelled && `取消 ${r.cancelled}`].filter(Boolean);
+        setToast(parts.length ? '已' + parts.join(' · ') : '已处理', 'check');
       },
       saveEvent: (id, patch) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
       rescheduleEvent: (id, time) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, t: time } : e)); setDetail((d) => d && d.id === id ? { ...d, t: time } : d); setToast('已改到 ' + time, 'check'); },

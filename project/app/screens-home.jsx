@@ -96,7 +96,7 @@
         if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
           ctx.parsing = true; setP('parsing');
           try {
-            const acts = await window.VL.parseRemote(text);
+            const acts = await window.VL.parseRemote(text, app ? window.VL.candidateEvents(app.events) : []);
             if (ctx.phase !== 'parsing') return; // 解析期间已关闭/切换
             setEngineUsed('ai'); showActs(acts); return;
           } catch (e) { ctx.parsing = false; /* 回退规则引擎，下面会标记 rule */ }

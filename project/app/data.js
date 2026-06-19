@@ -394,28 +394,55 @@
     let created = 0, completed = 0;
     const rid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent });
-    const findMatch = (title, dateKey) => {
-      const days = [dateKey, window.VL.todayKey(), window.VL.prevKey(window.VL.todayKey())].filter(Boolean);
+    let rescheduled = 0, cancelled = 0;
+    // 定位已有日程：优先 targetId（千问从我们给的清单里选），否则按标题模糊匹配
+    const findLoc = (id, title, dateKey) => {
+      if (id) { for (const day of Object.keys(next)) { const e = (next[day] || []).find((x) => x.id === id); if (e) return { e, day }; } }
+      if (!title) return null;
+      const days = [dateKey, window.VL.todayKey(), window.VL.prevKey(window.VL.todayKey()), ...Object.keys(next)].filter(Boolean);
       const seen = new Set();
       for (const day of days) {
         if (seen.has(day)) continue; seen.add(day);
-        const hit = (next[day] || []).find((e) => e.status !== 'done' && e.status !== 'cancelled' && (e.title.includes(title) || title.includes(e.title)));
-        if (hit) return hit;
+        const e = (next[day] || []).find((x) => x.status !== 'cancelled' && (x.title.includes(title) || title.includes(x.title)));
+        if (e) return { e, day };
       }
       return null;
     };
     (actions || []).forEach((a) => {
-      if (a.kind === 'complete') {
-        const m = findMatch(a.title, a.draft.dateKey);
-        if (m) m.status = 'done';
-        else { next[a.draft.dateKey] = [...(next[a.draft.dateKey] || []), mk(a.draft, 'done')]; }
+      const d = a.draft || {};
+      if (a.kind === 'reschedule') {
+        const loc = findLoc(a.targetId, a.title, d.dateKey);
+        if (!loc) return;
+        const newDay = d.dateKey || loc.day;
+        const patched = { ...loc.e, t: d.time || loc.e.t };
+        if (newDay !== loc.day) { next[loc.day] = next[loc.day].filter((x) => x.id !== loc.e.id); next[newDay] = [...(next[newDay] || []), patched]; }
+        else { next[loc.day] = next[loc.day].map((x) => (x.id === loc.e.id ? patched : x)); }
+        rescheduled += 1;
+      } else if (a.kind === 'cancel') {
+        const loc = findLoc(a.targetId, a.title, d.dateKey);
+        if (loc) { next[loc.day] = next[loc.day].map((x) => (x.id === loc.e.id ? { ...x, status: 'cancelled' } : x)); cancelled += 1; }
+      } else if (a.kind === 'complete') {
+        const loc = findLoc(a.targetId, a.title, d.dateKey);
+        if (loc) { next[loc.day] = next[loc.day].map((x) => (x.id === loc.e.id ? { ...x, status: 'done' } : x)); }
+        else { next[d.dateKey] = [...(next[d.dateKey] || []), mk(d, 'done')]; }
         completed += 1;
       } else {
-        next[a.draft.dateKey] = [...(next[a.draft.dateKey] || []), mk(a.draft, 'todo')];
+        next[d.dateKey] = [...(next[d.dateKey] || []), mk(d, 'todo')];
         created += 1;
       }
     });
-    return { next, created, completed };
+    return { next, created, completed, rescheduled, cancelled };
+  };
+  // 给后端"语音改期/取消"用：把现有日程压成精简清单（带 id 供匹配）
+  window.VL.candidateEvents = function (eventsObj) {
+    const out = [];
+    Object.keys(eventsObj || {}).forEach((k) => (eventsObj[k] || []).forEach((e) => {
+      if (e.status === 'cancelled') return;
+      const dt = window.VL.keyDate(k);
+      const iso = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+      out.push({ id: e.id, title: e.title, date: iso, time: e.t });
+    }));
+    return out.slice(0, 50);
   };
   window.VL.periods = [
     { key: 'day', label: '日' }, { key: 'week', label: '周' },

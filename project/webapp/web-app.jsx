@@ -585,13 +585,13 @@
       },
       addExtracted: (list) => { setEvents((prev) => { const next = { ...prev }; list.forEach((p) => { const ev = { id: 'u' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: 'todo' }; next[p.dateKey] = [...(next[p.dateKey] || []).map((e) => ({ ...e })), ev]; }); return next; }); awardXp(XP.create * list.length); setToast(`已加入 ${list.length} 个日程`, 'check'); },
       applyBatch: (sel) => {
-        const created = sel.filter((a) => a.kind !== 'complete').length;
-        const completed = sel.filter((a) => a.kind === 'complete').length;
-        setEvents((prev) => window.VL.applyBatchTo(prev, sel).next);
-        if (created) awardXp(XP.create * created);
-        if (completed) awardXp(XP.done * completed);
+        const r = window.VL.applyBatchTo(events, sel);
+        setEvents(r.next);
+        if (r.created) awardXp(XP.create * r.created);
+        if (r.completed) awardXp(XP.done * r.completed);
         setSelDay(window.VL.todayKey()); setTab('cal');
-        setToast(`已新增 ${created} 条 · 完成 ${completed} 条`, 'check');
+        const parts = [r.created && `新增 ${r.created}`, r.completed && `完成 ${r.completed}`, r.rescheduled && `改期 ${r.rescheduled}`, r.cancelled && `取消 ${r.cancelled}`].filter(Boolean);
+        setToast(parts.length ? '已' + parts.join(' · ') : '已处理', 'check');
       },
       addCourses: (list, repeat) => {
         const dk = window.VL.data.dowToKey;
@@ -627,7 +627,7 @@
         </div>
         <DetailModal t={t} app={app} />
         <EditModal t={t} app={app} />
-        <window.WebVoiceModal t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} onExtracted={app.addExtracted} onCourses={app.addCourses} onBatch={(acts) => { setVoiceOpen(false); app.openBatch(acts); }} aiEngine={aiEngine} dayEventsFor={(k) => events[k] || []} />
+        <window.WebVoiceModal t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} onExtracted={app.addExtracted} onCourses={app.addCourses} onBatch={(acts) => { setVoiceOpen(false); app.openBatch(acts); }} aiEngine={aiEngine} dayEventsFor={(k) => events[k] || []} allEvents={events} />
         <RecurrenceModal t={t} open={recurOpen} onClose={() => setRecurOpen(false)} count={pendingCount} onConfirm={(u, ut) => { app.setCourseRange(u, ut); setRecurOpen(false); }} />
         <Modal t={t} open={mtOpen} onClose={() => setMtOpen(false)} width={420}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bolt" size={20} color={'oklch(0.6 0.15 60)'} /></div><h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>关于一心多用</h3></div>

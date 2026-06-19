@@ -309,28 +309,38 @@
 
   // 待执行清单：批量语音/文字解析出的多条动作，用户逐条确认（可勾选）后再批量执行——永不静默执行
   function BatchReviewList({ t, actions, sel, onToggle, style }) {
-    const green = 'oklch(0.6 0.13 150)';
+    const green = 'oklch(0.6 0.13 150)', amber = 'oklch(0.72 0.15 70)';
+    const KIND = {
+      create: { label: '新增', c: t.accentText, on: t.accent },
+      complete: { label: '完成', c: green, on: green },
+      reschedule: { label: '改期', c: 'oklch(0.55 0.15 60)', on: amber },
+      cancel: { label: '取消', c: t.muted, on: t.muted },
+    };
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
         {actions.map((a, i) => {
           const on = sel[i];
-          const isDone = a.kind === 'complete';
-          const badgeC = isDone ? green : t.accentText;
-          const d = a.draft;
+          const k = KIND[a.kind] || KIND.create;
+          const d = a.draft || {};
+          const isEdit = a.kind === 'reschedule' || a.kind === 'cancel';
           const dateShort = (d.dateText || '').split(' · ')[0];
+          let detail;
+          if (a.kind === 'reschedule') { const to = [dateShort, d.time ? window.VL.fmtTime(d.time) : ''].filter(Boolean).join(' '); detail = to ? '改到 ' + to : '换个时间'; }
+          else if (a.kind === 'cancel') detail = '取消这条日程';
+          else detail = `${dateShort} ${window.VL.fmtRange(d.time, d.dur)}`;
           return (
-            <button key={i} onClick={() => onToggle(i)} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, cursor: 'pointer', textAlign: 'left', font: 'inherit', borderRadius: t.radius, background: on ? t.surface : t.surface2, border: `1.5px solid ${on ? (isDone ? green : t.accentText) : t.border}` }}>
-              <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? (isDone ? green : t.accent) : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
+            <button key={i} onClick={() => onToggle(i)} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, cursor: 'pointer', textAlign: 'left', font: 'inherit', borderRadius: t.radius, background: on ? t.surface : t.surface2, border: `1.5px solid ${on ? k.on : t.border}` }}>
+              <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? k.on : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: badgeC, background: `color-mix(in oklch, ${isDone ? green : t.accent} 16%, transparent)`, padding: '1px 7px', borderRadius: 999 }}>{isDone ? '完成' : '新增'}</span>
-                  <span style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{d.title}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: k.c, background: `color-mix(in oklch, ${k.on} 16%, transparent)`, padding: '1px 7px', borderRadius: 999, flexShrink: 0 }}>{k.label}</span>
+                  <span style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: a.kind === 'cancel' ? 'line-through' : 'none' }}>{d.title || a.title}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12.5, color: t.muted }}>{dateShort} {d.time}</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>
-                  {d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
-                  {d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
+                  <span style={{ fontSize: 12.5, color: t.muted }}>{detail}</span>
+                  {!isEdit && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>}
+                  {!isEdit && d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
+                  {!isEdit && d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
                 </div>
               </div>
             </button>

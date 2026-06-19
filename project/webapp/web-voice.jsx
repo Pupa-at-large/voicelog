@@ -15,7 +15,7 @@
     );
   }
 
-  function WebVoiceModal({ t, open, onClose, onConfirm, onExtracted, onCourses, onBatch, aiEngine, dayEventsFor }) {
+  function WebVoiceModal({ t, open, onClose, onConfirm, onExtracted, onCourses, onBatch, aiEngine, dayEventsFor, allEvents }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening');
     const [engineUsed, setEngineUsed] = useState(null); // 'ai' | 'rule' | null
@@ -78,7 +78,7 @@
         // 开启「AI 解析」且配置了后端 → 先走千问真·AI 解析；失败/未配置自动回退规则引擎
         if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
           ctx.parsing = true; setP('parsing');
-          try { const acts = await window.VL.parseRemote(text); if (ctx.phase !== 'parsing') return; setEngineUsed('ai'); showActs(acts); return; }
+          try { const acts = await window.VL.parseRemote(text, window.VL.candidateEvents(allEvents || {})); if (ctx.phase !== 'parsing') return; setEngineUsed('ai'); showActs(acts); return; }
           catch (e) { ctx.parsing = false; }
         }
         ruleParse(text, curated);

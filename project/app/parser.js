@@ -221,29 +221,38 @@
   // 把千问返回的 action 映射成内部草稿（字段与 parse() 输出同构），
   // 让单条预览 / 编辑 / 批量「待执行清单」复用现有 UI；返回与 parseBatch 同构的数组。
   const SERVER_CATS = ['meet', 'deep', 'life', 'learn', 'misc'];
+  const SERVER_KINDS = ['create', 'complete', 'reschedule', 'cancel'];
   function mapServerAction(a) {
-    if (!a || !a.title) return null;
-    const date = String(a.date || '').trim();
+    if (!a) return null;
+    const kind = SERVER_KINDS.indexOf(a.kind) >= 0 ? a.kind : 'create';
+    const title = a.title ? String(a.title).trim() : '';
+    if (kind === 'create' && !title) return null;
+    if ((kind === 'reschedule' || kind === 'cancel' || kind === 'complete') && !title && !a.targetId) return null;
     const today = (window.VL.todayKey && window.VL.todayKey()) || '06-16';
-    const dateKey = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date.slice(5) : today;
+    const hasDate = /^\d{4}-\d{2}-\d{2}$/.test(String(a.date || ''));
+    const hasTime = /^\d{1,2}:\d{2}$/.test(a.time || '');
+    const dateKey = hasDate ? String(a.date).slice(5) : today;
     const order = ((window.VL.data && window.VL.data.week) || []).map((w) => w.key);
     const di = order.indexOf(dateKey), ti = order.indexOf(today);
     let prefix = null;
     if (di >= 0 && ti >= 0) { const diff = di - ti; prefix = diff === 0 ? '今天' : diff === 1 ? '明天' : diff === 2 ? '后天' : null; }
-    const time = /^\d{1,2}:\d{2}$/.test(a.time || '') ? a.time : '09:00';
+    const base = { kind, targetId: a.targetId || null, title, seg: title };
+    // 改期/取消：只带"变化项"，date/time 没给就保持原样（null → applyBatchTo 沿用原值）
+    if (kind === 'reschedule' || kind === 'cancel') {
+      return Object.assign(base, { draft: { title, dateKey: hasDate ? dateKey : null, dateText: hasDate ? dateTextOf(dateKey, prefix) : null, time: hasTime ? a.time : null } });
+    }
     const draft = {
-      title: String(a.title).trim(),
-      dateKey, dateText: dateTextOf(dateKey, prefix), time,
+      title, dateKey, dateText: dateTextOf(dateKey, prefix), time: hasTime ? a.time : '09:00',
       loc: a.loc || null, reminder: Number(a.reminder) || 0,
       cat: SERVER_CATS.indexOf(a.cat) >= 0 ? a.cat : 'misc',
       dur: Number(a.dur) || 60, urgent: !!a.urgent, important: !!a.important,
     };
-    if (a.kind === 'complete') return { kind: 'complete', title: draft.title, draft: { ...draft, status: 'done' }, seg: draft.title };
-    return { kind: 'create', title: draft.title, draft, seg: draft.title };
+    if (kind === 'complete') return Object.assign(base, { draft: Object.assign({}, draft, { status: 'done' }) });
+    return Object.assign(base, { draft });
   }
   window.VL.mapServerAction = mapServerAction;
 
-  async function parseRemote(text) {
+  async function parseRemote(text, candidates) {
     const base = (window.VL.serverUrl || '').replace(/\/+$/, '');
     if (!base) throw new Error('未配置后端地址');
     const ctrl = new AbortController();
@@ -253,14 +262,17 @@
       const _hm = String(_n.getHours()).padStart(2, '0') + ':' + String(_n.getMinutes()).padStart(2, '0');
       const r = await fetch(base + '/parse', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        // 把客户端真实的"今天/现在"一并发给后端，避免服务器时区/日期与前端对不上
-        body: JSON.stringify({ text: text, today: window.VL.todayISO ? window.VL.todayISO() : undefined, now: _hm }),
+        // 把客户端真实的"今天/现在" + 现有日程（供"改期/取消"按 id 匹配）一并发给后端
+        body: JSON.stringify({ text: text, today: window.VL.todayISO ? window.VL.todayISO() : undefined, now: _hm, events: candidates || [] }),
         signal: ctrl.signal,
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const data = await r.json();
       const acts = (data.actions || []).map(mapServerAction).filter(Boolean);
       if (!acts.length) throw new Error('空结果');
+      // 改期/取消时千问常只给 targetId、不给标题——从候选清单回填，供清单展示
+      const byId = {}; (candidates || []).forEach((e) => { if (e && e.id) byId[e.id] = e; });
+      acts.forEach((a) => { if (a.targetId && byId[a.targetId] && !(a.draft && a.draft.title)) { const ti = byId[a.targetId].title; a.title = ti; a.seg = ti; if (a.draft) a.draft.title = ti; } });
       return acts;
     } finally { clearTimeout(to); }
   }
