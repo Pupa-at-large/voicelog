@@ -99,18 +99,26 @@
   }
 
   // 月：日历热力
-  function MonthView({ t, app, onPick }) {
-    const _b = window.VL.todayDateObj();
+  function MonthView({ t, app, onPick, monthOff, onMonth }) {
+    const _t = window.VL.todayDateObj();
+    const _b = new Date(_t.getFullYear(), _t.getMonth() + (monthOff || 0), 1);
     const _Y = _b.getFullYear(), _M = _b.getMonth();
+    const isThisMonth = _Y === _t.getFullYear() && _M === _t.getMonth();
     const lead = new Date(_Y, _M, 1).getDay();            // 当月 1 号是周几
     const daysInMonth = new Date(_Y, _M + 1, 0).getDate(); // 当月天数
     const _mm = String(_M + 1).padStart(2, '0');
+    const navBtn = { width: 34, height: 34, borderRadius: 999, border: `1px solid ${t.border}`, background: t.surface2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
     const cells = [];
     for (let i = 0; i < lead; i++) cells.push(null);
     for (let d = 1; d <= daysInMonth; d++) cells.push(d);
     while (cells.length % 7) cells.push(null);
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 24px' }} data-vlpop>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 10 }}>
+          <button onClick={() => onMonth && onMonth(-1)} style={navBtn}><Icon name="chevL" size={18} color={t.text} /></button>
+          <span style={{ fontSize: 15, fontWeight: 700, color: t.text, minWidth: 92, textAlign: 'center' }}>{_Y} 年 {_M + 1} 月{isThisMonth ? '' : ''}</span>
+          <button onClick={() => onMonth && onMonth(1)} style={navBtn}><Icon name="chevR" size={18} color={t.text} /></button>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginBottom: 6 }}>
           {DOWH.map((d) => <div key={d} style={{ textAlign: 'center', fontSize: 11, color: t.faint, fontWeight: 600, padding: '2px 0' }}>{d}</div>)}
         </div>
@@ -120,7 +128,7 @@
             const key = _mm + '-' + String(d).padStart(2, '0');
             const evs = live(app.events[key]);
             const cats = [...new Set(evs.map((e) => e.cat))];
-            const today = key === TODAY;
+            const today = isThisMonth && key === TODAY;
             return (
               <div key={i} onClick={() => evs.length && onPick(key)} style={{
                 minHeight: 58, borderRadius: 10, padding: '6px 0 0', cursor: evs.length ? 'pointer' : 'default',
@@ -144,6 +152,7 @@
   function OverviewView({ t, app }) {
     const [idx, setIdx] = useState(1); // 0 月 · 1 周 · 2 日
     const [day, setDay] = useState(TODAY);
+    const [monthOff, setMonthOff] = useState(0); // 月视图翻月偏移
     const ref = useRef(null);
     const step = (d) => setIdx((i) => Math.max(0, Math.min(2, i + d)));
 
@@ -187,7 +196,7 @@
         </div>
         {level === 'day' && <DayView t={t} app={app} dayKey={day} />}
         {level === 'week' && <WeekView t={t} app={app} onPick={(k) => { setDay(k); setIdx(2); }} />}
-        {level === 'month' && <MonthView t={t} app={app} onPick={(k) => { setDay(k); setIdx(2); }} />}
+        {level === 'month' && <MonthView t={t} app={app} monthOff={monthOff} onMonth={(d) => setMonthOff((o) => o + d)} onPick={(k) => { setDay(k); setIdx(2); }} />}
         <div style={{ textAlign: 'center', fontSize: 11, color: t.faint, padding: '2px 0 8px' }}>双指 / ⌘+滚轮缩放 · 或用上方 ± 切换</div>
       </div>
     );
