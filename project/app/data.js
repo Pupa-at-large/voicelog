@@ -27,7 +27,19 @@
   // 日期文案："今天 · 6月17日 周二"（窗口外只给"M月D日"）
   function dateTextOf(key, prefix) {
     const w = week.find((x) => x.key === key);
-    const base = w ? `${w.month}月${w.day}日 周${w.dow}` : key;
+    let base;
+    if (w) base = `${w.month}月${w.day}日 周${w.dow}`;
+    else {
+      // 窗口外的任意日期：按"最接近今天的那一年"还原出真实 dow/月/日（解决未来/过去日程显示成裸键）
+      const p = String(key || '').split('-'); const mo = +p[0], da = +p[1];
+      if (mo && da) {
+        let d = new Date(_TODAY.getFullYear(), mo - 1, da);
+        const diff = (d - _TODAY) / 86400000;
+        if (diff > 182) d = new Date(_TODAY.getFullYear() - 1, mo - 1, da);
+        else if (diff < -182) d = new Date(_TODAY.getFullYear() + 1, mo - 1, da);
+        base = `${d.getMonth() + 1}月${d.getDate()}日 周${DOWC[d.getDay()]}`;
+      } else base = key;
+    }
     return prefix ? `${prefix} · ${base}` : base;
   }
 

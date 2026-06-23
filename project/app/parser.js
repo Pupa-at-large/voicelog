@@ -82,7 +82,12 @@
     }
     else {
       const m = rest.match(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)([一二三四五六日天])/);
-      if (m && DOW2KEY[m[1]]) { dateKey = DOW2KEY[m[1]]; datePrefix = (/下/.test(m[0]) ? '下周' : '周') + m[1]; strip(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)[一二三四五六日天]/); }
+      if (m && DOW2KEY[m[1]]) {
+        let dk = DOW2KEY[m[1]];
+        if (/下/.test(m[0]) && window.VL.keyDate) { const d = new Date(window.VL.keyDate(dk).getTime()); d.setDate(d.getDate() + 7); dk = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+        dateKey = dk; datePrefix = (/下/.test(m[0]) ? '下周' : '周') + m[1];
+        strip(/(?:下个?周|下星期|下礼拜|这?周|这?星期|这?礼拜)[一二三四五六日天]/);
+      }
     }
 
     // ── 时段 ──
