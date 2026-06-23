@@ -162,10 +162,15 @@
     }, [open, run]);
 
     // 徽章诚实化：显示"实际用了哪个引擎"——开了 AI 但云端没响应回退时，明确标注
-    const engineOn = engineUsed ? engineUsed === 'ai' : aiEngine;
-    const engine = engineOn
-      ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' }
-      : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
+    const isManual = engineUsed === 'manual';
+    const engineOn = engineUsed && engineUsed !== 'manual' ? engineUsed === 'ai' : (isManual ? false : aiEngine);
+    const engine = isManual
+      ? { label: '手动填写', color: t.muted }
+      : engineOn
+        ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' }
+        : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
+    const blankDraft = () => ({ title: '新日程', dateKey: window.VL.todayKey(), dateText: window.VL.dateText(window.VL.todayKey(), '今天'), time: '09:00', dur: 60, loc: null, reminder: 0, cat: 'misc', urgent: false, important: false });
+    const openManual = () => { setEngineUsed('manual'); setDraft(blankDraft()); setPhase('preview'); };
 
     const field = (label, value, opts) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderBottom: opts && opts.last ? 'none' : `1px solid ${t.border}` }}>
@@ -205,14 +210,15 @@
           {phase === 'uploadStart' && (
             <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 4px 6px' }}>
               <div style={{ textAlign: 'center', marginBottom: 18 }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Icon name="image" size={26} color={t.accentText} /></div>
-                <div style={{ fontSize: 18, fontWeight: 720, color: t.text }}>上传，让 AI 提取日程</div>
-                <div style={{ fontSize: 12.5, color: t.faint, marginTop: 5, lineHeight: 1.5 }}>课表 / 截图 / 文档都行，识别后核对再加入</div>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Icon name="plus" size={26} color={t.accentText} /></div>
+                <div style={{ fontSize: 18, fontWeight: 720, color: t.text }}>添加日程</div>
+                <div style={{ fontSize: 12.5, color: t.faint, marginTop: 5, lineHeight: 1.5 }}>拍照 / 上传识别，或手动填写；也可点麦克风说一句</div>
               </div>
               <button onClick={() => camRef.current && camRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: 'none', background: t.accent, color: t.onAccent, font: 'inherit', fontSize: 15, fontWeight: 700, boxShadow: t.shadow, marginBottom: 10 }}><Icon name="image" size={19} color={t.onAccent} />拍照（课表 / 白板）</button>
-              <button onClick={() => fileRef.current && fileRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650 }}><Icon name="export" size={18} color={t.accentText} />从相册 / 文件选择</button>
+              <button onClick={() => fileRef.current && fileRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650, marginBottom: 10 }}><Icon name="export" size={18} color={t.accentText} />从相册 / 文件选择</button>
+              <button onClick={openManual} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650 }}><Icon name="pencil" size={18} color={t.accentText} />手动填写一条</button>
               <button onClick={onClose} style={{ marginTop: 16, height: 40, borderRadius: 12, cursor: 'pointer', border: 'none', background: 'transparent', color: t.muted, font: 'inherit', fontSize: 14, fontWeight: 600 }}>取消</button>
-              <div style={{ fontSize: 11.5, color: t.faint, textAlign: 'center', marginTop: 6 }}>提示：现在是演示样例，真识别接入视觉模型后生效</div>
+              <div style={{ fontSize: 11.5, color: t.faint, textAlign: 'center', marginTop: 6 }}>提示：拍照/上传现在是演示样例，真识别接入视觉模型后生效</div>
             </div>
           )}
 
@@ -340,7 +346,7 @@
           {phase === 'preview' && draft && (
             <div style={{ animation: 'vlin .3s ease' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 2px 12px' }}>
-                <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>解析结果</span>
+                <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>{isManual ? '新建日程' : '解析结果'}</span>
                 <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
               </div>
               {transcript && (
@@ -714,7 +720,7 @@
                 <span style={{ width: 22, height: 22, borderRadius: 999, border: `1.5px solid ${window.VL.GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 720, color: window.VL.GOLD, flexShrink: 0 }}>{app.level.lv}</span>
                 <span style={{ fontSize: 13, fontWeight: 650, color: t.text }}>LV.{app.level.lv}</span>
               </button>
-              <button onClick={app.openUpload} title="拍照 / 上传日程" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="image" size={20} color={t.text} /></button>
+              <button onClick={app.openUpload} title="添加日程（拍照/上传/手动）" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="plus" size={20} color={t.text} /></button>
               <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
             </div>
           </div>
