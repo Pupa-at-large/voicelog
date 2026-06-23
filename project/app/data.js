@@ -30,8 +30,9 @@
   const remap = (k) => (k in _OFF ? relKey(_OFF[k]) : k);
   const remapEvents = (seed) => { const o = {}; Object.keys(seed).forEach((k) => { o[remap(k)] = seed[k]; }); return o; };
 
-  // 7 天窗口（今天在 index 1）；dow/day/month 均按真实日期算
-  const week = [-1, 0, 1, 2, 3, 4, 5].map((n) => { const d = _dayAt(n); return { key: _mmdd(d), dow: DOWC[d.getDay()], day: d.getDate(), month: d.getMonth() + 1, today: n === 0 }; });
+  // 7 天窗口（今天在 index 1）；dow/day/month 均按真实日期算。weekOff 翻周用。
+  const windowDays = (weekOff) => [-1, 0, 1, 2, 3, 4, 5].map((i) => { const n = i + (weekOff || 0) * 7; const d = _dayAt(n); return { key: _mmdd(d), dow: DOWC[d.getDay()], day: d.getDate(), month: d.getMonth() + 1, today: n === 0 }; });
+  const week = windowDays(0);
   const dowToKey = {}; week.forEach((w) => { dowToKey[DOWC.indexOf(w.dow)] = w.key; });
   // 日期文案："今天 · 6月17日 周二"（窗口外只给"M月D日"）
   function dateTextOf(key, prefix) {
@@ -270,6 +271,7 @@
   window.VL.todayISO = function () { return _iso(_TODAY); };
   window.VL.todayDateObj = function () { return new Date(_TODAY.getTime()); };
   window.VL.WEEK_KEYS = week.map((w) => w.key);
+  window.VL.windowDays = windowDays;
   window.VL.dateText = dateTextOf;
 
   // ── 时间显示：内部一律存 24 小时 "HH:MM"，只在显示时格式化。──

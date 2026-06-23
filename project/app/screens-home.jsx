@@ -645,11 +645,18 @@
 
   // ── 主页 ──
   function HomeScreen({ t, app }) {
-    const { week } = window.VL.data;
     const [view, setView] = useState('list');
     const [capDismiss, setCapDismiss] = useState({});
+    const [weekOff, setWeekOff] = useState(0); // 周条翻周偏移
     const sel = app.selectedDay;
     const todayKey = window.VL.todayKey();
+    // 周条跟随选中日：选中日变化时，把周条移到包含它的那一周（语音加未来日程也能在首页看到）
+    useEffect(() => {
+      const diff = Math.round((window.VL.keyDate(sel) - window.VL.todayDateObj()) / 86400000);
+      setWeekOff(Math.round((diff - 2) / 7));
+    }, [sel]);
+    const weekDays = window.VL.windowDays(weekOff);
+    const DOWC = ['日', '一', '二', '三', '四', '五', '六'];
     // 今天之前所有未完成（含前几天累积）；仅在「今天」视图、且未在贪睡期内显示
     const pending = (sel === todayKey) ? window.VL.pendingBefore(app.events, todayKey) : [];
     const rollSnoozed = Date.now() < (app.rolloverSnoozeUntil || 0);
@@ -657,7 +664,7 @@
     const conflictIds = new Set();
     list.forEach((ev) => { if (ev.status !== 'cancelled' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
     const doneN = list.filter((e) => e.status === 'done').length;
-    const cur = week.find((w) => w.key === sel) || week[1];
+    const cur = weekDays.find((w) => w.key === sel) || (() => { const d = window.VL.keyDate(sel); return { key: sel, dow: DOWC[d.getDay()], day: d.getDate(), month: d.getMonth() + 1, today: sel === todayKey }; })();
     const totalH = list.filter((e) => e.status !== 'cancelled').reduce((s, e) => s + e.dur, 0) / 60;
 
     return (
@@ -710,8 +717,16 @@
         ) : (
           <React.Fragment>
             <div style={{ padding: '4px 20px 0', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <button onClick={() => setWeekOff((o) => o - 1)} style={{ width: 30, height: 30, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevL" size={17} color={t.muted} /></button>
+                <span style={{ fontSize: 12, fontWeight: 600, color: t.faint, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {weekDays[0].month}月{weekDays[0].day}日 – {weekDays[6].month}月{weekDays[6].day}日
+                  {weekOff !== 0 && <button onClick={() => { setWeekOff(0); app.setDay(window.VL.todayKey()); }} style={{ height: 22, padding: '0 9px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 11.5, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>回今天</button>}
+                </span>
+                <button onClick={() => setWeekOff((o) => o + 1)} style={{ width: 30, height: 30, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevR" size={17} color={t.muted} /></button>
+              </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                {week.map((w) => {
+                {weekDays.map((w) => {
                   const on = w.key === sel;
                   const has = (app.events[w.key] || []).length > 0;
                   return (
