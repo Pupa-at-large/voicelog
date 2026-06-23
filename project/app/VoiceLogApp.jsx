@@ -358,7 +358,7 @@
         <TabBar t={t} tab={tab} setTab={(k) => (k === 'growth' ? app.goGrowth() : setTab(k))} onMic={() => { setVoiceMode('voice'); setVoiceOpen(true); }} />
 
         <Toast t={t} toast={toast} />
-        <VoiceOverlay t={t} open={voiceOpen} mode={voiceMode} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
+        <VoiceOverlay t={t} open={voiceOpen} openMode={voiceMode} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
         <DetailSheet t={t} ev={detail} onClose={() => setDetail(null)}
           onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit}
           onStar={app.toggleImportant} onUrgent={app.toggleUrgent} onMatrixInfo={app.showMatrix} onPostpone={(id) => { app.postpone(id); setDetail(null); }} app={app} />

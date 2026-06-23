@@ -35,7 +35,7 @@
   }
 
   // ── 语音建程：真实识别优先，失败自动回退示例 ──
-  function VoiceOverlay({ t, open, mode, onClose, onConfirm, aiEngine, app }) {
+  function VoiceOverlay({ t, open, openMode, onClose, onConfirm, aiEngine, app }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening'); // listening | parsing | preview | extracting | extracted
     const [engineUsed, setEngineUsed] = useState(null); // 实际用了哪个引擎：'ai' | 'rule' | null
@@ -77,7 +77,7 @@
       const setP = (p) => { ctx.phase = p; setPhase(p); };
 
       // 上传入口：不自动听，直接进"拍照/上传"选择屏
-      if (mode === 'upload') { setPhase('uploadStart'); return () => { clearTimeout(utRef.current); }; }
+      if (openMode === 'upload') { setPhase('uploadStart'); return () => { clearTimeout(utRef.current); }; }
 
       const showActs = (acts) => {
         if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
