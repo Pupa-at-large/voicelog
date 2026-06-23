@@ -20,6 +20,7 @@
     const [phase, setPhase] = useState('listening');
     const [engineUsed, setEngineUsed] = useState(null); // 'ai' | 'rule' | null
     const [existResched, setExistResched] = useState(null); // 冲突"挪旧的"：{id,title,time}
+    const [heardNothing, setHeardNothing] = useState(false);
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real');
     const [draft, setDraft] = useState(null);
@@ -59,7 +60,7 @@
     useEffect(() => {
       if (!open) return;
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
-      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null);
+      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null); setHeardNothing(false);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
       const showActs = (acts) => {
         if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
@@ -83,11 +84,10 @@
         }
         ruleParse(text, curated);
       };
-      const fallback = () => {
-        if (ctx.fellBack) return; ctx.fellBack = true; setMode('demo'); setTranscript('');
-        let i = 0; ctx.sim = setInterval(() => { i += 1; setTranscript(V.chunks.slice(0, i).join('')); if (i >= V.chunks.length) { clearInterval(ctx.sim); ctx.t2 = setTimeout(() => startParse(V.phrase, { ...V.parsed }), 620); } }, 600);
-      };
-      ctx.stop = () => { if (ctx.real && ctx.rec) { try { ctx.rec.stop(); } catch (e) {} } else { clearInterval(ctx.sim); clearTimeout(ctx.t2); startParse(V.phrase, { ...V.parsed }); } };
+      const noSpeech = () => { if (ctx.fellBack) return; ctx.fellBack = true; clearInterval(ctx.sim); clearTimeout(ctx.t2); setHeardNothing(true); };
+      const playExample = () => { ctx.fellBack = true; ctx.real = false; setHeardNothing(false); setMode('demo'); setTranscript(''); let i = 0; ctx.sim = setInterval(() => { i += 1; setTranscript(V.chunks.slice(0, i).join('')); if (i >= V.chunks.length) { clearInterval(ctx.sim); ctx.t2 = setTimeout(() => startParse(V.phrase, { ...V.parsed }), 620); } }, 600); };
+      ctx.example = playExample;
+      ctx.stop = () => { if (ctx.real && ctx.rec) { try { ctx.rec.stop(); } catch (e) {} } else { noSpeech(); } };
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       let started = false;
       if (SR) {
@@ -95,13 +95,13 @@
           const rec = new SR(); ctx.rec = rec; ctx.real = true; setMode('real');
           rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = false;
           rec.onresult = (e) => { let f = '', it = ''; for (let k = 0; k < e.results.length; k++) { const r = e.results[k]; if (r.isFinal) f += r[0].transcript; else it += r[0].transcript; } ctx.finalText = f; ctx.interimText = it; setTranscript(f + it); };
-          rec.onerror = () => fallback();
+          rec.onerror = () => noSpeech();
           // 手动停止时常还没"定稿"，用 interim 兜底，避免回退到示例文本
-          rec.onend = () => { if (ctx.phase !== 'listening') return; const x = (ctx.finalText || ctx.interimText || '').trim(); if (x) startParse(x, null); else if (!ctx.fellBack) fallback(); };
+          rec.onend = () => { if (ctx.phase !== 'listening') return; const x = (ctx.finalText || ctx.interimText || '').trim(); if (x) startParse(x, null); else if (!ctx.fellBack) noSpeech(); };
           rec.start(); started = true;
         } catch (e) { started = false; }
       }
-      if (!started) fallback();
+      if (!started) { ctx.real = false; setMode('demo'); noSpeech(); }
       return () => { try { ctx.rec && ctx.rec.stop(); } catch (e) {} clearInterval(ctx.sim); clearTimeout(ctx.t1); clearTimeout(ctx.t2); clearTimeout(utRef.current); };
     }, [open, run]);
 
@@ -144,12 +144,13 @@
           {phase === 'listening' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-                <Dot color={'oklch(0.62 0.2 25)'} ring /><span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在听…</span>
+                <Dot color={heardNothing ? t.muted : 'oklch(0.62 0.2 25)'} ring={!heardNothing} /><span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>{heardNothing ? '没听清' : '正在听…'}</span>
                 <Chip t={t} color={mode === 'real' ? engine.color : t.muted} soft>{mode === 'real' ? '浏览器语音识别' : '示例演示'}</Chip>
               </div>
-              <Wave color={t.accent} />
-              <p style={{ marginTop: 18, fontSize: 17, lineHeight: 1.5, color: transcript ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 50 }}>{transcript || '说出你的安排，例如「明天下午三点跟老王开会」'}</p>
-              <button onClick={() => R.current.stop && R.current.stop()} style={{ width: 60, height: 60, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}><div style={{ width: 20, height: 20, borderRadius: 6, background: t.onAccent }} /></button>
+              {!heardNothing && <Wave color={t.accent} />}
+              <p style={{ marginTop: 18, fontSize: heardNothing ? 14 : 17, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 50 }}>{heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 看示例。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}</p>
+              <button onClick={() => (heardNothing ? setRun((r) => r + 1) : (R.current.stop && R.current.stop()))} style={{ width: 60, height: 60, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>{heardNothing ? <Icon name="mic" size={26} color={t.onAccent} /> : <div style={{ width: 20, height: 20, borderRadius: 6, background: t.onAccent }} />}</button>
+              {heardNothing && <button onClick={() => R.current.example && R.current.example()} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText }}>看示例（单条解析）</button>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '18px 0 4px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} /><span style={{ fontSize: 12, color: t.faint }}>或</span><div style={{ flex: 1, height: 1, background: t.border }} />
               </div>

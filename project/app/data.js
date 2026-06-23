@@ -1,5 +1,14 @@
 /* VoiceLog · 示例数据 */
 (function () {
+  // ?reset=1（或 ?reset）：清空本站数据回到全新 demo（保留已配置的后端地址）；清完抹掉参数，刷新不会反复清。
+  try {
+    if (/[?&]reset(=1|=true)?(&|$)/i.test(location.search)) {
+      Object.keys(localStorage).filter((k) => k.indexOf('voicelog') === 0 && k !== 'voicelog:serverUrl').forEach((k) => localStorage.removeItem(k));
+      const clean = location.search.replace(/([?&])reset(=[^&]*)?/i, '$1').replace(/[?&]+$/, '').replace(/[?&]&/, '?');
+      if (history && history.replaceState) history.replaceState({}, '', location.pathname + clean + location.hash);
+    }
+  } catch (e) {}
+
   // ── 日期锚点：跟随真实「今天」（本地时区，跨午夜自动翻天）──
   // 原型本是冻结在 6/16(周一) 那一周的静态 demo；这里把"7 天窗口 + 种子数据"按
   // "相对今天的偏移"动态平移：窗口 = 今天-1 … 今天+5（保留"昨天有未完成、今天排满"的结构）。

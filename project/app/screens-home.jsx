@@ -40,6 +40,7 @@
     const [phase, setPhase] = useState('listening'); // listening | parsing | preview | extracting | extracted
     const [engineUsed, setEngineUsed] = useState(null); // 实际用了哪个引擎：'ai' | 'rule' | null
     const [existResched, setExistResched] = useState(null); // 冲突时选择"挪旧的"：{id,title,time}
+    const [heardNothing, setHeardNothing] = useState(false); // 没识别到内容：停在监听屏给重试/上传，不再凭空造日程
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real'); // real | demo
     const [draft, setDraft] = useState(null);
@@ -71,7 +72,7 @@
     useEffect(() => {
       if (!open) return;
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
-      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null);
+      setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null); setHeardNothing(false);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
 
       const showActs = (acts) => {
@@ -103,8 +104,14 @@
         }
         ruleParse(text, curated);
       };
-      const fallbackDemo = () => {
-        if (ctx.fellBack) return; ctx.fellBack = true; ctx.real = false;
+      // 没识别到内容：停在监听屏给"重试/上传/看示例"，绝不凭空造一条假日程
+      const noSpeech = () => {
+        if (ctx.fellBack) return; ctx.fellBack = true;
+        clearInterval(ctx.sim); clearTimeout(ctx.t2); setHeardNothing(true);
+      };
+      // 仅供「看示例」按钮显式调用：模拟一段口语 + 解析（演示用，不会自动触发）
+      const playExample = () => {
+        ctx.fellBack = true; ctx.real = false; setHeardNothing(false);
         setMode('demo'); setTranscript('');
         let i = 0;
         ctx.sim = setInterval(() => {
@@ -112,9 +119,10 @@
           if (i >= V.chunks.length) { clearInterval(ctx.sim); ctx.sim = null; ctx.t2 = setTimeout(() => startParse(V.phrase, { ...V.parsed }), 620); }
         }, 600);
       };
+      ctx.example = playExample;
       ctx.stop = () => {
         if (ctx.real && ctx.rec) { try { ctx.rec.stop(); } catch (e) {} }
-        else { clearInterval(ctx.sim); clearTimeout(ctx.t2); startParse(V.phrase, { ...V.parsed }); }
+        else { noSpeech(); }
       };
 
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -131,17 +139,17 @@
             }
             ctx.finalText = final; ctx.interimText = interim; setTranscript(final + interim);
           };
-          rec.onerror = () => fallbackDemo();
+          rec.onerror = () => noSpeech();
           rec.onend = () => {
             if (ctx.phase !== 'listening') return;
-            // 手动停止时引擎常还没"定稿"，用 interim 兜底，避免回退到示例文本
+            // 手动停止时引擎常还没"定稿"，用 interim 兜底；真没内容则进"没听清"，不造假
             const txt = (ctx.finalText || ctx.interimText || '').trim();
-            if (txt) startParse(txt, null); else if (!ctx.fellBack) fallbackDemo();
+            if (txt) startParse(txt, null); else if (!ctx.fellBack) noSpeech();
           };
           rec.start(); started = true;
         } catch (e) { started = false; }
       }
-      if (!started) fallbackDemo();
+      if (!started) { ctx.real = false; setMode('demo'); noSpeech(); }
 
       return () => {
         try { ctx.rec && ctx.rec.stop && ctx.rec.stop(); } catch (e) {}
@@ -191,23 +199,24 @@
           {phase === 'listening' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 8px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-                <Dot color={'oklch(0.62 0.2 25)'} ring />
-                <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在听…</span>
+                <Dot color={heardNothing ? t.muted : 'oklch(0.62 0.2 25)'} ring={!heardNothing} />
+                <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>{heardNothing ? '没听清' : '正在听…'}</span>
                 <Chip t={t} color={mode === 'real' ? engine.color : t.muted} soft>{mode === 'real' ? '浏览器语音识别' : '示例演示'}</Chip>
               </div>
-              <Waveform color={t.accent} active />
-              <p style={{ marginTop: 20, fontSize: 19, lineHeight: 1.5, color: transcript ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 58, letterSpacing: 0.2 }}>
-                {transcript || '说出你的安排，例如「明天下午三点跟老王开会」'}
-                {transcript && <span style={{ display: 'inline-block', width: 2, height: 20, background: t.accent, marginLeft: 1, verticalAlign: -3, animation: 'vlbar 1s steps(1) infinite' }} />}
+              <Waveform color={t.accent} active={!heardNothing} />
+              <p style={{ marginTop: 20, fontSize: heardNothing ? 15 : 19, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 58, letterSpacing: 0.2 }}>
+                {heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 看示例。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}
+                {transcript && !heardNothing && <span style={{ display: 'inline-block', width: 2, height: 20, background: t.accent, marginLeft: 1, verticalAlign: -3, animation: 'vlbar 1s steps(1) infinite' }} />}
               </p>
               <div style={{ display: 'flex', gap: 12, marginTop: 22, alignItems: 'center' }}>
                 <button onClick={onClose} style={{ width: 48, height: 48, borderRadius: 999, border: `1px solid ${t.borderStrong}`, background: 'transparent', color: t.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={20} color={t.muted} /></button>
-                <button onClick={() => R.current.stop && R.current.stop()} style={{ width: 66, height: 66, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, color: t.onAccent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, background: t.onAccent }} />
+                <button onClick={() => (heardNothing ? setRun((r) => r + 1) : (R.current.stop && R.current.stop()))} style={{ width: 66, height: 66, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, color: t.onAccent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {heardNothing ? <Icon name="mic" size={28} color={t.onAccent} /> : <div style={{ width: 22, height: 22, borderRadius: 6, background: t.onAccent }} />}
                 </button>
                 <div style={{ width: 48 }} />
               </div>
-              <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>点击停止 · 说完自动解析</span>
+              <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>{heardNothing ? '点这里重新听' : '点击停止 · 说完自动解析'}</span>
+              {heardNothing && <button onClick={() => R.current.example && R.current.example()} style={{ marginTop: 8, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText }}>看示例（单条解析）</button>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '16px 0 2px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} />
                 <span style={{ fontSize: 12, color: t.faint }}>或</span>
