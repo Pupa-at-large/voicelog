@@ -10,9 +10,25 @@
   body { font-family: -apple-system, "PingFang SC", system-ui, sans-serif; }
   /* 手机优先：占满整屏；在桌面上居中成一台手机宽 */
   #root { height: 100vh; width: 100%; max-width: 440px; margin: 0 auto; position: relative; overflow: hidden; background: #fff; }
+  /* 启动屏：HTML 一到就显示，把"加载+编译"的 1 秒变成品牌闪屏；React 挂载后淡出 */
+  #splash { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;
+    background: #0c0c0e; transition: opacity .4s ease; }
+  #splash .lg { width: 78px; height: 78px; border-radius: 21px; background: #3f7afe; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 34px rgba(0,0,0,.45); animation: splpop .5s ease both; }
+  #splash .nm { color: #fff; font-size: 22px; font-weight: 800; letter-spacing: -0.3px; }
+  #splash .nm span { color: #9db8ff; }
+  #splash .sl { color: rgba(255,255,255,.5); font-size: 12.5px; }
+  #splash .dots { margin-top: 6px; width: 26px; height: 26px; border: 2.5px solid rgba(255,255,255,.18); border-top-color: rgba(255,255,255,.7); border-radius: 999px; animation: splspin .8s linear infinite; }
+  @keyframes splpop { from { transform: scale(.8); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes splspin { to { transform: rotate(360deg) } }
 </style>
 </head>
 <body>
+<div id="splash">
+  <div class="lg"><svg width="42" height="42" viewBox="0 0 24 24" fill="none"><rect x="2.5" y="9" width="3" height="6" rx="1.5" fill="#fff"/><rect x="7.5" y="4" width="3" height="16" rx="1.5" fill="#fff"/><rect x="12.5" y="6.5" width="3" height="11" rx="1.5" fill="#fff"/><rect x="17.5" y="10" width="3" height="4" rx="1.5" fill="#fff"/></svg></div>
+  <div class="nm">语迹 <span>VoiceLog</span></div>
+  <div class="sl">时间是你最大的资产</div>
+  <div class="dots"></div>
+</div>
 <div id="root"></div>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -51,6 +67,11 @@
   }
 
   ReactDOM.createRoot(document.getElementById('root')).render(<Mobile />);
+  // React 挂载后淡出启动屏（双 rAF 等首帧绘制，避免闪一下空白）
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const s = document.getElementById('splash');
+    if (s) { s.style.opacity = '0'; setTimeout(() => s.remove(), 450); }
+  }));
 </script>
 </body>
 </html>
