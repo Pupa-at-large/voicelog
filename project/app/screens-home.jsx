@@ -35,7 +35,7 @@
   }
 
   // ── 语音建程：真实识别优先，失败自动回退示例 ──
-  function VoiceOverlay({ t, open, onClose, onConfirm, aiEngine, app }) {
+  function VoiceOverlay({ t, open, mode, onClose, onConfirm, aiEngine, app }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening'); // listening | parsing | preview | extracting | extracted
     const [engineUsed, setEngineUsed] = useState(null); // 实际用了哪个引擎：'ai' | 'rule' | null
@@ -52,6 +52,7 @@
     const R = useRef({});
     const titleRef = useRef(null);
     const fileRef = useRef(null);
+    const camRef = useRef(null);
     const utRef = useRef(0);
 
     const onPickFile = (e) => {
@@ -74,6 +75,9 @@
       const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
       setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null); setHeardNothing(false);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
+
+      // 上传入口：不自动听，直接进"拍照/上传"选择屏
+      if (mode === 'upload') { setPhase('uploadStart'); return () => { clearTimeout(utRef.current); }; }
 
       const showActs = (acts) => {
         if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
@@ -195,6 +199,22 @@
           display: 'flex', flexDirection: 'column',
         }}>
           <div style={{ width: 38, height: 5, borderRadius: 999, background: t.borderStrong, margin: '0 auto 6px' }} />
+          <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={onPickFile} />
+          <input ref={camRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={onPickFile} />
+
+          {phase === 'uploadStart' && (
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 4px 6px' }}>
+              <div style={{ textAlign: 'center', marginBottom: 18 }}>
+                <div style={{ width: 56, height: 56, borderRadius: 16, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Icon name="image" size={26} color={t.accentText} /></div>
+                <div style={{ fontSize: 18, fontWeight: 720, color: t.text }}>上传，让 AI 提取日程</div>
+                <div style={{ fontSize: 12.5, color: t.faint, marginTop: 5, lineHeight: 1.5 }}>课表 / 截图 / 文档都行，识别后核对再加入</div>
+              </div>
+              <button onClick={() => camRef.current && camRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: 'none', background: t.accent, color: t.onAccent, font: 'inherit', fontSize: 15, fontWeight: 700, boxShadow: t.shadow, marginBottom: 10 }}><Icon name="image" size={19} color={t.onAccent} />拍照（课表 / 白板）</button>
+              <button onClick={() => fileRef.current && fileRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650 }}><Icon name="export" size={18} color={t.accentText} />从相册 / 文件选择</button>
+              <button onClick={onClose} style={{ marginTop: 16, height: 40, borderRadius: 12, cursor: 'pointer', border: 'none', background: 'transparent', color: t.muted, font: 'inherit', fontSize: 14, fontWeight: 600 }}>取消</button>
+              <div style={{ fontSize: 11.5, color: t.faint, textAlign: 'center', marginTop: 6 }}>提示：现在是演示样例，真识别接入视觉模型后生效</div>
+            </div>
+          )}
 
           {phase === 'listening' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 8px' }}>
@@ -222,7 +242,6 @@
                 <span style={{ fontSize: 12, color: t.faint }}>或</span>
                 <div style={{ flex: 1, height: 1, background: t.border }} />
               </div>
-              <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={onPickFile} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%', marginTop: 6 }}>
                 <button onClick={() => fileRef.current && fileRef.current.click()} style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, padding: '0 18px',
@@ -695,6 +714,7 @@
                 <span style={{ width: 22, height: 22, borderRadius: 999, border: `1.5px solid ${window.VL.GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 720, color: window.VL.GOLD, flexShrink: 0 }}>{app.level.lv}</span>
                 <span style={{ fontSize: 13, fontWeight: 650, color: t.text }}>LV.{app.level.lv}</span>
               </button>
+              <button onClick={app.openUpload} title="拍照 / 上传日程" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="image" size={20} color={t.text} /></button>
               <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
             </div>
           </div>

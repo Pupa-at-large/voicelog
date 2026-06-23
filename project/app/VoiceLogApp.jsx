@@ -134,6 +134,7 @@
     const [trashOpen, setTrashOpen] = useState(false);
     const [matrixOpen, setMatrixOpen] = useState(false);
     const [voiceOpen, setVoiceOpen] = useState(false);
+    const [voiceMode, setVoiceMode] = useState('voice'); // 'voice' 说话 | 'upload' 拍照/上传
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
     const [mtOpen, setMtOpen] = useState(false);
@@ -200,7 +201,8 @@
         const today = todayStr();
         if (lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); }
       },
-      openVoice: () => setVoiceOpen(true),
+      openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
+      openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },
       setNotify: (v) => { setNotify(v); setToast(v ? '已开启到点提醒' : '已关闭提醒', 'bell'); },
@@ -353,10 +355,10 @@
           {tab === 'me' && <MeScreen t={t} app={app} />}
         </div>
 
-        <TabBar t={t} tab={tab} setTab={(k) => (k === 'growth' ? app.goGrowth() : setTab(k))} onMic={() => setVoiceOpen(true)} />
+        <TabBar t={t} tab={tab} setTab={(k) => (k === 'growth' ? app.goGrowth() : setTab(k))} onMic={() => { setVoiceMode('voice'); setVoiceOpen(true); }} />
 
         <Toast t={t} toast={toast} />
-        <VoiceOverlay t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
+        <VoiceOverlay t={t} open={voiceOpen} mode={voiceMode} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} aiEngine={aiEngine} app={app} />
         <DetailSheet t={t} ev={detail} onClose={() => setDetail(null)}
           onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit}
           onStar={app.toggleImportant} onUrgent={app.toggleUrgent} onMatrixInfo={app.showMatrix} onPostpone={(id) => { app.postpone(id); setDetail(null); }} app={app} />
