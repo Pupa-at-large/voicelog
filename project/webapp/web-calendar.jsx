@@ -61,11 +61,13 @@
     );
   }
 
-  function WebCalendar({ t, view, events, selDay, onSelectEvent, onPickDay, onSelectSlot }) {
+  function WebCalendar({ t, view, events, selDay, onSelectEvent, onPickDay, onSelectSlot, monthOff }) {
     const base = 7, end = 22, HH = 52;
 
     if (view === 'month') {
-      const _b = window.VL.todayDateObj(); const _Y = _b.getFullYear(), _M = _b.getMonth();
+      const _t = window.VL.todayDateObj(); const _b = new Date(_t.getFullYear(), _t.getMonth() + (monthOff || 0), 1);
+      const _Y = _b.getFullYear(), _M = _b.getMonth();
+      const _isThisMonth = _Y === _t.getFullYear() && _M === _t.getMonth();
       const _lead = new Date(_Y, _M, 1).getDay(), _dim = new Date(_Y, _M + 1, 0).getDate();
       const _mm = String(_M + 1).padStart(2, '0');
       const cells = []; for (let i = 0; i < _lead; i++) cells.push(null); for (let d = 1; d <= _dim; d++) cells.push(d); while (cells.length % 7) cells.push(null);
@@ -77,7 +79,7 @@
               if (!d) return <div key={i} style={{ minHeight: 116, borderRight: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, background: t.surface2 }} />;
               const key = _mm + '-' + String(d).padStart(2, '0');
               const evs = live(events[key]).slice().sort((a, b) => a.t.localeCompare(b.t));
-              const today = key === TODAY;
+              const today = _isThisMonth && key === TODAY;
               return (
                 <div key={i} onClick={() => onPickDay(key)} style={{ minHeight: 116, padding: 7, borderRight: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, cursor: 'pointer', background: today ? t.accentSoft : t.surface }}>
                   <div style={{ fontSize: 13, fontWeight: today ? 720 : 560, color: today ? t.accentText : t.text, marginBottom: 5 }}>{d}</div>

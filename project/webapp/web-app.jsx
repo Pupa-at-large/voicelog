@@ -166,12 +166,14 @@
   // ── 日历视图 ──
   function CalView({ t, app }) {
     const [view, setView] = useState('week');
+    const [monthOff, setMonthOff] = useState(0);
     const _selW = window.VL.data.week.find((x) => x.key === app.selDay) || {};
     const selDayNum = _selW.day;
     const _wk = window.VL.data.week, _td = window.VL.todayDateObj();
+    const _mB = new Date(_td.getFullYear(), _td.getMonth() + monthOff, 1);
     const ranges = {
       week: `${_wk[0].month}月${_wk[0].day}日 – ${_wk[6].month}月${_wk[6].day}日`,
-      month: `${_td.getFullYear()} 年 ${_td.getMonth() + 1} 月`,
+      month: `${_mB.getFullYear()} 年 ${_mB.getMonth() + 1} 月`,
       day: `${_selW.month}月${selDayNum}日`,
       matrix: `${_selW.month}月${selDayNum}日 · 四象限`,
     };
@@ -180,7 +182,13 @@
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px', borderBottom: `1px solid ${t.border}` }}>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 750, color: t.text }}>{ranges[view]}</h1>
-            <button onClick={() => { app.setDay(window.VL.todayKey()); }} style={{ height: 34, padding: '0 14px', borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>今天</button>
+            {view === 'month' && (
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button onClick={() => setMonthOff((o) => o - 1)} title="上个月" style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevL" size={17} color={t.text} /></button>
+                <button onClick={() => setMonthOff((o) => o + 1)} title="下个月" style={{ width: 32, height: 32, borderRadius: 999, border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevR" size={17} color={t.text} /></button>
+              </div>
+            )}
+            <button onClick={() => { app.setDay(window.VL.todayKey()); setMonthOff(0); }} style={{ height: 34, padding: '0 14px', borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, cursor: 'pointer' }}>今天</button>
             <div style={{ flex: 1 }} />
             <div style={{ width: 288 }}><Segmented t={t} value={view} onChange={setView} items={[{ key: 'day', label: '日' }, { key: 'week', label: '周' }, { key: 'month', label: '月' }, { key: 'matrix', label: '象限' }]} /></div>
           </div>
@@ -193,7 +201,7 @@
           )}
           {view === 'matrix'
             ? <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px' }}><window.MatrixView t={t} events={app.events[app.selDay] || []} onOpen={app.openDetail} onInfo={app.showMatrix} /></div>
-            : <window.WebCalendar t={t} view={view} events={app.events} selDay={app.selDay} onSelectEvent={app.openDetail} onPickDay={(k) => { app.setDay(k); if (view === 'month') setView('day'); }} onSelectSlot={(k) => app.setDay(k)} />}
+            : <window.WebCalendar t={t} view={view} events={app.events} selDay={app.selDay} monthOff={monthOff} onSelectEvent={app.openDetail} onPickDay={(k) => { app.setDay(k); if (view === 'month') setView('day'); }} onSelectSlot={(k) => app.setDay(k)} />}
         </div>
         <RightRail t={t} app={app} dayKey={app.selDay} />
       </div>
