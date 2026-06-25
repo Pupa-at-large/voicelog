@@ -1,9 +1,14 @@
 name: Build macOS app
 
-# 打一个 v* 的 tag（或手动触发）就在 GitHub 的 macOS 机器上构建 .dmg 并发到 Releases。
+# 触发方式（都不需要推 tag）：
+#  - 改动 desktop/RELEASE.txt（或本工作流）推到工作分支 → 自动构建并发布
+#  - 或在 Actions 页手动 Run workflow
 on:
   push:
-    tags: ['v*']
+    branches: ['claude/keen-cerf-nbg2mx']
+    paths:
+      - 'desktop/RELEASE.txt'
+      - '.github/workflows/desktop-release.yml'
   workflow_dispatch:
 
 permissions:
@@ -24,14 +29,18 @@ jobs:
           npm run dist
       - name: List artifacts
         run: ls -la desktop/release || true
+      - name: Read version
+        id: ver
+        run: echo "v=$(tr -d '[:space:]' < desktop/RELEASE.txt 2>/dev/null || echo 0.1.0)" >> "$GITHUB_OUTPUT"
       - name: Publish to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          name: 语迹 VoiceLog ${{ github.ref_name }}
+          tag_name: v${{ steps.ver.outputs.v }}
+          name: 语迹 VoiceLog v${{ steps.ver.outputs.v }}
+          target_commitish: ${{ github.sha }}
           body: |
-            语迹 VoiceLog · macOS 桌面版（Apple 芯片 / arm64）。
-            未签名：首次打开请用「右键→打开」或「系统设置 → 隐私与安全性 → 仍要打开」。
+            语迹 VoiceLog · macOS 桌面版（Apple 芯片 / arm64，未签名）。
+            首次打开：右键→打开，或「系统设置 → 隐私与安全性 → 仍要打开」。
           files: |
             desktop/release/*.dmg
             desktop/release/*.zip
