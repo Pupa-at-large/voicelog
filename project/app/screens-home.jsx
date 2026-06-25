@@ -41,6 +41,7 @@
     const [engineUsed, setEngineUsed] = useState(null); // 实际用了哪个引擎：'ai' | 'rule' | null
     const [existResched, setExistResched] = useState(null); // 冲突时选择"挪旧的"：{id,title,time}
     const [heardNothing, setHeardNothing] = useState(false); // 没识别到内容：停在监听屏给重试/上传，不再凭空造日程
+    const [typedText, setTypedText] = useState(''); // 打字输入(语音不可用时的退路 + 引导第一步)
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real'); // real | demo
     const [draft, setDraft] = useState(null);
@@ -171,6 +172,26 @@
         : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
     const blankDraft = () => ({ title: '新日程', dateKey: window.VL.todayKey(), dateText: window.VL.dateText(window.VL.todayKey(), '今天'), time: '09:00', dur: 60, loc: null, reminder: 0, cat: 'misc', urgent: false, important: false });
     const openManual = () => { setEngineUsed('manual'); setDraft(blankDraft()); setPhase('preview'); };
+    const openTyping = () => { setTypedText(''); setPhase('typing'); };
+    // 打字解析(组件作用域,供"打字输入"用;语音路径仍走 effect 里的 startParse)
+    const doParse = async (text) => {
+      const txt = (text || '').trim(); if (!txt) return;
+      if (aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
+        setEngineUsed(null); setPhase('parsing');
+        try {
+          const acts = await window.VL.parseRemote(txt, app ? window.VL.candidateEvents(app.events) : []);
+          setEngineUsed('ai');
+          if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setPhase('preview'); }
+          else { setBatchActions(acts); setBatchSel(acts.map(() => true)); setPhase('batch'); }
+          return;
+        } catch (e) { /* 回退规则 */ }
+      }
+      setEngineUsed('rule');
+      const acts = window.VL.parseBatch ? window.VL.parseBatch(txt) : [];
+      if (acts.length > 1) { setBatchActions(acts); setBatchSel(acts.map(() => true)); setPhase('batch'); return; }
+      const d = window.VL.parse ? window.VL.parse(txt) : null;
+      if (d && d.title) { setDraft(d); setPhase('preview'); } else { setPhase('typing'); }
+    };
 
     const field = (label, value, opts) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', borderBottom: opts && opts.last ? 'none' : `1px solid ${t.border}` }}>
@@ -216,9 +237,26 @@
               </div>
               <button onClick={() => camRef.current && camRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: 'none', background: t.accent, color: t.onAccent, font: 'inherit', fontSize: 15, fontWeight: 700, boxShadow: t.shadow, marginBottom: 10 }}><Icon name="image" size={19} color={t.onAccent} />拍照（课表 / 白板）</button>
               <button onClick={() => fileRef.current && fileRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650, marginBottom: 10 }}><Icon name="export" size={18} color={t.accentText} />从相册 / 文件选择</button>
+              <button onClick={openTyping} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650, marginBottom: 10 }}><Icon name="sparkle" size={18} color={t.accentText} />打字一句 · AI 解析</button>
               <button onClick={openManual} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650 }}><Icon name="pencil" size={18} color={t.accentText} />手动填写一条</button>
               <button onClick={onClose} style={{ marginTop: 16, height: 40, borderRadius: 12, cursor: 'pointer', border: 'none', background: 'transparent', color: t.muted, font: 'inherit', fontSize: 14, fontWeight: 600 }}>取消</button>
               <div style={{ fontSize: 11.5, color: t.faint, textAlign: 'center', marginTop: 6 }}>提示：拍照/上传现在是演示样例，真识别接入视觉模型后生效</div>
+            </div>
+          )}
+
+          {phase === 'typing' && (
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '14px 4px 6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <Icon name="sparkle" size={17} color={t.accentText} />
+                <span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>打一句话，AI 帮你建</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>像说话那样写,不用工整,它会理清</div>
+              <textarea value={typedText} onChange={(e) => setTypedText(e.target.value)} autoFocus rows={3} placeholder="例如：明天下午三点跟老王在公司开会，提前半小时提醒" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.5, outline: 'none' }} />
+              <button onClick={() => setTypedText('明天下午三点跟老王开会')} style={{ alignSelf: 'flex-start', marginTop: 8, padding: '5px 11px', borderRadius: 999, border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, color: t.muted }}>用这句试试</button>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" onClick={() => setPhase('uploadStart')} style={{ flex: 1 }}>返回</Btn>
+                <Btn t={t} kind="primary" icon="sparkle" onClick={() => doParse(typedText)} style={{ flex: 2 }}>解析</Btn>
+              </div>
             </div>
           )}
 
@@ -242,7 +280,10 @@
                 <div style={{ width: 48 }} />
               </div>
               <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>{heardNothing ? '点这里重新听' : '点击停止 · 说完自动解析'}</span>
-              {heardNothing && <button onClick={() => R.current.example && R.current.example()} style={{ marginTop: 8, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText }}>看示例（单条解析）</button>}
+              {heardNothing && <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
+                <button onClick={openTyping} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>
+                <button onClick={() => R.current.example && R.current.example()} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, color: t.muted }}>看示例</button>
+              </div>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '16px 0 2px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} />
                 <span style={{ fontSize: 12, color: t.faint }}>或</span>

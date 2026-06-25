@@ -21,6 +21,7 @@
     const [engineUsed, setEngineUsed] = useState(null); // 'ai' | 'rule' | null
     const [existResched, setExistResched] = useState(null); // 冲突"挪旧的"：{id,title,time}
     const [heardNothing, setHeardNothing] = useState(false);
+    const [typedText, setTypedText] = useState('');
     const [transcript, setTranscript] = useState('');
     const [mode, setMode] = useState('real');
     const [draft, setDraft] = useState(null);
@@ -107,6 +108,24 @@
 
     const engineOn = engineUsed ? engineUsed === 'ai' : aiEngine;
     const engine = engineOn ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' } : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
+    const openTyping = () => { setTypedText(''); setPhase('typing'); };
+    const doParse = async (text) => {
+      const txt = (text || '').trim(); if (!txt) return;
+      if (aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
+        setEngineUsed(null); setPhase('parsing');
+        try {
+          const acts = await window.VL.parseRemote(txt, window.VL.candidateEvents(allEvents || {})); setEngineUsed('ai');
+          if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setPhase('preview'); }
+          else if (onBatch) { onBatch(acts); } else { setDraft(acts[0].draft); setPhase('preview'); }
+          return;
+        } catch (e) { /* 回退规则 */ }
+      }
+      setEngineUsed('rule');
+      const acts = window.VL.parseBatch ? window.VL.parseBatch(txt) : [];
+      if (acts.length > 1 && onBatch) { onBatch(acts); return; }
+      const d = window.VL.parse ? window.VL.parse(txt) : null;
+      if (d && d.title) { setDraft(d); setPhase('preview'); } else { setPhase('typing'); }
+    };
     // 预览可编辑日期/时间（与移动端一致）
     const draftISO = draft ? (window.VL.todayDateObj().getFullYear() + '-' + draft.dateKey) : '';
     const setDraftDate = (iso) => {
@@ -141,6 +160,19 @@
         <div style={{ position: 'relative', width: phase === 'course-grid' ? 600 : 460, maxWidth: '92%', maxHeight: '88%', overflowY: 'auto', background: t.surface, borderRadius: t.radius + 8, boxShadow: t.shadowLg, border: `1px solid ${t.border}`, padding: 24, transform: open ? 'scale(1)' : 'scale(0.96)', opacity: open ? 1 : 0, transition: 'transform .25s, opacity .25s' }}>
           <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.surface2, color: t.muted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={17} color={t.muted} /></button>
 
+          {phase === 'typing' && (
+            <div style={{ padding: '6px 2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="sparkle" size={17} color={t.accentText} /><span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>打一句话，AI 帮你建</span></div>
+              <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>像说话那样写,不用工整,它会理清</div>
+              <textarea value={typedText} onChange={(e) => setTypedText(e.target.value)} autoFocus rows={3} placeholder="例如：明天下午三点跟老王在公司开会，提前半小时提醒" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.5, outline: 'none' }} />
+              <button onClick={() => setTypedText('明天下午三点跟老王开会')} style={{ marginTop: 8, padding: '5px 11px', borderRadius: 999, border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, color: t.muted }}>用这句试试</button>
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" onClick={() => setPhase('listening')} style={{ flex: 1 }}>返回</Btn>
+                <Btn t={t} kind="primary" icon="sparkle" onClick={() => doParse(typedText)} style={{ flex: 2 }}>解析</Btn>
+              </div>
+            </div>
+          )}
+
           {phase === 'listening' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0 4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
@@ -150,7 +182,10 @@
               {!heardNothing && <Wave color={t.accent} />}
               <p style={{ marginTop: 18, fontSize: heardNothing ? 14 : 17, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 50 }}>{heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 看示例。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}</p>
               <button onClick={() => (heardNothing ? setRun((r) => r + 1) : (R.current.stop && R.current.stop()))} style={{ width: 60, height: 60, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>{heardNothing ? <Icon name="mic" size={26} color={t.onAccent} /> : <div style={{ width: 20, height: 20, borderRadius: 6, background: t.onAccent }} />}</button>
-              {heardNothing && <button onClick={() => R.current.example && R.current.example()} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText }}>看示例（单条解析）</button>}
+              {heardNothing && <div style={{ display: 'flex', gap: 18, marginTop: 10 }}>
+                <button onClick={openTyping} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>
+                <button onClick={() => R.current.example && R.current.example()} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, color: t.muted }}>看示例</button>
+              </div>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '18px 0 4px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} /><span style={{ fontSize: 12, color: t.faint }}>或</span><div style={{ flex: 1, height: 1, background: t.border }} />
               </div>
