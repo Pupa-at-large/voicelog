@@ -45,3 +45,48 @@ node native/demo/qwen-parse.mjs --mock
 
 > 注：国际站端点 `dashscope-intl.aliyuncs.com` 在本远程环境的网络出口白名单之外，
 > 仅国内站 `dashscope.aliyuncs.com` 可达。
+
+---
+
+# native/demo · 豆包语音转文字探针
+
+`doubao-asr.mjs` —— 把"点麦克风说话 → 文字"从浏览器自带的 Web Speech API
+（设计版 `screens-home.jsx` 的「浏览器语音识别」）切到 **豆包语音（火山引擎）**
+免费额度跑通的一条产线探针。先做最简单的一段：**HTTP 录音文件识别标准版**
+（提交任务 → 轮询查询 → 拿到文字），用来验证 AppID/Token 与免费额度可用。
+
+> 火山的"一句话/流式识别"是 WebSocket 二进制帧协议（给麦克风边说边出字用），
+> 更重；本探针先用 HTTP 录音文件接口验证"音频→文字"，实时流式留作接麦克风按钮的下一步。
+
+## 跑
+
+```bash
+# 真·联网识别（需要火山「豆包语音」的 AppID/Token + 一个公网可下载的音频 URL）
+DOUBAO_APP_ID=xxx DOUBAO_ACCESS_TOKEN=xxx \
+  node native/demo/doubao-asr.mjs https://your.cdn/sample.mp3
+
+# 离线 mock：不联网，用代表性返回走真实渲染（演示「ASR JSON → 文字」段）
+node native/demo/doubao-asr.mjs --mock
+```
+
+## 环境变量
+
+| 变量 | 必填 | 默认 | 说明 |
+|---|---|---|---|
+| `DOUBAO_APP_ID` | 是 | — | 火山控制台「豆包语音」应用的 AppID |
+| `DOUBAO_ACCESS_TOKEN` | 是 | — | 对应的 Access Token |
+| `DOUBAO_ASR_RESOURCE_ID` | 否 | `volc.bigasr.auc` | 录音文件识别标准版；极速版 `volc.bigasr.auc_turbo`，新 seed 模型 `volc.seedasr.auc`——**以控制台开通/「模型列表」页为准** |
+| `DOUBAO_AUDIO_FORMAT` | 否 | `mp3` | 要和音频实际格式一致（wav/pcm/ogg/m4a…） |
+| `DOUBAO_AUDIO_URL` | 否 | — | 音频公网地址（也可作第一个命令行参数传） |
+| `DOUBAO_BASE` | 否 | `https://openspeech.bytedance.com` | 服务端点 |
+
+## 协议要点（从火山官方文档核实）
+
+- 提交：`POST /api/v3/auc/bigmodel/submit`；查询：`POST /api/v3/auc/bigmodel/query`。
+- 鉴权走**请求头**（不是 Bearer）：`X-Api-App-Key`(=AppID)、`X-Api-Access-Key`(=Token)、
+  `X-Api-Resource-Id`、`X-Api-Request-Id`(=任务 id，提交/查询用同一个关联)、`X-Api-Sequence: -1`。
+- 结果状态看**响应头** `X-Api-Status-Code`：`20000000` 成功、`20000001` 处理中、`20000002` 排队中。
+- 请求体 JSON：`{ user, audio:{format,url}, request:{model_name:"bigmodel", enable_itn, enable_punc} }`。
+
+> 注：豆包语音正文文档页对自动抓取返回 403，以上端点/字段来自官方文档片段核实；
+> Resource-Id 与免费额度模型代码请以你控制台实际开通的为准。
