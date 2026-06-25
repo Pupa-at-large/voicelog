@@ -438,7 +438,7 @@
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
     const [timeFmt, setTimeFmt] = useState(() => (saved && saved.timeFmt) || '24'); // '24' | '12'
     window.VL.timeFmt = timeFmt;
-    const [events, setEvents] = useState(() => fresh ? {} : ((saved && saved.events) ? saved.events : clone(window.VL.data.events)));
+    const [events, setEvents] = useState(() => fresh ? {} : ((saved && saved.events) ? saved.events : {})); // 新用户默认空白；示例按需载入
     const [tab, setTab] = useState('cal');
     const [selDay, setSelDay] = useState(window.VL.todayKey());
     const [detail, setDetail] = useState(null);
@@ -502,6 +502,7 @@
       openVoice: () => setVoiceOpen(true),
       showMultitask: () => setMtOpen(true),
       setBase: (k) => { setBaseKey(k); setToast('已切换视觉方向', 'check'); },
+      loadDemo: () => { setEvents(clone(window.VL.data.events)); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
       timeFmt, setTimeFmt: (f) => { setTimeFmt(f); setToast(f === '12' ? '已切换为 12 小时制' : '已切换为 24 小时制', 'check'); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },

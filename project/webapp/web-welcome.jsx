@@ -42,6 +42,7 @@
 
           <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
             <Btn t={t} kind="primary" size="lg" icon="mic" onClick={app.openVoice} style={{ whiteSpace: 'nowrap', padding: '0 28px' }}>说一句 / 上传课表</Btn>
+            {app.loadDemo && <Btn t={t} kind="ghost" size="lg" icon="sparkle" onClick={app.loadDemo} style={{ whiteSpace: 'nowrap', padding: '0 22px' }}>看示例数据</Btn>}
           </div>
 
           {/* 例子 */}

@@ -86,34 +86,24 @@
 
   // 首开欢迎页（大 Logo + 名字 + 标语）。只在第一次进入时出现，点"开始使用"后记住。
   function WelcomeScreen({ t, onStart }) {
-    const feats = [
-      ['micFill', '语音建程', '一句口语 → AI 解析成日程，确认后才落库'],
-      ['sparkle', '复盘成长', '奖励"做了"而非"做完"，等级只升不降'],
-      ['shield', '本地优先', '数据都在你自己机器上，可导出、不锁定'],
-    ];
+    const btn = (primary) => ({ width: '100%', maxWidth: 320, height: 52, borderRadius: 16, cursor: 'pointer', font: 'inherit', fontSize: 16, fontWeight: 700, flexShrink: 0, border: primary ? 'none' : `1px solid ${t.border}`, background: primary ? t.accent : t.surface2, color: primary ? t.onAccent : t.text, boxShadow: primary ? t.shadowLg : 'none' });
     return (
-      <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: t.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 30px', textAlign: 'center', overflowY: 'auto', animation: 'vlin .45s ease' }}>
-        <div style={{ width: 88, height: 88, borderRadius: 24, background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, flexShrink: 0 }}>
-          <svg width="46" height="46" viewBox="0 0 24 24" fill="none">
+      <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: t.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 30px', textAlign: 'center', animation: 'vlin .45s ease' }}>
+        <div style={{ width: 92, height: 92, borderRadius: 26, background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 26, flexShrink: 0 }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
             <rect x="2.5" y="9" width="3" height="6" rx="1.5" fill={t.onAccent} />
             <rect x="7.5" y="4" width="3" height="16" rx="1.5" fill={t.onAccent} />
             <rect x="12.5" y="6.5" width="3" height="11" rx="1.5" fill={t.onAccent} />
             <rect x="17.5" y="10" width="3" height="4" rx="1.5" fill={t.onAccent} />
           </svg>
         </div>
-        <h1 style={{ margin: 0, fontSize: 32, fontWeight: 800, letterSpacing: -0.5, color: t.text }}>语迹 <span style={{ color: t.accentText }}>VoiceLog</span></h1>
-        <div style={{ fontSize: 17, fontWeight: 600, color: t.text, marginTop: 12 }}>时间是你最大的资产</div>
-        <p style={{ fontSize: 14, color: t.muted, lineHeight: 1.6, maxWidth: 300, margin: '12px 0 0' }}>说一句话，就记下你的安排。不催你、不打分，专注复盘与成长——让时间真正属于你。</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 320, margin: '28px 0 30px' }}>
-          {feats.map(([ic, title, sub]) => (
-            <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 13, textAlign: 'left' }}>
-              <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ic} size={19} color={t.accentText} /></div>
-              <div><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>{title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 1, lineHeight: 1.4 }}>{sub}</div></div>
-            </div>
-          ))}
+        <h1 style={{ margin: 0, fontSize: 34, fontWeight: 800, letterSpacing: -0.5, color: t.text }}>语迹 <span style={{ color: t.accentText }}>VoiceLog</span></h1>
+        <div style={{ fontSize: 17, fontWeight: 600, color: t.text, marginTop: 14 }}>时间是你最大的资产</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, width: '100%', maxWidth: 320, marginTop: 40 }}>
+          <button onClick={() => onStart(false)} style={btn(true)}>开始（空白）</button>
+          <button onClick={() => onStart(true)} style={btn(false)}>先看示例效果</button>
         </div>
-        <button onClick={onStart} style={{ width: '100%', maxWidth: 320, height: 52, borderRadius: 16, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 16, fontWeight: 700, background: t.accent, color: t.onAccent, boxShadow: t.shadowLg, flexShrink: 0 }}>开始使用</button>
-        <div style={{ fontSize: 11.5, color: t.faint, marginTop: 14 }}>本地优先 · 无需注册即可开始</div>
+        <div style={{ fontSize: 11.5, color: t.faint, marginTop: 16 }}>本地优先 · 数据保存在你的设备上</div>
       </div>
     );
   }
@@ -122,7 +112,7 @@
     const saved = useRef(loadState(theme.key)).current;
     const [tab, setTab] = useState('home');
     const [selectedDay, setSelectedDay] = useState(window.VL.todayKey());
-    const [events, setEvents] = useState(() => (saved && saved.events) ? saved.events : clone(window.VL.data.events));
+    const [events, setEvents] = useState(() => (saved && saved.events) ? saved.events : {}); // 新用户默认空白；示例从欢迎页按需载入
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
     // 成长系统：XP（只升不降）+ 累计天数；首次落在 LV.4 区间，贴近设计稿
     const [xp, setXp] = useState(() => (saved && typeof saved.xp === 'number') ? saved.xp : 320);
@@ -203,6 +193,7 @@
       },
       openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
       openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
+      loadDemo: () => { setEvents(clone(window.VL.data.events)); setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已载入示例数据', 'sparkle'); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },
       setNotify: (v) => { setNotify(v); setToast(v ? '已开启到点提醒' : '已关闭提醒', 'bell'); },
@@ -414,7 +405,7 @@
           </div>
         </Sheet>
         <LevelUpOverlay t={t} level={levelUp} onClose={() => setLevelUp(null)} />
-        {showWelcome && <WelcomeScreen t={t} onStart={() => { try { localStorage.setItem('voicelog:welcomed', '1'); } catch (e) {} setShowWelcome(false); }} />}
+        {showWelcome && <WelcomeScreen t={t} onStart={(demo) => { if (demo) setEvents(clone(window.VL.data.events)); try { localStorage.setItem('voicelog:welcomed', '1'); } catch (e) {} setShowWelcome(false); }} />}
       </div>
     );
   }
