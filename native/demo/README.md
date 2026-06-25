@@ -90,3 +90,53 @@ node native/demo/doubao-asr.mjs --mock
 
 > 注：豆包语音正文文档页对自动抓取返回 403，以上端点/字段来自官方文档片段核实；
 > Resource-Id 与免费额度模型代码请以你控制台实际开通的为准。
+
+---
+
+# native/demo · 豆包语音**实时流式**识别探针
+
+`doubao-asr-stream.mjs` —— 第二段产线探针，对齐**设计版里点麦克风的交互**。
+`screens-home.jsx` 的语音 overlay 是一台 `listening → interim → final` 的增量状态机
+（Web Speech API 在 `onresult` 里累积 interim/final，「正在听…」下面实时刷字）。
+火山的**流式识别**正是给这个交互用的：WebSocket 二进制帧，边发音频边收增量结果。
+本脚本把流式链路（建连 → 发配置 → 流式发音频 → 收 interim → 收 final）跑通。
+
+> node 没有麦克风，所以用「读本地音频文件 → 按 ~100ms 切片 → 按真实时长节流发送」
+> 逼真模拟"边说边发"。零依赖：Node 22 自带全局 `WebSocket`（且支持握手自定义头，
+> 火山鉴权正走头），gzip 走内置 `node:zlib`，无需 npm install。
+
+## 跑
+
+```bash
+# 真·流式识别（需要火山「豆包语音」AppID/Token + 一个本地音频文件）
+# 推荐 16k/16bit/单声道 PCM：
+ffmpeg -i input.m4a -ar 16000 -ac 1 -f s16le sample.pcm
+DOUBAO_APP_ID=xxx DOUBAO_ACCESS_TOKEN=xxx \
+  node native/demo/doubao-asr-stream.mjs ./sample.pcm
+
+# 离线 mock：不联网，用代表性增量结果走真实渲染（演示 interim→final 这台状态机）
+node native/demo/doubao-asr-stream.mjs --mock
+```
+
+## 环境变量
+
+| 变量 | 必填 | 默认 | 说明 |
+|---|---|---|---|
+| `DOUBAO_APP_ID` | 是 | — | 火山控制台「豆包语音」应用的 AppID |
+| `DOUBAO_ACCESS_TOKEN` | 是 | — | 对应的 Access Token |
+| `DOUBAO_ASR_RESOURCE_ID` | 否 | `volc.bigasr.sauc.duration` | 流式·按时长（含免费额度）；按并发 `volc.bigasr.sauc.concurrent`——**以控制台开通的为准** |
+| `DOUBAO_AUDIO_FORMAT` | 否 | `pcm` | 也支持 `wav`/`mp3`/`ogg` |
+| `DOUBAO_AUDIO_RATE` | 否 | `16000` | pcm 必须和文件实际采样率一致 |
+| `DOUBAO_CHUNK_MS` | 否 | `100` | 每片音频对应的毫秒数（节流间隔） |
+| `DOUBAO_WS_BASE` | 否 | `wss://openspeech.bytedance.com` | 服务端点 |
+| `DOUBAO_WS_PATH` | 否 | `/api/v3/sauc/bigmodel` | 出 interim 的流式端点；只要 final 用 `/api/v3/sauc/bigmodel_nostream` |
+
+## 协议要点（二进制帧）
+
+- WebSocket 握手鉴权走**请求头**：`X-Api-App-Key`、`X-Api-Access-Key`、`X-Api-Resource-Id`、`X-Api-Connect-Id`。
+- 每帧 **4 字节头**：`[版本|头长][消息类型|标志位][序列化|压缩][保留]`，其后可选 4 字节序列号 + 4 字节 payload 长度 + payload（gzip）。
+- 消息类型：`0b0001` full-client-request（配置）、`0b0010` audio-only-request（音频帧）、`0b1001` full-server-response（结果）、`0b1111` error。
+- 标志位：`0b0001` 带正序列号(还有后续)、`0b0011` 最后一包(序列号取负)；服务端 `flags & 0x02` 表示这是最后一帧。
+- 配置帧 JSON：`{ user, audio:{format,codec,rate,bits,channel}, request:{model_name:"bigmodel", enable_itn, enable_punc, show_utterances} }`。
+
+> 编解码字节布局有 `proto-test`（往返自洽）兜底；真实免费额度需拿凭据 + 一个音频文件实跑验证。
