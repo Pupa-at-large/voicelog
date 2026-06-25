@@ -1,0 +1,30 @@
+{
+  "name": "voicelog-desktop",
+  "productName": "语迹 VoiceLog",
+  "version": "0.1.0",
+  "description": "语迹 VoiceLog · macOS 桌面版（复用网页原型，Electron 打包）",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --mac"
+  },
+  "devDependencies": {
+    "@babel/standalone": "7.29.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.voicelog.desktop",
+    "productName": "语迹 VoiceLog",
+    "files": ["main.js", "dist/**/*"],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg", "zip"],
+      "identity": null
+    }
+  }
+}
