@@ -723,6 +723,8 @@
     }, [sel]);
     const weekDays = window.VL.windowDays(weekOff);
     const DOWC = ['日', '一', '二', '三', '四', '五', '六'];
+    const allEmpty = Object.values(app.events).every((a) => !a || !a.length); // 全空 = 新用户，给第一动作引导
+    const [growthTip, setGrowthTip] = useState(() => { try { return !localStorage.getItem('voicelog:tip_growth'); } catch (e) { return false; } });
     // 今天之前所有未完成（含前几天累积）；仅在「今天」视图、且未在贪睡期内显示
     const pending = (sel === todayKey) ? window.VL.pendingBefore(app.events, todayKey) : [];
     const rollSnoozed = Date.now() < (app.rolloverSnoozeUntil || 0);
@@ -816,11 +818,32 @@
               {totalH > window.VL.DAILY_CAPACITY_H && !capDismiss[sel] && (
                 <window.CapacityBanner t={t} hours={totalH} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [sel]: true }))} style={{ marginBottom: 12 }} />
               )}
+              {doneN >= 1 && growthTip && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: t.radius, background: t.accentSoft, marginBottom: 12 }}>
+                  <Icon name="sparkle" size={16} color={t.accentText} style={{ flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontSize: 12.5, color: t.accentText, lineHeight: 1.5 }}>做了就有成长——「成长」页能看你的等级、时间去向和复盘。</div>
+                  <button onClick={app.goGrowth} style={{ flexShrink: 0, height: 28, padding: '0 11px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 700, background: t.accent, color: t.onAccent }}>去看看</button>
+                  <button onClick={() => { setGrowthTip(false); try { localStorage.setItem('voicelog:tip_growth', '1'); } catch (e) {} }} style={{ flexShrink: 0, padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex' }}><Icon name="x" size={14} color={t.accentText} /></button>
+                </div>
+              )}
               <window.FocusCard t={t} events={list} dayKey={sel} onOpen={app.openDetail} style={{ marginBottom: 14 }} />
               {list.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {list.map((ev) => <SwipeRow key={ev.id} t={t} ev={ev} conflict={conflictIds.has(ev.id)} onWarn={app.showMultitask} onToggle={app.toggleDone} onOpen={app.openDetail} onEdit={app.openEdit} onDelete={app.deleteEvent} onStar={app.toggleImportant} />)}
                   <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 6 }}>← 左滑编辑/删除 · 右滑完成 →</div>
+                </div>
+              ) : allEmpty ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+                  <div style={{ width: 76, height: 76, borderRadius: 22, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadowLg }}><Icon name="micFill" size={34} color={t.onAccent} /></div>
+                  <div>
+                    <div style={{ fontSize: 19, fontWeight: 760, color: t.text }}>记下你的第一件事</div>
+                    <div style={{ fontSize: 13.5, color: t.muted, marginTop: 5, lineHeight: 1.55 }}>说一句，或打一句话——语迹帮你变成日程。<br />例如「明天下午三点跟老王开会」</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
+                    <Btn t={t} kind="primary" icon="mic" onClick={app.openVoice} style={{ width: '100%' }}>说一句</Btn>
+                    <Btn t={t} kind="soft" icon="sparkle" onClick={app.openUpload} style={{ width: '100%' }}>打字 / 上传 / 手动</Btn>
+                  </div>
+                  <button onClick={app.loadDemo} style={{ marginTop: 2, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, color: t.faint }}>或先看示例数据</button>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '44px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
