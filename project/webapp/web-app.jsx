@@ -452,9 +452,9 @@
     const [trashOpen, setTrashOpen] = useState(false);
     const [celebrate, setCelebrate] = useState(null);
     const [burst, setBurst] = useState(null);
-    // 成长系统：新用户从 0 起步，老用户落在 LV.4 区间
-    const [xp, setXp] = useState(() => fresh ? 0 : ((saved && typeof saved.xp === 'number') ? saved.xp : 320));
-    const [accumulatedDays, setAccDays] = useState(() => fresh ? 0 : ((saved && typeof saved.accumulatedDays === 'number') ? saved.accumulatedDays : 86));
+    // 成长系统：新用户从 0 起步；示例数据由「看示例」按需载入
+    const [xp, setXp] = useState(() => (!fresh && saved && typeof saved.xp === 'number') ? saved.xp : 0);
+    const [accumulatedDays, setAccDays] = useState(() => (!fresh && saved && typeof saved.accumulatedDays === 'number') ? saved.accumulatedDays : 0);
     const [lastActiveDay, setLastActiveDay] = useState(() => (saved && saved.lastActiveDay) || '');
     const [lastReviewDay, setLastReviewDay] = useState(() => (saved && saved.lastReviewDay) || '');
     const [levelUp, setLevelUp] = useState(null);
@@ -502,7 +502,7 @@
       openVoice: () => setVoiceOpen(true),
       showMultitask: () => setMtOpen(true),
       setBase: (k) => { setBaseKey(k); setToast('已切换视觉方向', 'check'); },
-      loadDemo: () => { setEvents(clone(window.VL.data.events)); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
+      loadDemo: () => { setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
       timeFmt, setTimeFmt: (f) => { setTimeFmt(f); setToast(f === '12' ? '已切换为 12 小时制' : '已切换为 24 小时制', 'check'); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },

@@ -22,7 +22,7 @@
     ];
     return (
       <div style={{
-        flexShrink: 0, position: 'relative', display: 'flex', alignItems: 'flex-start',
+        flexShrink: 0, position: 'relative', zIndex: 30, display: 'flex', alignItems: 'flex-start',
         padding: '8px 14px calc(8px + 22px)', background: t.surface,
         borderTop: `1px solid ${t.border}`,
         boxShadow: t.mode === 'dark' ? 'none' : '0 -4px 24px rgba(16,24,40,0.04)',
@@ -115,8 +115,8 @@
     const [events, setEvents] = useState(() => (saved && saved.events) ? saved.events : {}); // 新用户默认空白；示例从欢迎页按需载入
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
     // 成长系统：XP（只升不降）+ 累计天数；首次落在 LV.4 区间，贴近设计稿
-    const [xp, setXp] = useState(() => (saved && typeof saved.xp === 'number') ? saved.xp : 320);
-    const [accumulatedDays, setAccDays] = useState(() => (saved && typeof saved.accumulatedDays === 'number') ? saved.accumulatedDays : 86);
+    const [xp, setXp] = useState(() => (saved && typeof saved.xp === 'number') ? saved.xp : 0);
+    const [accumulatedDays, setAccDays] = useState(() => (saved && typeof saved.accumulatedDays === 'number') ? saved.accumulatedDays : 0);
     const [lastActiveDay, setLastActiveDay] = useState(() => (saved && saved.lastActiveDay) || '');
     const [lastReviewDay, setLastReviewDay] = useState(() => (saved && saved.lastReviewDay) || '');
     const [levelUp, setLevelUp] = useState(null);
@@ -193,7 +193,7 @@
       },
       openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
       openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
-      loadDemo: () => { setEvents(clone(window.VL.data.events)); setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已载入示例数据', 'sparkle'); },
+      loadDemo: () => { setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86); setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已载入示例数据', 'sparkle'); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },
       setNotify: (v) => { setNotify(v); setToast(v ? '已开启到点提醒' : '已关闭提醒', 'bell'); },
