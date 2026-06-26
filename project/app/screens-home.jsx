@@ -721,7 +721,6 @@
     const weekDays = window.VL.windowDays(weekOff);
     const DOWC = ['日', '一', '二', '三', '四', '五', '六'];
     const allEmpty = Object.values(app.events).every((a) => !a || !a.length); // 全空 = 新用户，给第一动作引导
-    const [growthTip, setGrowthTip] = useState(() => { try { return !localStorage.getItem('voicelog:tip_growth'); } catch (e) { return false; } });
     // 今天之前所有未完成（含前几天累积）；仅在「今天」视图、且未在贪睡期内显示
     const pending = (sel === todayKey) ? window.VL.pendingBefore(app.events, todayKey) : [];
     const rollSnoozed = Date.now() < (app.rolloverSnoozeUntil || 0);
@@ -756,10 +755,7 @@
               <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>{cur.month}月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button onClick={app.goGrowth} title="成长" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 42, padding: '0 12px 0 8px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, boxShadow: t.shadow }}>
-                <span style={{ width: 22, height: 22, borderRadius: 999, border: `1.5px solid ${window.VL.GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 720, color: window.VL.GOLD, flexShrink: 0 }}>{app.level.lv}</span>
-                <span style={{ fontSize: 13, fontWeight: 650, color: t.text }}>LV.{app.level.lv}</span>
-              </button>
+              {/* 成长入口已统一到底部 Tab，首页不再放 LV 徽章（去冗余） */}
               <button onClick={app.openUpload} title="添加日程（拍照/上传/手动）" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="plus" size={20} color={t.text} /></button>
               <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
             </div>
@@ -814,14 +810,6 @@
               )}
               {totalH > window.VL.DAILY_CAPACITY_H && !capDismiss[sel] && (
                 <window.CapacityBanner t={t} hours={totalH} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [sel]: true }))} style={{ marginBottom: 12 }} />
-              )}
-              {doneN >= 1 && growthTip && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: t.radius, background: t.accentSoft, marginBottom: 12 }}>
-                  <Icon name="sparkle" size={16} color={t.accentText} style={{ flexShrink: 0 }} />
-                  <div style={{ flex: 1, fontSize: 12.5, color: t.accentText, lineHeight: 1.5 }}>做了就有成长——「成长」页能看你的等级、时间去向和复盘。</div>
-                  <button onClick={app.goGrowth} style={{ flexShrink: 0, height: 28, padding: '0 11px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 700, background: t.accent, color: t.onAccent }}>去看看</button>
-                  <button onClick={() => { setGrowthTip(false); try { localStorage.setItem('voicelog:tip_growth', '1'); } catch (e) {} }} style={{ flexShrink: 0, padding: 4, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex' }}><Icon name="x" size={14} color={t.accentText} /></button>
-                </div>
               )}
               <window.FocusCard t={t} events={list} dayKey={sel} onOpen={app.openDetail} style={{ marginBottom: 14 }} />
               {list.length > 0 ? (

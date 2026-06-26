@@ -532,7 +532,7 @@
       events, selDay, detail, editEv, aiEngine, notify, accentKey, hasPending, pendingCount, burst,
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelDay, setToast, setDetail, setEditEv, setTab,
-      goGrowth: () => { setTab('growth'); const today = todayStr(); const hasAnything = Object.values(events).some((a) => a && a.length); if (hasAnything && lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); } },
+      goGrowth: () => setTab('growth'), // 只导航；成长 XP 只由真实动作触发
       openDetail: (ev) => setDetail(ev),
       openEdit: (ev) => { setDetail(null); setEditEv(ev); },
       openRecur: () => setRecurOpen(true),

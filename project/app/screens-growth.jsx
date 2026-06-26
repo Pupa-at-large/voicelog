@@ -79,6 +79,47 @@
     );
   }
 
+  // 「成长规则」——把"怎么算成长"摊开给用户，去掉黑箱感
+  function GrowthRules({ t, level }) {
+    const [open, setOpen] = useState(false);
+    const rules = window.VL.XP_RULES || [];
+    const ladder = (window.VL.LEVELS || []).filter((L) => L.lv >= level.lv && L.lv <= level.lv + 2);
+    return (
+      <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+        <button onClick={() => setOpen((o) => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 14px', background: 'transparent', border: 'none', cursor: 'pointer', font: 'inherit', textAlign: 'left' }}>
+          <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1, fontSize: 14.5, fontWeight: 650, color: t.text }}>怎么算成长？</span>
+          <span style={{ fontSize: 12.5, color: t.faint }}>{open ? '收起' : '看规则'}</span>
+          <Icon name={open ? 'chevD' : 'chevR'} size={16} color={t.faint} />
+        </button>
+        {open && (
+          <div style={{ padding: '2px 14px 14px' }}>
+            <div style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.6, marginBottom: 10 }}>经验只由你的真实动作产生，<b style={{ color: t.text }}>只升不降、不惩罚</b>。打开这个页面本身不加分。</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {rules.map((rule) => (
+                <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: t.radius - 4, background: t.surface2 }}>
+                  <Icon name={rule.icon} size={16} color={t.accentText} style={{ flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: 13.5, color: t.text }}>{rule.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 720, color: GOLD }}>+{rule.xp}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: t.faint, marginTop: 12, marginBottom: 6, fontWeight: 600 }}>接下来的等级</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {ladder.map((L) => (
+                <div key={L.lv} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: L.lv === level.lv ? t.text : t.muted }}>
+                  <span style={{ width: 20, height: 20, borderRadius: 999, flexShrink: 0, border: `1.5px solid ${L.lv === level.lv ? GOLD : t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10.5, fontWeight: 720, color: L.lv === level.lv ? GOLD : t.faint }}>{L.lv}</span>
+                  <span style={{ flex: 1 }}>{L.name}</span>
+                  <span style={{ color: t.faint }}>{L.need} XP</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+    );
+  }
+
   function GrowthScreen({ t, app }) {
     const L = window.VL.levelFromXp(app.xp || 0);
     const stats = window.VL.growthStats(app.events);
@@ -127,6 +168,10 @@
             {stat(`${stats.completion}%`, '完成率', 'oklch(0.62 0.14 150)')}
             {stat(app.accumulatedDays || 0, '累计天数', t.accentText)}
           </div>
+
+          {/* 成长规则（可见、可展开）：经验只由真实动作产生，只升不降 */}
+          <GrowthRules t={t} level={L} />
+
 
           {/* Typeless 式「它对你的了解」报告（隐私卡 + 甜甜圈 + 图标分类表） */}
           <div style={{ marginBottom: 16 }}>

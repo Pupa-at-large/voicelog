@@ -46,6 +46,19 @@
               <Icon name="shield" size={15} color={t.faint} style={{ flexShrink: 0, marginTop: 1 }} />
               <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: t.faint }}>数据本地存储，随时导出带走。等级与 XP 只升不降——每一次记录都算数。</p>
             </div>
+            {/* 成长规则：经验只由真实动作产生，打开页面不加分 */}
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.border}` }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: t.text, marginBottom: 9 }}>怎么算成长（只升不降）</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {(window.VL.XP_RULES || []).map((rule) => (
+                  <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: t.muted }}>
+                    <Icon name={rule.icon} size={14} color={t.accentText} style={{ flexShrink: 0 }} />
+                    <span style={{ flex: 1 }}>{rule.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 720, color: GOLD }}>+{rule.xp}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* 数据 + 时间去向 + 洞察 */}

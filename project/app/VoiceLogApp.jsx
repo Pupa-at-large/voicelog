@@ -203,13 +203,8 @@
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelectedDay,
       setToast,
-      goGrowth: () => {
-        setTab('growth');
-        const today = todayStr();
-        // 全新用户没有任何日程时，进成长页不应凭空 +XP / 升级——有内容可复盘才奖励
-        const hasAnything = Object.values(events).some((a) => a && a.length);
-        if (hasAnything && lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); }
-      },
+      // 只导航，不发 XP。成长 XP 只由真实动作触发：记录 / 完成 / 写复盘（见成长页「成长规则」）
+      goGrowth: () => setTab('growth'),
       openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
       openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
       demoMode,

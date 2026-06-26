@@ -487,18 +487,24 @@
   // 称号文字可自由替换；阈值为累计 XP。
   const LEVELS = [
     { lv: 1,  need: 0,    name: '初次记录的人' },
-    { lv: 2,  need: 60,   name: '开始留意时间的人' },
-    { lv: 3,  need: 160,  name: '渐入轨道的人' },
-    { lv: 4,  need: 320,  name: '稳步前行的人' },
-    { lv: 5,  need: 540,  name: '掌控节奏的人' },
-    { lv: 6,  need: 820,  name: '善用时间的人' },
-    { lv: 7,  need: 1180, name: '复盘成习惯的人' },
-    { lv: 8,  need: 1640, name: '时间的经营者' },
-    { lv: 9,  need: 2200, name: '自律自如的人' },
-    { lv: 10, need: 2900, name: '时间的主人' },
+    { lv: 2,  need: 30,   name: '开始留意时间的人' },
+    { lv: 3,  need: 80,   name: '渐入轨道的人' },
+    { lv: 4,  need: 160,  name: '稳步前行的人' },
+    { lv: 5,  need: 270,  name: '掌控节奏的人' },
+    { lv: 6,  need: 410,  name: '善用时间的人' },
+    { lv: 7,  need: 590,  name: '复盘成习惯的人' },
+    { lv: 8,  need: 820,  name: '时间的经营者' },
+    { lv: 9,  need: 1100, name: '自律自如的人' },
+    { lv: 10, need: 1450, name: '时间的主人' },
   ];
-  // 记录 +5 · 完成 +10 · 复盘 +15（只增不减）
-  const XP = { create: 5, done: 10, review: 15 };
+  // 动作驱动、只增不减、不惩罚。复盘最被看重（复盘是主场）。
+  const XP = { create: 2, done: 5, reflect: 15 };
+  // 给「成长规则」卡展示用：每条 = { key, icon, label, xp }
+  const XP_RULES = [
+    { key: 'create', icon: 'plus', label: '记录一条安排', xp: XP.create },
+    { key: 'done', icon: 'check', label: '完成一条', xp: XP.done },
+    { key: 'reflect', icon: 'sparkle', label: '写下 / 说出一次复盘', xp: XP.reflect },
+  ];
 
   function levelFromXp(xp) {
     let cur = LEVELS[0];
@@ -545,6 +551,7 @@
 
   window.VL.LEVELS = LEVELS;
   window.VL.XP = XP;
+  window.VL.XP_RULES = XP_RULES;
   window.VL.levelFromXp = levelFromXp;
   window.VL.growthStats = growthStats;
   window.VL.growthInsight = growthInsight;
