@@ -178,12 +178,17 @@
             <GrowthReport t={t} stats={stats} maturity={maturity} quadStats={quadStats} wide={false} />
           </div>
 
-          {/* 本周洞察 */}
-          <SectionLabel t={t}>本周洞察</SectionLabel>
-          <div style={{ display: 'flex', gap: 11, padding: 14, borderRadius: t.radius, marginBottom: 16, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
+          {/* 一句话本周洞察（成长身份层的总结，详细洞察沉到下面的复盘） */}
+          <div style={{ display: 'flex', gap: 11, padding: 14, borderRadius: t.radius, marginBottom: 8, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
             <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: t.text }}>{insight}</p>
           </div>
+
+          {/* ── 合并：复盘 · 回看这段时间 ── */}
+          <div style={{ height: 1, background: t.border, margin: '24px -20px 18px' }} />
+          <div style={{ fontSize: 22, fontWeight: 760, color: t.text, letterSpacing: -0.4 }}>复盘</div>
+          <div style={{ fontSize: 12.5, color: t.muted, margin: '3px 0 16px' }}>回看这段时间花在哪、完成得怎样，写下你的想法</div>
+          {window.ReviewBody && <window.ReviewBody t={t} app={app} />}
         </div>
       </div>
     );

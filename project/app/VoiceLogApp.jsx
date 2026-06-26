@@ -29,9 +29,8 @@
   function TabBar({ t, tab, setTab, onMic }) {
     const items = [
       { key: 'home', icon: 'calendar', label: '日程' },
-      { key: 'review', icon: 'chart', label: '复盘' },
-      { key: '_mic' },
       { key: 'growth', icon: 'sparkle', label: '成长' },
+      { key: '_mic' },
       { key: 'me', icon: 'user', label: '我的' },
     ];
     return (
@@ -413,7 +412,6 @@
 
         <div style={{ flex: 1, minHeight: 0, position: 'relative', zIndex: 2 }}>
           {tab === 'home' && <HomeScreen t={t} app={app} />}
-          {tab === 'review' && <ReviewScreen t={t} app={app} />}
           {tab === 'growth' && <GrowthScreen t={t} app={app} />}
           {tab === 'export' && <ExportScreen t={t} app={app} />}
           {tab === 'me' && <MeScreen t={t} app={app} />}

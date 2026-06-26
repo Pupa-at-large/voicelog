@@ -24,23 +24,19 @@
     );
   }
 
-  function ReviewScreen({ t, app }) {
+  // 复盘正文（可复用，嵌进合并后的「成长」页）：周期选择 + 数据 + 我的复盘 + 导出
+  function ReviewBody({ t, app }) {
     const [period, setPeriod] = useState('day');
     const r = window.VL.getReview(period, app.events);
     const max = Math.max(1, ...r.alloc.map((a) => a.hours));
-    const dayList = (app.events[window.VL.todayKey()] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+    const dayList = (app.events[window.VL.todayKey()] || []).slice().sort((a, b) => window.VL.sortMin(a) - window.VL.sortMin(b) || a.t.localeCompare(b.t));
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
-          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>复盘</h1>
-          <div style={{ marginTop: 14 }}>
-            <Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} />
-          </div>
+      <React.Fragment>
+        <div style={{ marginBottom: 14 }}>
+          <Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} />
         </div>
-
-        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
-          <Card t={t} style={{ marginBottom: 14 }}>
+        <Card t={t} style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 13, color: t.muted, fontWeight: 600 }}>{r.label} · {r.range}</div>
@@ -96,7 +92,7 @@
                 {dayList.map((ev, i, arr) => (
                   <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none', opacity: ev.status === 'cancelled' ? 0.55 : 1 }}>
                     <Dot color={catColor(t, ev.cat)} />
-                    <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums', minWidth: 42 }}>{window.VL.fmtTime(ev.t)}</span>
+                    <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums', minWidth: 42 }}>{window.VL.timeLabel(ev) || '随手'}</span>
                     <span style={{ flex: 1, fontSize: 14.5, color: t.text, fontWeight: 550, textDecoration: ev.status !== 'todo' ? 'line-through' : 'none', opacity: ev.status === 'done' ? 0.6 : 1 }}>{ev.title}</span>
                     <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: ev.status === 'done' ? 'oklch(0.6 0.13 150)' : t.faint, background: ev.status === 'done' ? 'color-mix(in oklch, oklch(0.6 0.13 150) 14%, transparent)' : t.surface2 }}>{ev.status === 'done' ? '完成' : ev.status === 'cancelled' ? '取消' : '待办'}</span>
                   </div>
@@ -106,10 +102,24 @@
           )}
 
           <Btn t={t} kind="outline" full icon="export" onClick={() => app.goExport(period)}>导出这份复盘</Btn>
+      </React.Fragment>
+    );
+  }
+
+  // 独立「复盘」页（保留，便于复用/回退）；合并后默认入口在「成长」页里
+  function ReviewScreen({ t, app }) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
+          <h1 style={{ margin: 0, fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>复盘</h1>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
+          <ReviewBody t={t} app={app} />
         </div>
       </div>
     );
   }
 
   window.ReviewScreen = ReviewScreen;
+  window.ReviewBody = ReviewBody;
 })();
