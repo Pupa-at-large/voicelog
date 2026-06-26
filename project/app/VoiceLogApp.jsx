@@ -306,8 +306,10 @@
     const onConfirmVoice = (parsed, reschedules) => {
       const ev = {
         id: 'v' + Date.now(), t: parsed.time, dur: parsed.dur || 60, title: parsed.title,
-        cat: parsed.cat, loc: parsed.loc, reminder: parsed.reminder, status: 'todo',
+        cat: parsed.cat, loc: parsed.loc, reminder: parsed.reminder,
+        status: parsed.status === 'done' ? 'done' : 'todo', // 补录→已记录
         important: !!parsed.important, urgent: !!parsed.urgent,
+        note: parsed.note || undefined, progress: parsed.progress || undefined,
       };
       // 冲突时若选了"挪旧的"：先把已有行程改到新时间（点了才改，绝不自动），再加入新事项
       mutate(parsed.dateKey, (arr) => {

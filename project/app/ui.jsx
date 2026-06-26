@@ -320,8 +320,9 @@
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
         {actions.map((a, i) => {
           const on = sel[i];
-          const k = KIND[a.kind] || KIND.create;
           const d = a.draft || {};
+          const recorded = a.kind === 'create' && d.status === 'done'; // 补录
+          const k = recorded ? { label: '已记录', c: green, on: green } : (KIND[a.kind] || KIND.create);
           const isEdit = a.kind === 'reschedule' || a.kind === 'cancel';
           const dateShort = (d.dateText || '').split(' · ')[0];
           let detail;
@@ -342,6 +343,11 @@
                   {!isEdit && d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
                   {!isEdit && d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
                 </div>
+                {d.subtasks && d.subtasks.length > 0 && (
+                  <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {d.subtasks.map((s, j) => <div key={j} style={{ fontSize: 12, color: t.faint }}>· {s}</div>)}
+                  </div>
+                )}
               </div>
             </button>
           );
