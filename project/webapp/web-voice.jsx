@@ -94,7 +94,7 @@
       if (SR) {
         try {
           const rec = new SR(); ctx.rec = rec; ctx.real = true; setMode('real');
-          rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = false;
+          rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = true; // 长句不被截断，说完点停止
           rec.onresult = (e) => { let f = '', it = ''; for (let k = 0; k < e.results.length; k++) { const r = e.results[k]; if (r.isFinal) f += r[0].transcript; else it += r[0].transcript; } ctx.finalText = f; ctx.interimText = it; setTranscript(f + it); };
           rec.onerror = () => noSpeech();
           // 手动停止时常还没"定稿"，用 interim 兜底，避免回退到示例文本

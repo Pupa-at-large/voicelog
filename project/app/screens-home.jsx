@@ -135,7 +135,7 @@
       if (SR) {
         try {
           const rec = new SR(); ctx.rec = rec; ctx.real = true; setMode('real');
-          rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+          rec.lang = 'zh-CN'; rec.interimResults = true; rec.continuous = true; rec.maxAlternatives = 1; // continuous=true：长句/多条补录不会说一半被截断，直到点停止
           rec.onresult = (e) => {
             let final = '', interim = '';
             for (let k = 0; k < e.results.length; k++) {
@@ -279,7 +279,7 @@
                 </button>
                 <div style={{ width: 48 }} />
               </div>
-              <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>{heardNothing ? '点这里重新听' : '点击停止 · 说完自动解析'}</span>
+              <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>{heardNothing ? '点这里重新听' : '说完点「停止」· 长句、多条都能说'}</span>
               {heardNothing && <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
                 <button onClick={openTyping} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>
                 <button onClick={() => R.current.example && R.current.example()} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, color: t.muted }}>看示例</button>
