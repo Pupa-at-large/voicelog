@@ -96,7 +96,7 @@
         )}
         <div style={{ padding: 12, borderRadius: t.radius, background: t.surface2 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Dot color={aiEngine ? 'oklch(0.62 0.15 150)' : 'oklch(0.70 0.14 70)'} size={9} ring /><span style={{ fontSize: 13, fontWeight: 600, color: t.text }}>{aiEngine ? 'AI 解析' : '规则解析'}</span></div>
-          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 6, lineHeight: 1.5 }}>数据存于本机 voicelog.db，并镜像一份 Markdown。</div>
+          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 6, lineHeight: 1.5 }}>数据存在你这台设备的浏览器里，可在「导出」页随时下载备份。</div>
         </div>
       </div>
     );
@@ -250,6 +250,22 @@
     const ext = F.find((f) => f.key === fmt).ext;
     const fname = `${r.label}_${r.range.replace(/[\s/–]+/g, '-')}${ext}`;
     const Prev = { md: window.MdPreview, txt: window.TxtPreview, docx: window.DocxPreview }[fmt];
+    const doCopy = async () => {
+      try { await navigator.clipboard.writeText(fmt === 'txt' ? window.buildTXT(r) : window.buildMD(r)); app.setToast('已复制到剪贴板', 'copy'); }
+      catch (e) { app.setToast('复制失败 · 请手动选择预览', 'info'); }
+    };
+    const doExport = () => {
+      let content = window.buildMD(r), type = 'text/markdown;charset=utf-8', name = fname;
+      if (fmt === 'txt') { content = window.buildTXT(r); type = 'text/plain;charset=utf-8'; }
+      else if (fmt === 'docx') { content = window.buildDOC(r); type = 'application/msword'; name = fname.replace(/\.docx$/, '.doc'); }
+      try {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([content], { type }));
+        a.download = name; document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+        app.setToast('已导出 ' + name, 'check');
+      } catch (e) { app.setToast('导出失败，请重试', 'info'); }
+    };
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
@@ -267,8 +283,8 @@
                 </button>
               ); })}
             </div>
-            <Btn t={t} kind="primary" icon="export" full onClick={() => app.setToast(`已导出 ${fname}`, 'check')} style={{ marginBottom: 8 }}>导出到 exports/</Btn>
-            <Btn t={t} kind="ghost" icon="copy" full onClick={() => app.setToast('已复制到剪贴板', 'copy')}>复制内容</Btn>
+            <Btn t={t} kind="primary" icon="export" full onClick={doExport} style={{ marginBottom: 8 }}>导出文件</Btn>
+            <Btn t={t} kind="ghost" icon="copy" full onClick={doCopy}>复制内容</Btn>
             <div style={{ display: 'flex', gap: 7, alignItems: 'center', justifyContent: 'center', marginTop: 14 }}><Icon name="shield" size={14} color={t.faint} /><span style={{ fontSize: 12, color: t.faint }}>保存在本机 · 不经过云端</span></div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -352,10 +368,9 @@
         </div>
         <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
           <Row icon="bell" title="浏览器到点提醒" sub="到点在页面内提醒，并发送系统通知" right={<Toggle on={app.notify} onChange={app.setNotify} />} />
-          <Row icon="folder" title="voicelog.db" sub="SQLite · 程序的事实来源" />
-          <Row icon="doc" title="voicelog_schedule.md" sub="纯文本镜像 · 不开 App 也能直接读、喂给 LLM" />
+          <Row icon="shield" title="本机浏览器存储" sub="日程都存在这台设备的浏览器里，不上传任何服务器" />
           <Row icon="trash" title={`回收站 · ${app.trash.length} 项`} sub="删除的日程先放这里，随时找回" right={<button onClick={app.openTrash} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: `1px solid ${t.border}`, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.surface, color: t.text }}>打开</button>} />
-          <Row icon="export" title="exports/" sub="导出的复盘文件都放在这里" last />
+          <Row icon="export" title="导出文件 .md/.txt/.doc" sub="在「导出」页一键下载到本机，可喂给任何大模型" last />
         </Card>
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, marginTop: 16 }}>
           <SectionLabel t={t} style={{ margin: 0 }}>数据备份</SectionLabel>
@@ -517,7 +532,7 @@
       events, selDay, detail, editEv, aiEngine, notify, accentKey, hasPending, pendingCount, burst,
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelDay, setToast, setDetail, setEditEv, setTab,
-      goGrowth: () => { setTab('growth'); const today = todayStr(); if (lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); } },
+      goGrowth: () => { setTab('growth'); const today = todayStr(); const hasAnything = Object.values(events).some((a) => a && a.length); if (hasAnything && lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); } },
       openDetail: (ev) => setDetail(ev),
       openEdit: (ev) => { setDetail(null); setEditEv(ev); },
       openRecur: () => setRecurOpen(true),

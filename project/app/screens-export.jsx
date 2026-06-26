@@ -341,5 +341,5 @@
     );
   }
 
-  Object.assign(window, { ExportScreen, MeScreen, MdPreview, TxtPreview, DocxPreview, buildMD, buildTXT, EXPORT_FORMATS: FORMATS });
+  Object.assign(window, { ExportScreen, MeScreen, MdPreview, TxtPreview, DocxPreview, buildMD, buildTXT, buildDOC, EXPORT_FORMATS: FORMATS });
 })();
