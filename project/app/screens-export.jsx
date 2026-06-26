@@ -23,6 +23,17 @@
     L.push('', `完成率 ${r.rate}%（完成 ${r.done} / 取消 ${r.cancelled} / 待办 ${r.todo}）`);
     return L.join('\n');
   }
+  // Word 可直接打开的 HTML .doc（真文件，非占位）
+  function buildDOC(r) {
+    const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    const rows = r.alloc.map((a) => `<tr><td>${esc(labelOf(a.cat))}</td><td>${fmtH(a.hours)} 小时</td><td>${a.items} 项</td><td>${pct(a.hours, r.total)}%</td></tr>`).join('');
+    const ins = r.insights.map((s) => `<li>${esc(s)}</li>`).join('');
+    return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body style="font-family:Calibri,Arial,sans-serif">`
+      + `<h1>${esc(r.label)}</h1><p>${esc(r.range)} · 共 ${r.count} 项 · 合计约 ${fmtH(r.total)} 小时</p>`
+      + `<h2>时间去向</h2><table border="1" cellspacing="0" cellpadding="5"><tr><th>类别</th><th>时长</th><th>项数</th><th>占比</th></tr>${rows}</table>`
+      + `<h2>洞察与建议</h2><ul>${ins}</ul>`
+      + `<p><i>完成率 ${r.rate}%（完成 ${r.done} / 取消 ${r.cancelled} / 待办 ${r.todo}）</i></p></body></html>`;
+  }
 
   const FORMATS = [
     { key: 'md', name: 'Markdown', ext: '.md', desc: '结构化清晰，最适合喂给别的 AI 继续聊' },
@@ -96,6 +107,23 @@
     const r = window.VL.getReview(period, app.events);
     const ext = FORMATS.find((f) => f.key === fmt).ext;
     const fname = `${r.label}_${r.range.replace(/[\s/–]+/g, '-')}${ext}`;
+    const reportText = () => (fmt === 'txt' ? buildTXT(r) : buildMD(r));
+    const doCopy = async () => {
+      try { await navigator.clipboard.writeText(reportText()); app.setToast('已复制到剪贴板', 'copy'); }
+      catch (e) { app.setToast('复制失败 · 请长按预览手动选择', 'info'); }
+    };
+    const doExport = () => {
+      let content = buildMD(r), type = 'text/markdown;charset=utf-8', name = fname;
+      if (fmt === 'txt') { content = buildTXT(r); type = 'text/plain;charset=utf-8'; }
+      else if (fmt === 'docx') { content = buildDOC(r); type = 'application/msword'; name = fname.replace(/\.docx$/, '.doc'); }
+      try {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([content], { type }));
+        a.download = name; document.body.appendChild(a); a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+        app.setToast('已导出 ' + name, 'check');
+      } catch (e) { app.setToast('导出失败，请重试', 'info'); }
+    };
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -133,8 +161,8 @@
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-            <Btn t={t} kind="ghost" icon="copy" onClick={() => app.setToast('已复制到剪贴板', 'copy')} style={{ flex: 1 }}>复制</Btn>
-            <Btn t={t} kind="primary" icon="export" onClick={() => app.setToast(`已导出 ${fname}`, 'check')} style={{ flex: 1.4 }}>导出到 exports/</Btn>
+            <Btn t={t} kind="ghost" icon="copy" onClick={doCopy} style={{ flex: 1 }}>复制</Btn>
+            <Btn t={t} kind="primary" icon="export" onClick={doExport} style={{ flex: 1.4 }}>导出文件</Btn>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="shield" size={14} color={t.faint} />
@@ -241,13 +269,11 @@
             <React.Fragment>
               <SectionLabel t={t}>时间显示</SectionLabel>
               <Card t={t} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>时间制式</div>
-                    <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>示例 {window.VL.fmtRange('19:00', 60, app.timeFmt)}</div>
-                  </div>
-                  <Segmented t={t} size="sm" value={app.timeFmt} onChange={app.setTimeFmt} items={[{ key: '24', label: '24 小时' }, { key: '12', label: '12 小时' }]} />
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 11 }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>时间制式</div>
+                  <div style={{ fontSize: 12.5, color: t.faint, whiteSpace: 'nowrap' }}>示例 {window.VL.fmtRange('19:00', 60, app.timeFmt)}</div>
                 </div>
+                <Segmented t={t} value={app.timeFmt} onChange={app.setTimeFmt} items={[{ key: '24', label: '24 小时制' }, { key: '12', label: '12 小时制' }]} />
               </Card>
             </React.Fragment>
           )}
@@ -289,6 +315,13 @@
             <Row t={t} icon="trash" title={`回收站 · ${app.trash.length} 项`} sub="删除的日程先放这里，随时找回" onClick={app.openTrash} right={<Icon name="chevR" size={18} color={t.faint} />} last />
           </Card>
 
+          <SectionLabel t={t}>示例数据</SectionLabel>
+          <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+            {app.demoMode
+              ? <Row t={t} icon="redo" title="退出示例预览" sub="回到你自己的日程（你的数据一直安全保留，没被覆盖）" onClick={app.exitDemo} right={<Icon name="chevR" size={18} color={t.faint} />} last />
+              : <Row t={t} icon="sparkle" title="查看示例数据" sub="载入一份样例感受完整效果，随时可一键退出" onClick={app.enterDemo} right={<Icon name="chevR" size={18} color={t.faint} />} last />}
+          </Card>
+
           <SectionLabel t={t}>数据备份</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
             <Row t={t} icon="export" title="备份到文件" sub="把全部日程下载成一个 .json 文件，存到手机或网盘——换设备、清缓存都不怕" onClick={app.backup} right={<Icon name="chevR" size={18} color={t.faint} />} />
@@ -296,11 +329,10 @@
           </Card>
           <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: 'none' }} />
 
-          <SectionLabel t={t}>数据位置</SectionLabel>
+          <SectionLabel t={t}>数据存在哪</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 20, overflow: 'hidden' }}>
-            <Row t={t} icon="folder" title="voicelog.db" sub="SQLite · 程序的事实来源" />
-            <Row t={t} icon="doc" title="voicelog_schedule.md" sub="纯文本镜像 · 不开 App 也能直接读、直接喂给 LLM" />
-            <Row t={t} icon="export" title="exports/" sub="导出的复盘文件都放在这里" last />
+            <Row t={t} icon="shield" title="本机浏览器存储" sub="你的日程都存在这台设备的浏览器里，不上传任何服务器" />
+            <Row t={t} icon="export" title="备份文件 .json" sub="点上面「备份到文件」导出一份，可换设备、可喂给任何大模型" last />
           </Card>
 
           <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, lineHeight: 1.6 }}>语迹 VoiceLog · 对着它说话，就能管日程<br />本地优先 · 永不崩 · 可导出喂给任何大模型</div>

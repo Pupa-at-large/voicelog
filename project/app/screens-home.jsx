@@ -50,6 +50,9 @@
     const [extracted, setExtracted] = useState([]);
     const [batchActions, setBatchActions] = useState([]);
     const [batchSel, setBatchSel] = useState([]);
+    // 云端是否"热"过：首次成功连上后端后记住，之后不再显示"首次唤醒要等几十秒"
+    const [warmed, setWarmed] = useState(() => { try { return !!localStorage.getItem('voicelog:warmed'); } catch (e) { return false; } });
+    const markWarmed = () => { setWarmed(true); try { localStorage.setItem('voicelog:warmed', '1'); } catch (e) {} };
     const R = useRef({});
     const titleRef = useRef(null);
     const fileRef = useRef(null);
@@ -104,7 +107,7 @@
           try {
             const acts = await window.VL.parseRemote(text, app ? window.VL.candidateEvents(app.events) : []);
             if (ctx.phase !== 'parsing') return; // 解析期间已关闭/切换
-            setEngineUsed('ai'); showActs(acts); return;
+            setEngineUsed('ai'); markWarmed(); showActs(acts); return;
           } catch (e) { ctx.parsing = false; /* 回退规则引擎，下面会标记 rule */ }
         }
         ruleParse(text, curated);
@@ -180,7 +183,7 @@
         setEngineUsed(null); setPhase('parsing');
         try {
           const acts = await window.VL.parseRemote(txt, app ? window.VL.candidateEvents(app.events) : []);
-          setEngineUsed('ai');
+          setEngineUsed('ai'); markWarmed();
           if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setPhase('preview'); }
           else { setBatchActions(acts); setBatchSel(acts.map(() => true)); setPhase('batch'); }
           return;
@@ -265,7 +268,7 @@
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
                 <Dot color={heardNothing ? t.muted : 'oklch(0.62 0.2 25)'} ring={!heardNothing} />
                 <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>{heardNothing ? '没听清' : '正在听…'}</span>
-                <Chip t={t} color={mode === 'real' ? engine.color : t.muted} soft>{mode === 'real' ? '浏览器语音识别' : '示例演示'}</Chip>
+                <Chip t={t} color={mode === 'real' ? engine.color : t.muted} soft>{mode === 'real' ? '手机语音识别' : '示例演示'}</Chip>
               </div>
               <Waveform color={t.accent} active={!heardNothing} />
               <p style={{ marginTop: 20, fontSize: heardNothing ? 15 : 19, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 58, letterSpacing: 0.2 }}>
@@ -303,7 +306,7 @@
               <div style={{ width: 40, height: 40, borderRadius: 999, border: `3px solid ${t.chartTrack}`, borderTopColor: t.accent, animation: 'vlspin .8s linear infinite' }} />
               <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在解析…</span>
               <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
-              {aiEngine && !engineUsed && <span style={{ fontSize: 12, color: t.faint, marginTop: -4 }}>首次唤醒云端可能要等几十秒…</span>}
+              {aiEngine && !engineUsed && !warmed && <span style={{ fontSize: 12, color: t.faint, marginTop: -4 }}>首次唤醒云端可能要等几十秒…</span>}
             </div>
           )}
 
@@ -633,7 +636,7 @@
   // ── 编辑表单 ──
   function EditSheet({ t, ev, onClose, onSave, app }) {
     const [st, setSt] = useState(null);
-    const titleRef = useRef(null), locRef = useRef(null);
+    const titleRef = useRef(null), locRef = useRef(null), noteRef = useRef(null);
     useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent }); } }, [ev]);
     if (!ev || !st) return null;
     const bump = (delta) => setSt((s) => { let total = (s.hh * 60 + s.mm + delta + 1440) % 1440; return { ...s, hh: Math.floor(total / 60), mm: total % 60 }; });
@@ -668,6 +671,9 @@
           </div>
         ))}
         {row('地点', editable(locRef, ev.loc || ''))}
+        {row('备注 / 子任务', (
+          <span ref={noteRef} contentEditable suppressContentEditableWarning data-ph="写点备注，或每行一个子任务…" style={{ display: 'block', fontSize: 14.5, fontWeight: 500, color: t.text, outline: 'none', borderRadius: 8, padding: '10px 12px', background: t.surface2, minHeight: 58, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{ev.note || ''}</span>
+        ))}
         {row('提醒', (
           <div style={{ display: 'flex', gap: 7 }}>
             {[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}
@@ -690,7 +696,8 @@
           <Btn t={t} kind="primary" icon="check" onClick={() => {
             const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title;
             const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc;
-            onSave(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important, urgent: st.urgent });
+            const note = noteRef.current ? noteRef.current.innerText.trim() : ev.note;
+            onSave(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, note: note || null, important: st.important, urgent: st.urgent });
             onClose();
           }} style={{ flex: 2 }}>保存</Btn>
         </div>
@@ -727,9 +734,9 @@
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
+        <div style={{ padding: '46px 20px 6px', flexShrink: 0 }}>
           {/* 品牌行：内联 SVG 声波标志 + 名字 + 标语（跨主题随主色） */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
             <div style={{ width: 30, height: 30, borderRadius: 9, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: t.shadow }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="9" width="2.6" height="6" rx="1.3" fill={t.onAccent} />
@@ -758,7 +765,7 @@
             </div>
           </div>
           {/* 列表 / 全览 切换 */}
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 10 }}>
             <div style={{ display: 'inline-flex', background: t.surface2, borderRadius: 999, padding: 3, border: `1px solid ${t.border}` }}>
               {[['list', '列表', 'list'], ['overview', '全览', 'grid'], ['matrix', '象限', 'grid4']].map(([k, lab, ic]) => {
                 const on = view === k;
@@ -797,11 +804,11 @@
                   );
                 })}
               </div>
-              <div style={{ marginTop: 14, fontSize: 13.5, color: t.muted }}>
+              <div style={{ marginTop: 10, fontSize: 13.5, color: t.muted }}>
                 {list.length > 0 ? <>共 <b style={{ color: t.text }}>{list.length}</b> 项 · 约 {totalH % 1 === 0 ? totalH : totalH.toFixed(1)} 小时 · 已完成 {doneN}</> : '这天还没有安排'}
               </div>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '12px 20px 24px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
               {pending.length > 0 && !rollSnoozed && (
                 <window.RolloverBanner t={t} items={pending} onMove={(picks) => app.rolloverUnfinished(picks)} onDismiss={() => app.snoozeRollover()} style={{ marginBottom: 12 }} />
               )}

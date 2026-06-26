@@ -153,6 +153,8 @@
     const [timeFmt, setTimeFmt] = useState(() => (saved && saved.timeFmt) || '24'); // '24' | '12'
     window.VL.timeFmt = timeFmt; // 让所有显示处的 fmtTime/fmtRange 读到当前制式
     const [showWelcome, setShowWelcome] = useState(() => { try { return !localStorage.getItem('voicelog:welcomed'); } catch (e) { return false; } });
+    const [demoMode, setDemoMode] = useState(false); // 示例预览中：不落库，可一键退出回到真实数据
+    const demoBackup = useRef(null);
     const toastTimer = useRef(0);
     const remTimer = useRef(0);
 
@@ -162,8 +164,9 @@
       return { ...theme, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft };
     }, [theme, accentKey]);
     useEffect(() => {
+      if (demoMode) return; // 示例预览不落库，绝不覆盖你的真实数据
       try { localStorage.setItem(DATA_KEY, JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt })); } catch (e) {}
-    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt]);
+    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt, demoMode]);
 
     // 任意 XP 行为都记一次「活跃」，累计天数只增不减
     const markActive = () => {
@@ -203,11 +206,28 @@
       goGrowth: () => {
         setTab('growth');
         const today = todayStr();
-        if (lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); }
+        // 全新用户没有任何日程时，进成长页不应凭空 +XP / 升级——有内容可复盘才奖励
+        const hasAnything = Object.values(events).some((a) => a && a.length);
+        if (hasAnything && lastReviewDay !== today) { setLastReviewDay(today); awardXp(XP.review); setToast('复盘成长 +15 XP', 'sparkle'); }
       },
       openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
       openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
-      loadDemo: () => { setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86); setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已载入示例数据', 'sparkle'); },
+      demoMode,
+      // 进示例预览：先把你的真实数据快照存到内存，再载入示例（示例不落库）
+      enterDemo: () => {
+        if (!demoMode) demoBackup.current = { events, xp, accumulatedDays, lastActiveDay, lastReviewDay };
+        setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86);
+        setSelectedDay(window.VL.todayKey()); setTab('home'); setDemoMode(true);
+        setToast('已进入示例预览 · 随时可退出', 'sparkle');
+      },
+      // 退出示例：从快照恢复你自己的日程
+      exitDemo: () => {
+        const b = demoBackup.current;
+        if (b) { setEvents(b.events); setXp(b.xp); setAccDays(b.accumulatedDays); setLastActiveDay(b.lastActiveDay); setLastReviewDay(b.lastReviewDay); }
+        demoBackup.current = null; setDemoMode(false);
+        setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已退出示例 · 回到你的日程', 'check');
+      },
+      loadDemo: () => app.enterDemo(), // 兼容旧入口
       // 本地优先的「别丢数据」方案：把全部数据下载成一个 .json 备份文件。不需要账号。
       backup: () => {
         try {
@@ -389,6 +409,11 @@
           {tab === 'me' && <MeScreen t={t} app={app} />}
         </div>
 
+        {demoMode && (
+          <div onClick={app.exitDemo} style={{ flexShrink: 0, zIndex: 31, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 14px', background: t.accent, color: t.onAccent, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+            <Icon name="sparkle" size={15} color={t.onAccent} />示例预览中 · 点此退出，回到你的日程
+          </div>
+        )}
         <TabBar t={t} tab={tab} setTab={(k) => (k === 'growth' ? app.goGrowth() : setTab(k))} onMic={() => { setVoiceMode('voice'); setVoiceOpen(true); }} />
 
         <Toast t={t} toast={toast} />
@@ -448,7 +473,7 @@
           </div>
         </Sheet>
         <LevelUpOverlay t={t} level={levelUp} onClose={() => setLevelUp(null)} />
-        {showWelcome && <WelcomeScreen t={t} onStart={(demo) => { if (demo) setEvents(clone(window.VL.data.events)); try { localStorage.setItem('voicelog:welcomed', '1'); } catch (e) {} setShowWelcome(false); }} />}
+        {showWelcome && <WelcomeScreen t={t} onStart={(demo) => { try { localStorage.setItem('voicelog:welcomed', '1'); } catch (e) {} setShowWelcome(false); if (demo) app.enterDemo(); }} />}
       </div>
     );
   }
