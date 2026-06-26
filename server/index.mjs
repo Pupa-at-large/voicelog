@@ -15,6 +15,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
+// 自动加载同目录的 .env（Node ≥ 20.12 / 22 内置；老版本忽略，可改用 node --env-file=.env）。
+try { process.loadEnvFile(new URL('./.env', import.meta.url)); } catch (e) { /* 没有 .env 或老 Node，跳过 */ }
+
 const PORT = process.env.PORT || 8787;
 const QWEN_KEY = process.env.DASHSCOPE_API_KEY || '';
 // 注意：老别名 qwen-flash/qwen-plus/qwen-max 已无免费额度（调用报 FreeTierOnly）。
