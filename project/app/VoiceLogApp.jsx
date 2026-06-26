@@ -9,8 +9,22 @@
   const todayStr = () => new Date().toISOString().slice(0, 10);
 
   const clone = (o) => JSON.parse(JSON.stringify(o));
-  const SKEY = (k) => 'voicelog:' + k;
-  function loadState(k) { try { return JSON.parse(localStorage.getItem(SKEY(k)) || 'null'); } catch (e) { return null; } }
+  // 全主题共用一份数据（修掉"换主题像丢数据"的坑）。首次加载时，从旧的按主题分库里
+  // 挑出数据最多的一份迁移过来，绝不丢已有日程。
+  const DATA_KEY = 'voicelog:data';
+  const LEGACY_KEYS = ['cloud', 'dawn', 'night'].map((k) => 'voicelog:' + k);
+  const evCount = (s) => { try { return Object.values((s && s.events) || {}).reduce((n, arr) => n + (arr ? arr.length : 0), 0); } catch (e) { return 0; } };
+  function loadState() {
+    try {
+      const cur = localStorage.getItem(DATA_KEY);
+      if (cur) return JSON.parse(cur);
+      const legacy = LEGACY_KEYS.map((k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }).filter(Boolean);
+      if (!legacy.length) return null;
+      const best = legacy.sort((a, b) => evCount(b) - evCount(a))[0];
+      try { localStorage.setItem(DATA_KEY, JSON.stringify(best)); } catch (e) {}
+      return best;
+    } catch (e) { return null; }
+  }
 
   function TabBar({ t, tab, setTab, onMic }) {
     const items = [
@@ -109,7 +123,7 @@
   }
 
   function VoiceLogApp({ theme, themeKey, onTheme }) {
-    const saved = useRef(loadState(theme.key)).current;
+    const saved = useRef(loadState()).current;
     const [tab, setTab] = useState('home');
     const [selectedDay, setSelectedDay] = useState(window.VL.todayKey());
     const [events, setEvents] = useState(() => (saved && saved.events) ? saved.events : {}); // 新用户默认空白；示例从欢迎页按需载入
@@ -148,7 +162,7 @@
       return { ...theme, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft };
     }, [theme, accentKey]);
     useEffect(() => {
-      try { localStorage.setItem(SKEY(theme.key), JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt })); } catch (e) {}
+      try { localStorage.setItem(DATA_KEY, JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt })); } catch (e) {}
     }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt]);
 
     // 任意 XP 行为都记一次「活跃」，累计天数只增不减
@@ -194,6 +208,33 @@
       openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
       openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
       loadDemo: () => { setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86); setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已载入示例数据', 'sparkle'); },
+      // 本地优先的「别丢数据」方案：把全部数据下载成一个 .json 备份文件。不需要账号。
+      backup: () => {
+        try {
+          const blob = { _app: 'voicelog', _v: 1, _at: new Date().toISOString(), events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt };
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([JSON.stringify(blob, null, 2)], { type: 'application/json' }));
+          a.download = 'voicelog-备份-' + todayStr() + '.json';
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+          setToast('已备份 ' + evCount(blob) + ' 条日程', 'check');
+        } catch (e) { setToast('备份失败，请重试', 'info'); }
+      },
+      // 从备份文件恢复（导入），覆盖当前数据。导入前界面会先确认。
+      restore: (parsed) => {
+        if (!parsed || typeof parsed !== 'object' || !parsed.events) { setToast('文件格式不对，未恢复', 'info'); return; }
+        try {
+          setEvents(parsed.events || {});
+          if (parsed.accentKey) setAccentKey(parsed.accentKey);
+          if (typeof parsed.xp === 'number') setXp(parsed.xp);
+          if (typeof parsed.accumulatedDays === 'number') setAccDays(parsed.accumulatedDays);
+          if (parsed.lastActiveDay) setLastActiveDay(parsed.lastActiveDay);
+          if (parsed.lastReviewDay) setLastReviewDay(parsed.lastReviewDay);
+          if (parsed.timeFmt) setTimeFmt(parsed.timeFmt);
+          setSelectedDay(window.VL.todayKey()); setTab('home');
+          setToast('已恢复 ' + evCount(parsed) + ' 条日程', 'sparkle');
+        } catch (e) { setToast('恢复失败，请重试', 'info'); }
+      },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },
       setNotify: (v) => { setNotify(v); setToast(v ? '已开启到点提醒' : '已关闭提醒', 'bell'); },

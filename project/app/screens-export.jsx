@@ -166,6 +166,20 @@
   }
 
   function MeScreen({ t, app }) {
+    const fileRef = React.useRef(null);
+    const onFile = (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let parsed = null;
+        try { parsed = JSON.parse(reader.result); } catch (err) { app.setToast('文件读取失败', 'info'); return; }
+        const n = (parsed && parsed.events) ? Object.values(parsed.events).reduce((a, arr) => a + (arr ? arr.length : 0), 0) : 0;
+        if (window.confirm('从备份恢复会用文件里的数据覆盖 App 当前的内容。\n这份备份含 ' + n + ' 条日程，确定恢复吗？')) app.restore(parsed);
+      };
+      reader.readAsText(f);
+    };
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '54px 20px 10px', flexShrink: 0 }}>
@@ -274,6 +288,13 @@
           <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
             <Row t={t} icon="trash" title={`回收站 · ${app.trash.length} 项`} sub="删除的日程先放这里，随时找回" onClick={app.openTrash} right={<Icon name="chevR" size={18} color={t.faint} />} last />
           </Card>
+
+          <SectionLabel t={t}>数据备份</SectionLabel>
+          <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+            <Row t={t} icon="export" title="备份到文件" sub="把全部日程下载成一个 .json 文件，存到手机或网盘——换设备、清缓存都不怕" onClick={app.backup} right={<Icon name="chevR" size={18} color={t.faint} />} />
+            <Row t={t} icon="redo" title="从备份恢复" sub="选择之前的 .json 备份覆盖恢复（会先确认）" onClick={() => fileRef.current && fileRef.current.click()} right={<Icon name="chevR" size={18} color={t.faint} />} last />
+          </Card>
+          <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: 'none' }} />
 
           <SectionLabel t={t}>数据位置</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 20, overflow: 'hidden' }}>

@@ -282,6 +282,20 @@
 
   // ── 设置视图 ──
   function SettingsView({ t, app, baseKey }) {
+    const fileRef = React.useRef(null);
+    const onFile = (e) => {
+      const f = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let parsed = null;
+        try { parsed = JSON.parse(reader.result); } catch (err) { app.setToast('文件读取失败', 'info'); return; }
+        const n = (parsed && parsed.events) ? Object.values(parsed.events).reduce((a, arr) => a + (arr ? arr.length : 0), 0) : 0;
+        if (window.confirm('从备份恢复会用文件里的数据覆盖当前内容。\n这份备份含 ' + n + ' 条日程，确定恢复吗？')) app.restore(parsed);
+      };
+      reader.readAsText(f);
+    };
     const Row = ({ icon, title, sub, right, last }) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 14px', borderBottom: last ? 'none' : `1px solid ${t.border}` }}>
         <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={18} color={t.muted} /></div>
@@ -343,6 +357,14 @@
           <Row icon="trash" title={`回收站 · ${app.trash.length} 项`} sub="删除的日程先放这里，随时找回" right={<button onClick={app.openTrash} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: `1px solid ${t.border}`, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.surface, color: t.text }}>打开</button>} />
           <Row icon="export" title="exports/" sub="导出的复盘文件都放在这里" last />
         </Card>
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, marginTop: 16 }}>
+          <SectionLabel t={t} style={{ margin: 0 }}>数据备份</SectionLabel>
+        </div>
+        <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+          <Row icon="export" title="备份到文件" sub="把全部日程下载成一个 .json 文件，换设备、清缓存都不怕" right={<button onClick={app.backup} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.accent, color: t.accentText }}>备份</button>} />
+          <Row icon="redo" title="从备份恢复" sub="选择之前的 .json 备份覆盖恢复（会先确认）" right={<button onClick={() => fileRef.current && fileRef.current.click()} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: `1px solid ${t.border}`, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.surface, color: t.text }}>恢复</button>} last />
+        </Card>
+        <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: 'none' }} />
       </div>
     );
   }
@@ -503,6 +525,34 @@
       showMultitask: () => setMtOpen(true),
       setBase: (k) => { setBaseKey(k); setToast('已切换视觉方向', 'check'); },
       loadDemo: () => { setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
+      backup: () => {
+        try {
+          const blob = { _app: 'voicelog', _v: 1, _at: new Date().toISOString(), events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt };
+          const n = Object.values(events || {}).reduce((a, arr) => a + (arr ? arr.length : 0), 0);
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([JSON.stringify(blob, null, 2)], { type: 'application/json' }));
+          a.download = 'voicelog-备份-' + todayStr() + '.json';
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+          setToast('已备份 ' + n + ' 条日程', 'check');
+        } catch (e) { setToast('备份失败，请重试', 'info'); }
+      },
+      restore: (parsed) => {
+        if (!parsed || typeof parsed !== 'object' || !parsed.events) { setToast('文件格式不对，未恢复', 'info'); return; }
+        try {
+          setEvents(parsed.events || {});
+          if (parsed.accentKey) setAccentKey(parsed.accentKey);
+          if (parsed.baseKey) setBaseKey(parsed.baseKey);
+          if (typeof parsed.xp === 'number') setXp(parsed.xp);
+          if (typeof parsed.accumulatedDays === 'number') setAccDays(parsed.accumulatedDays);
+          if (parsed.lastActiveDay) setLastActiveDay(parsed.lastActiveDay);
+          if (parsed.lastReviewDay) setLastReviewDay(parsed.lastReviewDay);
+          if (parsed.timeFmt) setTimeFmt(parsed.timeFmt);
+          setSelDay(window.VL.todayKey()); setTab('home');
+          const n = Object.values(parsed.events || {}).reduce((a, arr) => a + (arr ? arr.length : 0), 0);
+          setToast('已恢复 ' + n + ' 条日程', 'sparkle');
+        } catch (e) { setToast('恢复失败，请重试', 'info'); }
+      },
       timeFmt, setTimeFmt: (f) => { setTimeFmt(f); setToast(f === '12' ? '已切换为 12 小时制' : '已切换为 24 小时制', 'check'); },
       setAccent: (k) => { setAccentKey(k); setToast('已更新主题色', 'check'); },
       setAi: (v) => { setAiEngine(v); setToast(v ? '已启用 AI 解析' : '已切回规则解析', 'sparkle'); },
