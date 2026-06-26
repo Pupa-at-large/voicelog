@@ -365,7 +365,7 @@
                 <span style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.5 }}>从一段话里识别出多条意图，核对后一起执行——不会替你静默操作。</span>
               </div>
               <div style={{ maxHeight: 340, overflowY: 'auto' }}>
-                <window.BatchReviewList t={t} actions={batchActions} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} />
+                <window.BatchReviewList t={t} actions={batchActions} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} onEdit={(i, patch) => setBatchActions((acts) => acts.map((a, j) => (j === i ? { ...a, title: patch.title !== undefined ? patch.title : a.title, draft: { ...a.draft, ...patch } } : a)))} />
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <Btn t={t} kind="ghost" icon="redo" onClick={() => setRun((r) => r + 1)} style={{ flex: 1 }}>重说</Btn>

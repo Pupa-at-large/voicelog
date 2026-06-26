@@ -308,7 +308,7 @@
   }
 
   // 待执行清单：批量语音/文字解析出的多条动作，用户逐条确认（可勾选）后再批量执行——永不静默执行
-  function BatchReviewList({ t, actions, sel, onToggle, style }) {
+  function BatchReviewList({ t, actions, sel, onToggle, onEdit, style }) {
     const green = 'oklch(0.6 0.13 150)', amber = 'oklch(0.72 0.15 70)';
     const KIND = {
       create: { label: '新增', c: t.accentText, on: t.accent },
@@ -316,6 +316,10 @@
       reschedule: { label: '改期', c: 'oklch(0.55 0.15 60)', on: amber },
       cancel: { label: '取消', c: t.muted, on: t.muted },
     };
+    const [editIdx, setEditIdx] = React.useState(-1);
+    const isoOf = (key) => (key ? window.VL.todayDateObj().getFullYear() + '-' + key : '');
+    const datePatch = (iso) => { if (!iso) return {}; const dt = new Date(iso + 'T00:00:00'); if (isNaN(dt.getTime())) return {}; const key = String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); return { dateKey: key, dateText: window.VL.dateText ? window.VL.dateText(key) : key }; };
+    const inp = { font: 'inherit', fontSize: 14, fontWeight: 600, color: t.text, background: t.surface, border: `1px solid ${t.border}`, borderRadius: t.radius - 4, padding: '8px 10px', outline: 'none', colorScheme: t.mode === 'dark' ? 'dark' : 'light' };
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
         {actions.map((a, i) => {
@@ -324,32 +328,52 @@
           const recorded = a.kind === 'create' && d.status === 'done'; // 补录
           const k = recorded ? { label: '已记录', c: green, on: green } : (KIND[a.kind] || KIND.create);
           const isEdit = a.kind === 'reschedule' || a.kind === 'cancel';
+          const editing = editIdx === i;
           const dateShort = (d.dateText || '').split(' · ')[0];
           let detail;
           if (a.kind === 'reschedule') { const to = [dateShort, d.time ? window.VL.fmtTime(d.time) : ''].filter(Boolean).join(' '); detail = to ? '改到 ' + to : '换个时间'; }
           else if (a.kind === 'cancel') detail = '取消这条日程';
           else detail = `${dateShort} ${window.VL.fmtRange(d.time, d.dur)}`;
           return (
-            <button key={i} onClick={() => onToggle(i)} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, cursor: 'pointer', textAlign: 'left', font: 'inherit', borderRadius: t.radius, background: on ? t.surface : t.surface2, border: `1.5px solid ${on ? k.on : t.border}` }}>
-              <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? k.on : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: k.c, background: `color-mix(in oklch, ${k.on} 16%, transparent)`, padding: '1px 7px', borderRadius: 999, flexShrink: 0 }}>{k.label}</span>
-                  <span style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: a.kind === 'cancel' ? 'line-through' : 'none' }}>{d.title || a.title}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12.5, color: t.muted }}>{detail}</span>
-                  {!isEdit && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>}
-                  {!isEdit && d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
-                  {!isEdit && d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
-                </div>
-                {d.subtasks && d.subtasks.length > 0 && (
-                  <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {d.subtasks.map((s, j) => <div key={j} style={{ fontSize: 12, color: t.faint }}>· {s}</div>)}
+            <div key={i} style={{ borderRadius: t.radius, background: on ? t.surface : t.surface2, border: `1.5px solid ${on ? k.on : t.border}`, overflow: 'hidden' }}>
+              <div onClick={() => onToggle(i)} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 12, cursor: 'pointer' }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? k.on : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: k.c, background: `color-mix(in oklch, ${k.on} 16%, transparent)`, padding: '1px 7px', borderRadius: 999, flexShrink: 0 }}>{k.label}</span>
+                    <span style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: a.kind === 'cancel' ? 'line-through' : 'none' }}>{d.title || a.title}</span>
                   </div>
-                )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12.5, color: t.muted }}>{detail}</span>
+                    {!isEdit && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>}
+                    {!isEdit && d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
+                    {!isEdit && d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
+                  </div>
+                  {d.subtasks && d.subtasks.length > 0 && (
+                    <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {d.subtasks.map((s, j) => <div key={j} style={{ fontSize: 12, color: t.faint }}>· {s}</div>)}
+                    </div>
+                  )}
+                </div>
+                {onEdit && !isEdit && <button onClick={(e) => { e.stopPropagation(); setEditIdx(editing ? -1 : i); }} style={{ flexShrink: 0, width: 30, height: 30, borderRadius: 8, border: `1px solid ${t.border}`, background: editing ? t.accentSoft : 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="pencil" size={15} color={editing ? t.accentText : t.muted} /></button>}
               </div>
-            </button>
+              {editing && onEdit && (
+                <div style={{ padding: '0 12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }} onClick={(e) => e.stopPropagation()}>
+                  <input value={d.title || ''} onChange={(e) => onEdit(i, { title: e.target.value })} placeholder="标题" style={inp} />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input type="date" value={isoOf(d.dateKey)} onChange={(e) => onEdit(i, datePatch(e.target.value))} style={{ ...inp, flex: 1 }} />
+                    <input type="time" value={d.time || '09:00'} onChange={(e) => e.target.value && onEdit(i, { time: e.target.value })} style={{ ...inp, flex: 1 }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {['meet', 'deep', 'life', 'learn', 'misc'].map((c) => { const con = d.cat === c; return <button key={c} onClick={() => onEdit(i, { cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, border: `1px solid ${con ? 'transparent' : t.border}`, background: con ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: con ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button onClick={() => onEdit(i, { status: d.status === 'done' ? 'todo' : 'done' })} style={{ height: 28, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${t.border}`, background: d.status === 'done' ? `color-mix(in oklch, ${green} 16%, transparent)` : 'transparent', color: d.status === 'done' ? green : t.muted }}>{d.status === 'done' ? '已记录·已完成' : '标为已记录'}</button>
+                    <button onClick={() => setEditIdx(-1)} style={{ height: 28, padding: '0 16px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700, background: t.accent, color: t.onAccent }}>完成</button>
+                  </div>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

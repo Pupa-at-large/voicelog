@@ -670,7 +670,7 @@
                   <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>待执行清单 · 找到 {batch.length} 条</h3>
                 </div>
                 <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.6, color: t.muted }}>一段话里识别出多条意图。核对一下，去掉不要的，确认后一起执行——不会替你静默操作。</p>
-                <window.BatchReviewList t={t} actions={batch} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} />
+                <window.BatchReviewList t={t} actions={batch} sel={batchSel} onToggle={(i) => setBatchSel((s) => s.map((v, j) => (j === i ? !v : v)))} onEdit={(i, patch) => setBatch((acts) => acts.map((a, j) => (j === i ? { ...a, title: patch.title !== undefined ? patch.title : a.title, draft: { ...a.draft, ...patch } } : a)))} />
                 <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                   <Btn t={t} kind="ghost" onClick={() => setBatch(null)} style={{ flex: 1 }}>取消</Btn>
                   <Btn t={t} kind="primary" icon="check" onClick={() => { const sel = batch.filter((_, i) => batchSel[i]); if (sel.length) app.applyBatch(sel); setBatch(null); }} style={{ flex: 2, opacity: k ? 1 : 0.5, pointerEvents: k ? 'auto' : 'none' }}>确认执行（{k}）</Btn>
