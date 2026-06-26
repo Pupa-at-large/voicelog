@@ -180,12 +180,9 @@
                 <Chip t={t} color={mode === 'real' ? engine.color : t.muted} soft>{mode === 'real' ? '浏览器语音识别' : '示例演示'}</Chip>
               </div>
               {!heardNothing && <Wave color={t.accent} />}
-              <p style={{ marginTop: 18, fontSize: heardNothing ? 14 : 17, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 50 }}>{heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 看示例。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}</p>
+              <p style={{ marginTop: 18, fontSize: heardNothing ? 14 : 17, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 50 }}>{heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 改用打字。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}</p>
               <button onClick={() => (heardNothing ? setRun((r) => r + 1) : (R.current.stop && R.current.stop()))} style={{ width: 60, height: 60, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>{heardNothing ? <Icon name="mic" size={26} color={t.onAccent} /> : <div style={{ width: 20, height: 20, borderRadius: 6, background: t.onAccent }} />}</button>
-              {heardNothing && <div style={{ display: 'flex', gap: 18, marginTop: 10 }}>
-                <button onClick={openTyping} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>
-                <button onClick={() => R.current.example && R.current.example()} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, color: t.muted }}>看示例</button>
-              </div>}
+              {heardNothing && <button onClick={openTyping} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '18px 0 4px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} /><span style={{ fontSize: 12, color: t.faint }}>或</span><div style={{ flex: 1, height: 1, background: t.border }} />
               </div>
@@ -199,11 +196,6 @@
                 <button onClick={() => pickFile('doc')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: t.radius, cursor: 'pointer', textAlign: 'left', font: 'inherit', border: `1px solid ${t.border}`, background: t.surface2 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: t.raised, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="doc" size={19} color={t.muted} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>上传文件 / 截图</div><div style={{ fontSize: 12, color: t.faint, marginTop: 1 }}>从通知、邮件、会议纪要里提取日程</div></div>
-                  <Icon name="chevR" size={18} color={t.faint} />
-                </button>
-                <button onClick={() => onBatch && onBatch(window.VL.parseBatch(V.batchPhrase))} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: t.radius, cursor: 'pointer', textAlign: 'left', font: 'inherit', border: `1px solid ${t.border}`, background: t.surface2 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: t.raised, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="list" size={19} color={t.muted} /></div>
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>一段话建多条 <span style={{ fontSize: 11, fontWeight: 600, color: t.faint }}>示例</span></div><div style={{ fontSize: 12, color: t.faint, marginTop: 1 }}>说一句包含多件事，自动拆成待执行清单</div></div>
                   <Icon name="chevR" size={18} color={t.faint} />
                 </button>
               </div>

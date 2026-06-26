@@ -269,7 +269,7 @@
               </div>
               <Waveform color={t.accent} active={!heardNothing} />
               <p style={{ marginTop: 20, fontSize: heardNothing ? 15 : 19, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 58, letterSpacing: 0.2 }}>
-                {heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 看示例。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}
+                {heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 改用打字。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}
                 {transcript && !heardNothing && <span style={{ display: 'inline-block', width: 2, height: 20, background: t.accent, marginLeft: 1, verticalAlign: -3, animation: 'vlbar 1s steps(1) infinite' }} />}
               </p>
               <div style={{ display: 'flex', gap: 12, marginTop: 22, alignItems: 'center' }}>
@@ -280,10 +280,7 @@
                 <div style={{ width: 48 }} />
               </div>
               <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>{heardNothing ? '点这里重新听' : '说完点「停止」· 长句、多条都能说'}</span>
-              {heardNothing && <div style={{ display: 'flex', gap: 16, marginTop: 10 }}>
-                <button onClick={openTyping} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>
-                <button onClick={() => R.current.example && R.current.example()} style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, color: t.muted }}>看示例</button>
-              </div>}
+              {heardNothing && <button onClick={openTyping} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '16px 0 2px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} />
                 <span style={{ fontSize: 12, color: t.faint }}>或</span>
@@ -296,13 +293,6 @@
                   color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600,
                 }}>
                   <Icon name="export" size={17} color={t.accentText} />上传文件 / 图片，让 AI 提取日程
-                </button>
-                <button onClick={() => { const acts = window.VL.parseBatch(V.batchPhrase); setBatchActions(acts); setBatchSel(acts.map(() => true)); setPhase('batch'); }} style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 42, padding: '0 18px',
-                  borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2,
-                  color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600,
-                }}>
-                  <Icon name="list" size={17} color={t.accentText} />一段话建多条 · 示例
                 </button>
               </div>
             </div>
