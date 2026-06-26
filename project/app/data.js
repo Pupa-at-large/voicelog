@@ -192,9 +192,9 @@
 
   const fmtH = (h) => (Number.isInteger(h) ? h + '' : h.toFixed(1));
 
-  // 从真实日程实时计算「当日复盘」，保证主页/复盘/导出处处一致
-  function computeDay(dayEvents) {
-    const evs = (dayEvents || []).slice();
+  // 从真实日程实时计算复盘（任意一段时间），保证主页/复盘/导出处处一致、且永远反映你的真实数据
+  function computeStats(rawEvs, _label, _range) {
+    const evs = (rawEvs || []).slice();
     const live = evs.filter((e) => e.status !== 'cancelled');
     const done = evs.filter((e) => e.status === 'done').length;
     const cancelled = evs.filter((e) => e.status === 'cancelled').length;
@@ -229,12 +229,22 @@
     if (total > 0 && meet / total >= 0.5) insights.push('会议扎堆，把能异步处理的挪出来、给专注时段让位会更高效。');
     else if (byCat.deep) insights.push('有完整的深度工作时段，挺好，继续守住它。');
 
-    return { label: '每日复盘', range: _iso(_TODAY), total, count, done, cancelled, todo, rate, alloc, insights };
+    return { label: _label, range: _range, total, count, done, cancelled, todo, rate, alloc, insights };
   }
+  const computeDay = (dayEvents) => computeStats(dayEvents, '每日复盘', _iso(_TODAY));
+  // 把若干天的事件汇总成一个扁平列表
+  const gatherDays = (eventsObj, keys) => keys.reduce((out, k) => { const a = eventsObj && eventsObj[k]; if (a && a.length) out.push.apply(out, a); return out; }, []);
 
+  // 所有周期都按真实数据实时算（之前 week/月以上读的是写死的示例报告，新用户会看到假数据——已修）
   function getReview(period, eventsObj) {
     if (period === 'day') return computeDay((eventsObj && eventsObj[relKey(0)]) || []);
-    return review[period];
+    if (period === 'week') {
+      const wd = windowDays(0); const keys = wd.map((d) => d.key);
+      return computeStats(gatherDays(eventsObj, keys), '每周复盘', `${wd[0].month}/${wd[0].day}–${wd[6].month}/${wd[6].day}`);
+    }
+    const spec = { month: [30, '每月复盘', '近 30 天'], quarter: [90, '季度复盘', '近 90 天'], year: [365, '年度复盘', '近一年'] }[period] || [30, '复盘', ''];
+    const keys = []; for (let i = 0; i < spec[0]; i++) keys.push(relKey(-i));
+    return computeStats(gatherDays(eventsObj, keys), spec[1], spec[2]);
   }
 
   // 文件 / 图片上传 → 大模型自动提取的日程（样例）
