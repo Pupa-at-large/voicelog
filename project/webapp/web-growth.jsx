@@ -71,13 +71,16 @@
             <div style={{ marginBottom: 18 }}>
               <window.GrowthReport t={t} stats={stats} maturity={maturity} quadStats={quadStats} wide={true} />
             </div>
-            <SectionLabel t={t}>本周洞察</SectionLabel>
             <div style={{ display: 'flex', gap: 11, padding: 15, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
               <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: t.text }}>{insight}</p>
             </div>
           </div>
         </div>
+
+        {/* ── 合并：复盘 · 回看这段时间 ── */}
+        <div style={{ height: 1, background: t.border, margin: '26px 0 20px' }} />
+        {window.WebReviewBody && <window.WebReviewBody t={t} app={app} />}
       </div>
     );
   }

@@ -63,7 +63,7 @@
 
   // ── 侧边栏 ──
   function Sidebar({ t, tab, setTab, onVoice, aiEngine, level, xp, onGrowth }) {
-    const nav = [['cal', '日历', 'calendar'], ['review', '复盘', 'chart'], ['growth', '成长', 'sparkle'], ['export', '导出', 'export'], ['me', '设置', 'user']];
+    const nav = [['cal', '日历', 'calendar'], ['growth', '成长', 'sparkle'], ['me', '设置', 'user']];
     return (
       <div style={{ width: 248, flexShrink: 0, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '4px 6px 18px' }}>
@@ -229,14 +229,15 @@
     );
   }
 
-  function ReviewView({ t, app }) {
+  // 复盘正文（可复用，嵌进合并后的「成长」页）
+  function WebReviewBody({ t, app }) {
     const [period, setPeriod] = useState('day');
     const r = window.VL.getReview(period, app.events);
     const max = Math.max(1, ...r.alloc.map((a) => a.hours));
     return (
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 760, color: t.text }}>复盘</h1>
+      <React.Fragment>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <div style={{ fontSize: 22, fontWeight: 760, color: t.text }}>复盘 · 回看这段时间</div>
           <div style={{ width: 320 }}><Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} /></div>
         </div>
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
@@ -258,10 +259,14 @@
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {r.insights.map((s, i) => <div key={i} style={{ display: 'flex', gap: 11, padding: 15, borderRadius: t.radius, background: i === 0 ? t.accentSoft : t.surface, border: `1px solid ${i === 0 ? 'transparent' : t.border}`, boxShadow: i === 0 ? 'none' : t.shadow }}><Icon name={i === 0 ? 'sparkle' : 'bolt'} size={17} color={i === 0 ? t.accentText : t.muted} style={{ flexShrink: 0, marginTop: 1 }} /><p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: i === 0 ? t.accentText : t.text, fontWeight: i === 0 ? 550 : 400 }}>{s}</p></div>)}
             </div>
+            <Btn t={t} kind="outline" icon="export" onClick={() => app.goExport(period)} style={{ marginTop: 16 }}>导出这份复盘</Btn>
           </div>
         </div>
-      </div>
+      </React.Fragment>
     );
+  }
+  function ReviewView({ t, app }) {
+    return <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}><WebReviewBody t={t} app={app} /></div>;
   }
 
   // ── 导出视图 ──
@@ -292,7 +297,10 @@
     return (
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 760, color: t.text }}>导出</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={() => app.setTab('growth')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 32, padding: '0 12px 0 9px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, color: t.muted, font: 'inherit', fontSize: 13, fontWeight: 600 }}><Icon name="chevL" size={15} color={t.muted} sw={2.2} />返回</button>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 760, color: t.text }}>导出</h1>
+          </div>
           <div style={{ width: 320 }}><Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} /></div>
         </div>
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
@@ -575,6 +583,7 @@
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelDay, setToast, setDetail, setEditEv, setTab,
       goGrowth: () => setTab('growth'), // 只导航；成长 XP 只由真实动作触发
+      goExport: () => setTab('export'),
       reflections,
       saveReflection: (dayKey, text) => {
         const key = dayKey || window.VL.todayKey();
@@ -765,7 +774,6 @@
           )}
           <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
             {tab === 'cal' && (isEmpty ? <window.WebWelcome t={t} app={app} /> : <CalView t={t} app={app} />)}
-            {tab === 'review' && <ReviewView t={t} app={app} />}
             {tab === 'growth' && <window.WebGrowth t={t} app={app} />}
             {tab === 'export' && <ExportView t={t} app={app} />}
             {tab === 'me' && <SettingsView t={t} app={app} baseKey={baseKey} />}
@@ -852,5 +860,6 @@
     );
   }
 
+  window.WebReviewBody = WebReviewBody;
   window.VoiceLogWeb = VoiceLogWeb;
 })();
