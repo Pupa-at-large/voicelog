@@ -310,12 +310,48 @@
   window.VL.computeDay = computeDay;
   window.VL.getReview = getReview;
 
-  // 时间重叠检测（允许重叠，仅用于提醒）
   const toMin = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+
+  // ── 时间精度：精确(at) / 时段(period) / 全天(allday) / 随手记(untimed) ──
+  // 给"记流水账、记不清几点"的人用：时间从"必填精确值"变成"可选精度"
+  window.VL.DAYPARTS = [
+    { key: 'dawn', label: '凌晨', rep: '05:00' },
+    { key: 'morning', label: '上午', rep: '09:00' },
+    { key: 'noon', label: '中午', rep: '12:00' },
+    { key: 'afternoon', label: '下午', rep: '15:00' },
+    { key: 'evening', label: '晚上', rep: '20:00' },
+    { key: 'night', label: '深夜', rep: '23:00' },
+  ];
+  window.VL.daypartOf = (key) => window.VL.DAYPARTS.find((d) => d.key === key) || null;
+  // 规范化精度：显式 timeMode 优先；否则有合法 t → 精确，无 → 随手记（向后兼容老数据）
+  window.VL.timeMode = function (ev) {
+    const m = ev && ev.timeMode;
+    if (m === 'allday' || m === 'untimed' || m === 'period') return m;
+    return (ev && /^\d{1,2}:\d{2}$/.test(ev.t || '')) ? 'at' : 'untimed';
+  };
+  // 列表排序键（分钟）：全天置顶、随手记沉底、时段用代表时刻塞进大致位置
+  window.VL.sortMin = function (ev) {
+    const m = window.VL.timeMode(ev);
+    if (m === 'allday') return -1;
+    if (m === 'untimed') return 9999;
+    if (m === 'period') { const d = window.VL.daypartOf(ev.daypart); return d ? toMin(d.rep) : 9999; }
+    return toMin(ev.t);
+  };
+  // 显示用时间标签：精确→时刻；时段→上午/下午…；全天→全天；随手记→空
+  window.VL.timeLabel = function (ev, fmt) {
+    const m = window.VL.timeMode(ev);
+    if (m === 'allday') return '全天';
+    if (m === 'untimed') return '';
+    if (m === 'period') { const d = window.VL.daypartOf(ev.daypart); return d ? d.label : '某时段'; }
+    return window.VL.fmtTime(ev.t, fmt);
+  };
+
+  // 时间重叠检测（允许重叠，仅用于提醒）——只有"精确"事件占时段、参与冲突
   window.VL.overlaps = function (dayEvents, ev) {
+    if (window.VL.timeMode(ev) !== 'at') return [];
     const s = toMin(ev.t), e = s + (ev.dur || 60);
     return (dayEvents || []).filter((x) => {
-      if (x.id === ev.id || x.status === 'cancelled') return false;
+      if (x.id === ev.id || x.status === 'cancelled' || window.VL.timeMode(x) !== 'at') return false;
       const xs = toMin(x.t), xe = xs + (x.dur || 60);
       return s < xe && xs < e;
     });
@@ -426,7 +462,7 @@
     const next = {}; Object.keys(prev || {}).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
     let created = 0, completed = 0;
     const rid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent, note: d.note || undefined, progress: d.progress || undefined });
+    const mk = (d, status) => ({ id: rid(), t: d.time, timeMode: d.timeMode || undefined, daypart: d.daypart || undefined, dur: (d.timeMode && d.timeMode !== 'at') ? 0 : (d.dur || 60), title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent, note: d.note || undefined, progress: d.progress || undefined });
     let rescheduled = 0, cancelled = 0;
     // 定位已有日程：优先 targetId（千问从我们给的清单里选），否则按标题模糊匹配
     const findLoc = (id, title, dateKey) => {

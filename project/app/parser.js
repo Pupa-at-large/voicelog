@@ -90,13 +90,15 @@
       }
     }
 
-    // ── 时段 ──
-    let ampm = null;
-    if (/凌晨|早上|早晨|上午/.test(rest)) ampm = 'am';
-    else if (/中午/.test(rest)) ampm = 'noon';
-    else if (/下午|午后/.test(rest)) ampm = 'pm';
-    else if (/晚上|夜里|今晚|傍晚/.test(rest)) ampm = 'pm';
-    strip(/凌晨|早上|早晨|上午|中午|下午|午后|晚上|夜里|今晚|傍晚/);
+    // ── 时段（同时记下粗粒度 daypart，供"没说具体几点"时用）──
+    let ampm = null, dpart = null;
+    if (/凌晨/.test(rest)) { ampm = 'am'; dpart = 'dawn'; }
+    else if (/早上|早晨|上午/.test(rest)) { ampm = 'am'; dpart = 'morning'; }
+    else if (/中午/.test(rest)) { ampm = 'noon'; dpart = 'noon'; }
+    else if (/下午|午后/.test(rest)) { ampm = 'pm'; dpart = 'afternoon'; }
+    else if (/傍晚|晚上|今晚/.test(rest)) { ampm = 'pm'; dpart = 'evening'; }
+    else if (/夜里|深夜|半夜/.test(rest)) { ampm = 'pm'; dpart = 'night'; }
+    strip(/凌晨|早上|早晨|上午|中午|下午|午后|傍晚|晚上|夜里|深夜|半夜|今晚/);
 
     // ── 时间（支持"X点到Y点"时间段 → 算出时长）──
     const grabTime = () => {
@@ -120,7 +122,14 @@
     const _adj = (h) => ((ampm === 'pm' && h < 12) ? h + 12 : (ampm === 'noon') ? 12 : (ampm === 'am' && h === 12) ? 0 : h);
     if (hasTime) { hh = _adj(hh); if (_end) _end.hh = _adj(_end.hh); } else { hh = 9; mm = 0; }
     if (_end) { const d = (_end.hh * 60 + _end.mm) - (hh * 60 + mm); if (d > 0) dur = d; }
-    const time = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    let time = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+    // ── 时间精度：有具体点=精确；只说时段=time段；说"全天/一整天"=全天；什么都没说=随手记 ──
+    let timeMode = 'at', daypart = null;
+    if (!hasTime) {
+      if (/全天|一整天|整天|一天到晚|一整日/.test(raw)) { timeMode = 'allday'; time = '00:00'; dur = 0; }
+      else if (dpart) { timeMode = 'period'; daypart = dpart; const dp = window.VL.daypartOf && window.VL.daypartOf(dpart); if (dp) time = dp.rep; dur = 0; }
+      else { timeMode = 'untimed'; dur = 0; }
+    }
 
     // ── 提醒 ──
     let reminder = 0;
@@ -166,7 +175,7 @@
     const urgent = /紧急|尽快|赶紧|赶快|马上|立刻|立马|加急|催|今天就?要|今天必须|deadline|截止|ddl/i.test(raw);
     const importantKw = /重要|关键|必须|一定要?|别忘|千万|要紧|优先/.test(raw);
 
-    const out = { title, dateKey, dateText: dateTextOf(dateKey, datePrefix), time, loc, reminder, cat, dur, urgent, important: importantKw };
+    const out = { title, dateKey, dateText: dateTextOf(dateKey, datePrefix), time, timeMode, daypart, loc, reminder, cat, dur, urgent, important: importantKw };
     if (repeat && repeat.dows.length) {
       const DOWL = ['日', '一', '二', '三', '四', '五', '六'];
       const dk = (window.VL.data && window.VL.data.dowToKey) || {};
@@ -252,6 +261,13 @@
       cat: SERVER_CATS.indexOf(a.cat) >= 0 ? a.cat : 'misc',
       dur: Number(a.dur) || 60, urgent: !!a.urgent, important: !!a.important,
     };
+    // 时间精度：服务器可返回 timeMode/daypart；有具体时间则一律按精确
+    const DPK = ['dawn', 'morning', 'noon', 'afternoon', 'evening', 'night'];
+    const tmode = hasTime ? 'at' : (['allday', 'untimed', 'period'].indexOf(a.timeMode) >= 0 ? a.timeMode : (DPK.indexOf(a.daypart) >= 0 ? 'period' : 'untimed'));
+    draft.timeMode = tmode;
+    if (tmode === 'period') { draft.daypart = DPK.indexOf(a.daypart) >= 0 ? a.daypart : 'afternoon'; const dp = window.VL.daypartOf(draft.daypart); draft.time = dp ? dp.rep : '15:00'; draft.dur = 0; }
+    else if (tmode === 'allday') { draft.time = '00:00'; draft.dur = 0; }
+    else if (tmode === 'untimed') { draft.dur = 0; }
     // 子任务 → 备注 + 进度；补录(done) → 标已记录
     const subs = Array.isArray(a.subtasks) ? a.subtasks.map((s) => String(s || '').trim()).filter(Boolean) : [];
     if (subs.length) { draft.subtasks = subs; draft.note = subs.map((s) => '· ' + s).join('\n'); draft.progress = { done: a.done ? subs.length : 0, total: subs.length }; }

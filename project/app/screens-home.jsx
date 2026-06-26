@@ -402,7 +402,7 @@
               {(() => {
                 if (!app || draft.status === 'done') return null; // 补录(已记录)允许并行重叠，不弹冲突
                 const dayEvs = app.events[draft.dateKey] || [];
-                const conflict = window.VL.overlaps(dayEvs, { id: '__new', t: draft.time, dur: draft.dur });
+                const conflict = window.VL.overlaps(dayEvs, { id: '__new', t: draft.time, dur: draft.dur, timeMode: draft.timeMode, daypart: draft.daypart });
                 if (!conflict.length) return null;
                 const C = conflict[0];
                 const newSlots = window.VL.suggestSlots(dayEvs, { id: '__new', t: draft.time, dur: draft.dur });
@@ -441,11 +441,27 @@
                   </div>
                 ), { icon: 'clock' })}
                 {field('时间', (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
-                    <span style={{ color: t.faint }}>到</span>
-                    <input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
-                    <span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span>
+                  <div style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
+                      {[['at', '精确'], ['period', '时段'], ['allday', '全天'], ['untimed', '随手记']].map(([k, lab]) => {
+                        const on = window.VL.timeMode(draft) === k;
+                        return <button key={k} onClick={() => setDraft((dr) => { const nx = { ...dr, timeMode: k }; if (k === 'period') { nx.daypart = dr.daypart || 'afternoon'; const dp = window.VL.daypartOf(nx.daypart); nx.time = dp ? dp.rep : '15:00'; nx.dur = 0; } else if (k === 'allday') { nx.time = '00:00'; nx.dur = 0; } else if (k === 'untimed') { nx.dur = 0; } else { nx.dur = dr.dur || 60; } return nx; })} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>;
+                      })}
+                    </div>
+                    {window.VL.timeMode(draft) === 'at' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
+                        <span style={{ color: t.faint }}>到</span>
+                        <input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
+                        <span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span>
+                      </div>
+                    )}
+                    {window.VL.timeMode(draft) === 'period' && (
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                        {window.VL.DAYPARTS.map((d) => { const on = draft.daypart === d.key; return <button key={d.key} onClick={() => setDraft((dr) => ({ ...dr, daypart: d.key, time: (window.VL.daypartOf(d.key) || {}).rep || '15:00' }))} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}
+                      </div>
+                    )}
+                    {(window.VL.timeMode(draft) === 'allday' || window.VL.timeMode(draft) === 'untimed') && <span style={{ fontSize: 12.5, color: t.faint }}>{window.VL.timeMode(draft) === 'allday' ? '贯穿一整天，不占具体时段' : '只记一笔，不设时间'}</span>}
                   </div>
                 ), { icon: 'clock' })}
                 {field('地点', <span style={{ fontSize: 15, color: draft.loc ? t.text : t.faint }}>{draft.loc || '未识别 · 可不填'}</span>, { icon: 'pin' })}
@@ -538,8 +554,8 @@
     return (
       <div style={{ display: 'flex', gap: 12 }}>
         <div style={{ width: 48, flexShrink: 0, textAlign: 'right', paddingTop: 14 }}>
-          <div style={{ fontSize: 15, fontWeight: 650, color: done || cancelled ? t.faint : t.text, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtTime(ev.t)}</div>
-          <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtTime(window.VL.endTime(ev.t, ev.dur))}</div>
+          <div style={{ fontSize: window.VL.timeMode(ev) === 'at' ? 15 : 13, fontWeight: 650, color: done || cancelled ? t.faint : t.text, fontVariantNumeric: 'tabular-nums' }}>{window.VL.timeLabel(ev) || '随手'}</div>
+          {window.VL.timeMode(ev) === 'at' && <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtTime(window.VL.endTime(ev.t, ev.dur))}</div>}
         </div>
         <div style={{ flex: 1, minWidth: 0, position: 'relative', borderRadius: t.radius, overflow: 'hidden', boxShadow: t.shadow }}>
           {/* 右侧操作：编辑 / 删除 */}
@@ -610,7 +626,9 @@
           <button onClick={() => onEdit(ev)} style={{ height: 38, padding: '0 13px', borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}><Icon name="pencil" size={15} color={t.text} />编辑</button>
         </div>
         <div style={{ marginTop: 10 }}>
-          {meta('clock', '时间', `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟`)}
+          {window.VL.timeMode(ev) === 'at'
+            ? meta('clock', '时间', `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟`)
+            : meta('clock', '时间', window.VL.timeMode(ev) === 'allday' ? '全天 · 贯穿一整天' : (window.VL.timeLabel(ev) || '随手记 · 未设时间'))}
           {ev.loc && meta('pin', '地点', ev.loc)}
           {meta('bell', '提醒', ev.reminder ? `提前 ${ev.reminder} 分钟` : '不提醒')}
         </div>
@@ -637,7 +655,7 @@
   function EditSheet({ t, ev, onClose, onSave, app }) {
     const [st, setSt] = useState(null);
     const titleRef = useRef(null), locRef = useRef(null), noteRef = useRef(null);
-    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent }); } }, [ev]);
+    useEffect(() => { if (ev) { const [h, m] = (ev.t || '09:00').split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent, timeMode: window.VL.timeMode(ev), daypart: ev.daypart || 'afternoon' }); } }, [ev]);
     if (!ev || !st) return null;
     const bump = (delta) => setSt((s) => { let total = (s.hh * 60 + s.mm + delta + 1440) % 1440; return { ...s, hh: Math.floor(total / 60), mm: total % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
@@ -655,11 +673,29 @@
         <h3 style={{ margin: '2px 2px 16px', fontSize: 20, fontWeight: 720, color: t.text }}>编辑日程</h3>
         {row('标题', editable(titleRef, ev.title))}
         {row('时间', (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => bump(-15)} style={stepBtn(t)}><Icon name="minus" size={18} color={t.text} sw={2.2} /></button>
-            <span style={{ fontSize: 22, fontWeight: 720, color: t.text, fontVariantNumeric: 'tabular-nums', minWidth: 78, textAlign: 'center' }}>{time}</span>
-            <button onClick={() => bump(15)} style={stepBtn(t)}><Icon name="plus" size={18} color={t.text} sw={2.2} /></button>
-            <span style={{ fontSize: 12.5, color: t.faint, marginLeft: 4 }}>每档 15 分钟</span>
+          <div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+              {[['at', '精确'], ['period', '时段'], ['allday', '全天'], ['untimed', '随手记']].map(([k, lab]) => {
+                const on = st.timeMode === k;
+                return <button key={k} onClick={() => setSt({ ...st, timeMode: k })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>;
+              })}
+            </div>
+            {st.timeMode === 'at' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button onClick={() => bump(-15)} style={stepBtn(t)}><Icon name="minus" size={18} color={t.text} sw={2.2} /></button>
+                <span style={{ fontSize: 22, fontWeight: 720, color: t.text, fontVariantNumeric: 'tabular-nums', minWidth: 78, textAlign: 'center' }}>{time}</span>
+                <button onClick={() => bump(15)} style={stepBtn(t)}><Icon name="plus" size={18} color={t.text} sw={2.2} /></button>
+                <span style={{ fontSize: 12.5, color: t.faint, marginLeft: 4 }}>每档 15 分钟</span>
+              </div>
+            )}
+            {st.timeMode === 'period' && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {window.VL.DAYPARTS.map((d) => { const on = st.daypart === d.key; return <button key={d.key} onClick={() => setSt({ ...st, daypart: d.key })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}
+              </div>
+            )}
+            {(st.timeMode === 'allday' || st.timeMode === 'untimed') && (
+              <div style={{ fontSize: 12.5, color: t.faint, paddingLeft: 2 }}>{st.timeMode === 'allday' ? '贯穿一整天，不占具体时段' : '只是记一笔，不设时间'}</div>
+            )}
           </div>
         ))}
         {row('类别', (
@@ -697,7 +733,12 @@
             const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title;
             const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc;
             const note = noteRef.current ? noteRef.current.innerText.trim() : ev.note;
-            onSave(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, note: note || null, important: st.important, urgent: st.urgent });
+            const tmode = st.timeMode || 'at';
+            let nt = time, ndur = ev.dur || 60, ndaypart = null;
+            if (tmode === 'period') { ndaypart = st.daypart; const dp = window.VL.daypartOf(st.daypart); nt = dp ? dp.rep : '15:00'; ndur = 0; }
+            else if (tmode === 'allday') { nt = '00:00'; ndur = 0; }
+            else if (tmode === 'untimed') { ndur = 0; }
+            onSave(ev.id, { title, t: nt, dur: ndur, timeMode: tmode, daypart: ndaypart, cat: st.cat, reminder: st.reminder, loc: loc || null, note: note || null, important: st.important, urgent: st.urgent });
             onClose();
           }} style={{ flex: 2 }}>保存</Btn>
         </div>
@@ -724,7 +765,8 @@
     // 今天之前所有未完成（含前几天累积）；仅在「今天」视图、且未在贪睡期内显示
     const pending = (sel === todayKey) ? window.VL.pendingBefore(app.events, todayKey) : [];
     const rollSnoozed = Date.now() < (app.rolloverSnoozeUntil || 0);
-    const list = (app.events[sel] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+    // 按时间精度排序：全天置顶 → 时段/精确按时刻 → 随手记沉底
+    const list = (app.events[sel] || []).slice().sort((a, b) => window.VL.sortMin(a) - window.VL.sortMin(b) || a.t.localeCompare(b.t));
     const conflictIds = new Set();
     list.forEach((ev) => { if (ev.status === 'todo' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
     const doneN = list.filter((e) => e.status === 'done').length;
