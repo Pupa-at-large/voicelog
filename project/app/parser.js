@@ -252,6 +252,11 @@
       cat: SERVER_CATS.indexOf(a.cat) >= 0 ? a.cat : 'misc',
       dur: Number(a.dur) || 60, urgent: !!a.urgent, important: !!a.important,
     };
+    // 子任务 → 备注 + 进度；补录(done) → 标已记录
+    const subs = Array.isArray(a.subtasks) ? a.subtasks.map((s) => String(s || '').trim()).filter(Boolean) : [];
+    if (subs.length) { draft.subtasks = subs; draft.note = subs.map((s) => '· ' + s).join('\n'); draft.progress = { done: a.done ? subs.length : 0, total: subs.length }; }
+    else if (a.note) { draft.note = String(a.note); }
+    if (a.done) draft.status = 'done';
     if (kind === 'complete') return Object.assign(base, { draft: Object.assign({}, draft, { status: 'done' }) });
     return Object.assign(base, { draft });
   }

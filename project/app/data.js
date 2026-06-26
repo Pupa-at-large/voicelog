@@ -416,7 +416,7 @@
     const next = {}; Object.keys(prev || {}).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
     let created = 0, completed = 0;
     const rid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent });
+    const mk = (d, status) => ({ id: rid(), t: d.time, dur: d.dur || 60, title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent, note: d.note || undefined, progress: d.progress || undefined });
     let rescheduled = 0, cancelled = 0;
     // 定位已有日程：优先 targetId（千问从我们给的清单里选），否则按标题模糊匹配
     const findLoc = (id, title, dateKey) => {
@@ -450,7 +450,7 @@
         else { next[d.dateKey] = [...(next[d.dateKey] || []), mk(d, 'done')]; }
         completed += 1;
       } else {
-        next[d.dateKey] = [...(next[d.dateKey] || []), mk(d, 'todo')];
+        next[d.dateKey] = [...(next[d.dateKey] || []), mk(d, d.status === 'done' ? 'done' : 'todo')];
         created += 1;
       }
     });

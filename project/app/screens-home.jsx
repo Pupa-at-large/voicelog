@@ -407,7 +407,7 @@
                 );
               })()}
               {(() => {
-                if (!app) return null;
+                if (!app || draft.status === 'done') return null; // 补录(已记录)允许并行重叠，不弹冲突
                 const dayEvs = app.events[draft.dateKey] || [];
                 const conflict = window.VL.overlaps(dayEvs, { id: '__new', t: draft.time, dur: draft.dur });
                 if (!conflict.length) return null;
@@ -730,7 +730,7 @@
     const rollSnoozed = Date.now() < (app.rolloverSnoozeUntil || 0);
     const list = (app.events[sel] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
     const conflictIds = new Set();
-    list.forEach((ev) => { if (ev.status !== 'cancelled' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
+    list.forEach((ev) => { if (ev.status === 'todo' && window.VL.overlaps(list, ev).length) conflictIds.add(ev.id); });
     const doneN = list.filter((e) => e.status === 'done').length;
     const cur = weekDays.find((w) => w.key === sel) || (() => { const d = window.VL.keyDate(sel); return { key: sel, dow: DOWC[d.getDay()], day: d.getDate(), month: d.getMonth() + 1, today: sel === todayKey }; })();
     const totalH = list.filter((e) => e.status !== 'cancelled').reduce((s, e) => s + e.dur, 0) / 60;
