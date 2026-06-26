@@ -195,6 +195,7 @@
 
   function MeScreen({ t, app }) {
     const fileRef = React.useRef(null);
+    const [openSec, setOpenSec] = React.useState(null); // 折叠的设置分区：'look' | 'time' | null
     const onFile = (e) => {
       const f = e.target.files && e.target.files[0];
       e.target.value = '';
@@ -222,61 +223,54 @@
             </div>
           </div>
 
-          {/* 外观 · 主题（云/暖/夜）——从原顶部悬浮条搬进设置 */}
-          {app.setTheme && (
-            <React.Fragment>
-              <SectionLabel t={t}>外观 · 主题</SectionLabel>
-              <Card t={t} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  {[['cloud', '云', '晴空浅色'], ['dawn', '暖', '晨曦暖色'], ['night', '夜', '夜间深色']].map(([k, name, desc]) => {
-                    const on = app.themeKey === k;
-                    return (
-                      <button key={k} onClick={() => app.setTheme(k)} style={{ flex: 1, cursor: 'pointer', font: 'inherit', padding: '12px 8px', borderRadius: t.radius - 2, border: `1.5px solid ${on ? t.accent : t.border}`, background: on ? t.accentSoft : t.surface2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontSize: 17, fontWeight: 720, color: on ? t.accentText : t.text }}>{name}</span>
-                        <span style={{ fontSize: 11, color: on ? t.accentText : t.faint }}>{desc}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Card>
-            </React.Fragment>
-          )}
-
-          {/* 外观 · 主题色自调 */}
-          <SectionLabel t={t}>外观 · 主题色</SectionLabel>
-          <Card t={t} style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Icon name={t.mode === 'dark' ? 'flame' : 'sun'} size={18} color={t.muted} />
-                <span style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>{t.name} · {t.en}</span>
-              </div>
-              <span style={{ fontSize: 12.5, color: t.faint }}>点色块即时换色</span>
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {t.accents.map((a) => {
-                const on = app.accentKey === a.key;
-                return (
-                  <button key={a.key} onClick={() => app.setAccent(a.key)} style={{ flex: 1, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                    <span style={{ width: '100%', height: 38, borderRadius: 12, background: a.accent, boxShadow: on ? `0 0 0 2.5px ${t.surface}, 0 0 0 5px ${a.accent}` : t.shadow, transition: 'box-shadow .15s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={18} color="#fff" sw={2.6} />}</span>
-                    <span style={{ fontSize: 11.5, color: on ? t.text : t.faint, fontWeight: on ? 650 : 500 }}>{a.name}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <SectionLabel t={t}>偏好设置</SectionLabel>
+          <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+            {/* 外观（折叠：主题 + 主题色） */}
+            {app.setTheme && (
+              <React.Fragment>
+                <Row t={t} icon={t.mode === 'dark' ? 'flame' : 'sun'} title="外观" sub={`主题 ${t.name} · 主题色可调`} onClick={() => setOpenSec(openSec === 'look' ? null : 'look')} right={<Icon name={openSec === 'look' ? 'chevD' : 'chevR'} size={18} color={t.faint} />} />
+                {openSec === 'look' && (
+                  <div style={{ padding: '4px 14px 16px', background: t.surface2 }}>
+                    <div style={{ fontSize: 12, color: t.faint, fontWeight: 600, margin: '8px 0 8px 2px' }}>主题</div>
+                    <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+                      {[['cloud', '云', '晴空浅色'], ['dawn', '暖', '晨曦暖色'], ['night', '夜', '夜间深色']].map(([k, name, desc]) => {
+                        const on = app.themeKey === k;
+                        return (
+                          <button key={k} onClick={() => app.setTheme(k)} style={{ flex: 1, cursor: 'pointer', font: 'inherit', padding: '12px 8px', borderRadius: t.radius - 2, border: `1.5px solid ${on ? t.accent : t.border}`, background: on ? t.accentSoft : t.surface, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 17, fontWeight: 720, color: on ? t.accentText : t.text }}>{name}</span>
+                            <span style={{ fontSize: 11, color: on ? t.accentText : t.faint }}>{desc}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ fontSize: 12, color: t.faint, fontWeight: 600, margin: '0 0 8px 2px' }}>主题色 · 点色块即时换</div>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      {t.accents.map((a) => {
+                        const on = app.accentKey === a.key;
+                        return (
+                          <button key={a.key} onClick={() => app.setAccent(a.key)} style={{ flex: 1, border: 'none', background: 'transparent', cursor: 'pointer', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                            <span style={{ width: '100%', height: 36, borderRadius: 12, background: a.accent, boxShadow: on ? `0 0 0 2.5px ${t.surface2}, 0 0 0 5px ${a.accent}` : t.shadow, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={18} color="#fff" sw={2.6} />}</span>
+                            <span style={{ fontSize: 11.5, color: on ? t.text : t.faint, fontWeight: on ? 650 : 500 }}>{a.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
+            )}
+            {/* 时间显示（折叠） */}
+            {app.setTimeFmt && (
+              <React.Fragment>
+                <Row t={t} icon="clock" title="时间显示" sub={app.timeFmt === '12' ? '12 小时制' : '24 小时制'} onClick={() => setOpenSec(openSec === 'time' ? null : 'time')} right={<Icon name={openSec === 'time' ? 'chevD' : 'chevR'} size={18} color={t.faint} />} last />
+                {openSec === 'time' && (
+                  <div style={{ padding: '4px 14px 16px', background: t.surface2 }}>
+                    <Segmented t={t} value={app.timeFmt} onChange={app.setTimeFmt} items={[{ key: '24', label: '24 小时制' }, { key: '12', label: '12 小时制' }]} />
+                  </div>
+                )}
+              </React.Fragment>
+            )}
           </Card>
-
-          {app.setTimeFmt && (
-            <React.Fragment>
-              <SectionLabel t={t}>时间显示</SectionLabel>
-              <Card t={t} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 11 }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>时间制式</div>
-                  <div style={{ fontSize: 12.5, color: t.faint, whiteSpace: 'nowrap' }}>示例 {window.VL.fmtRange('19:00', 60, app.timeFmt)}</div>
-                </div>
-                <Segmented t={t} value={app.timeFmt} onChange={app.setTimeFmt} items={[{ key: '24', label: '24 小时制' }, { key: '12', label: '12 小时制' }]} />
-              </Card>
-            </React.Fragment>
-          )}
 
           <SectionLabel t={t}>解析引擎</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>

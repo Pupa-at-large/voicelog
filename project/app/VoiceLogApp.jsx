@@ -29,7 +29,6 @@
   function TabBar({ t, tab, setTab, onMic }) {
     const items = [
       { key: 'home', icon: 'calendar', label: '日程' },
-      { key: 'growth', icon: 'sparkle', label: '成长' },
       { key: '_mic' },
       { key: 'me', icon: 'user', label: '我的' },
     ];

@@ -799,11 +799,11 @@
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <div style={{ padding: '46px 20px 6px', flexShrink: 0 }}>
+        <div style={{ padding: 'max(env(safe-area-inset-top, 0px), 14px) 20px 6px', flexShrink: 0 }}>
           {/* 品牌行：内联 SVG 声波标志 + 名字 + 标语（跨主题随主色） */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: t.shadow }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 10 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: t.shadow }}>
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="9" width="2.6" height="6" rx="1.3" fill={t.onAccent} />
                 <rect x="8" y="4.5" width="2.6" height="15" rx="1.3" fill={t.onAccent} />
                 <rect x="13" y="7.5" width="2.6" height="9" rx="1.3" fill={t.onAccent} />
@@ -811,8 +811,8 @@
               </svg>
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 760, color: t.text, letterSpacing: -0.2, lineHeight: 1.1 }}>语迹 <span style={{ color: t.accentText, fontWeight: 700 }}>VoiceLog</span></div>
-              <div style={{ fontSize: 10.5, color: t.faint, marginTop: 1 }}>时间是你最大的资产</div>
+              <div style={{ fontSize: 18, fontWeight: 780, color: t.text, letterSpacing: -0.3, lineHeight: 1.1 }}>语迹 <span style={{ color: t.accentText, fontWeight: 740 }}>VoiceLog</span></div>
+              <div style={{ fontSize: 11.5, color: t.faint, marginTop: 2 }}>时间是你最大的资产</div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -821,7 +821,8 @@
               <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>{cur.month}月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* 成长入口已统一到底部 Tab，首页不再放 LV 徽章（去冗余） */}
+              {/* 成长入口：从底栏移到这里，点开是成长（含复盘）的全部页面 */}
+              <button onClick={app.goGrowth} title="成长" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 42, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, boxShadow: t.shadow }}><Icon name="sparkle" size={16} color={window.VL.GOLD} /><span style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>成长</span></button>
               <button onClick={app.openUpload} title="添加日程（拍照/上传/手动）" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="plus" size={20} color={t.text} /></button>
               <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
             </div>
