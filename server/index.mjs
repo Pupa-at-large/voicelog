@@ -3,7 +3,17 @@
 // 现在已实现：/parse —— 文字 → 通义千问 → 结构化「待执行清单」JSON。
 // 待接：/asr —— 音频 → 火山一句话识别 → 文字（拿到火山4个凭证后接，见 README）。
 // 零依赖：只用 Node 内置 http + 全局 fetch（Node ≥ 18）。本地跑：node server/index.mjs
+//
+// 已扩展为「可同步数据层 + 手机号登录」的 MVP 骨架（To-C 走通验证用）：
+//   /auth/request  手机号 → 验证码（骨架版直接返回，生产换短信服务商）
+//   /auth/verify   手机号 + 验证码 → token
+//   /sync/push     登录后：上传本地变化（按 updated_at「后写赢」合并）
+//   /sync/pull     登录后：拉取自上次游标以来的增量
+// 存储是「每用户一份记录」的 JSON 文件骨架——生产请换 RDS/Postgres（见 DEPLOY.md）。
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 
 const PORT = process.env.PORT || 8787;
 const QWEN_KEY = process.env.DASHSCOPE_API_KEY || '';
@@ -43,6 +53,24 @@ function readBody(req) {
   return new Promise((resolve) => { let d = ''; req.on('data', (c) => (d += c)); req.on('end', () => resolve(d)); });
 }
 
+// ───────────────────────── 持久化（骨架：JSON 文件；生产换数据库）─────────────────────────
+// 形状：{ users:{ [phone]:{ seq, events:{ [id]:{...ev, day, updated_at, deleted, seq} } } }, otps:{}, tokens:{ [token]:phone } }
+// seq 是每个用户单调递增的版本号——/sync/pull?since=N 只回 seq>N 的行，实现增量同步。
+const DATA_DIR = process.env.VL_DATA_DIR || new URL('./.data/', import.meta.url).pathname;
+const STORE_FILE = path.join(DATA_DIR, 'store.json');
+const emptyStore = () => ({ users: {}, otps: {}, tokens: {} });
+function loadStore() { try { return JSON.parse(fs.readFileSync(STORE_FILE, 'utf8')); } catch (e) { return emptyStore(); } }
+const STORE = loadStore();
+function saveStore() {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); const tmp = STORE_FILE + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(STORE)); fs.renameSync(tmp, STORE_FILE); } catch (e) { console.error('saveStore', e.message); }
+}
+
+const DEV = process.env.NODE_ENV !== 'production'; // 骨架：DEV 下把验证码直接回给前端，省去短信
+const genCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const genToken = () => crypto.randomBytes(24).toString('hex');
+const ensureUser = (phone) => (STORE.users[phone] = STORE.users[phone] || { seq: 0, events: {} });
+function authPhone(req) { const m = /^Bearer\s+(.+)$/i.exec(req.headers['authorization'] || ''); return m ? (STORE.tokens[m[1]] || null) : null; }
+
 async function parseUtterance(text, today, now, events) {
   if (!QWEN_KEY) throw new Error('未配置 DASHSCOPE_API_KEY');
   const day = /^\d{4}-\d{2}-\d{2}$/.test(today || '') ? today : SERVER_TODAY;
@@ -73,6 +101,53 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, await parseUtterance(text.trim(), today, now, events));
     } catch (e) { return json(res, 500, { error: String(e.message || e) }); }
   }
+  // ── 账户：手机号验证码登录（骨架：验证码直接返回 / 打印到控制台；生产换短信服务商 + 限流）──
+  if (req.url === '/auth/request' && req.method === 'POST') {
+    try {
+      const { phone } = JSON.parse((await readBody(req)) || '{}');
+      if (!/^\d{6,15}$/.test(phone || '')) return json(res, 400, { error: '手机号格式不对' });
+      const code = genCode();
+      STORE.otps[phone] = { code, exp: Date.now() + 5 * 60 * 1000 }; saveStore();
+      console.log(`[auth] ${phone} 验证码 ${code}（5 分钟内有效）`);
+      return json(res, 200, { ok: true, ...(DEV ? { devCode: code } : {}) }); // devCode 仅开发态返回
+    } catch (e) { return json(res, 500, { error: String(e.message || e) }); }
+  }
+  if (req.url === '/auth/verify' && req.method === 'POST') {
+    try {
+      const { phone, code } = JSON.parse((await readBody(req)) || '{}');
+      const rec = STORE.otps[phone];
+      if (!rec || rec.code !== String(code) || Date.now() > rec.exp) return json(res, 401, { error: '验证码错误或已过期' });
+      delete STORE.otps[phone];
+      const token = genToken(); STORE.tokens[token] = phone; ensureUser(phone); saveStore();
+      return json(res, 200, { ok: true, token, phone });
+    } catch (e) { return json(res, 500, { error: String(e.message || e) }); }
+  }
+
+  // ── 同步：push 上传变化（后写赢）/ pull 拉增量 ── 都要登录 ──
+  if (req.url === '/sync/push' && req.method === 'POST') {
+    const phone = authPhone(req); if (!phone) return json(res, 401, { error: '未登录' });
+    try {
+      const { events } = JSON.parse((await readBody(req)) || '{}');
+      const u = ensureUser(phone); let applied = 0;
+      for (const ev of (Array.isArray(events) ? events : [])) {
+        if (!ev || !ev.id) continue;
+        const cur = u.events[ev.id], incoming = Number(ev.updated_at || 0);
+        if (cur && Number(cur.updated_at || 0) > incoming) continue; // 服务器更新则忽略这条
+        u.events[ev.id] = { ...ev, updated_at: incoming || Date.now(), seq: ++u.seq };
+        applied++;
+      }
+      saveStore();
+      return json(res, 200, { ok: true, applied, cursor: u.seq });
+    } catch (e) { return json(res, 500, { error: String(e.message || e) }); }
+  }
+  if (req.url && req.url.startsWith('/sync/pull') && req.method === 'GET') {
+    const phone = authPhone(req); if (!phone) return json(res, 401, { error: '未登录' });
+    const u = ensureUser(phone);
+    const since = Number(new URL(req.url, 'http://x').searchParams.get('since') || 0) || 0;
+    const events = Object.values(u.events).filter((e) => e.seq > since);
+    return json(res, 200, { ok: true, events, cursor: u.seq });
+  }
+
   // TODO: /asr —— 火山一句话识别（WebSocket 二进制协议）。拿到 appid/access_token/access_secret/cluster 后实现。
   return json(res, 404, { error: 'not found' });
 });
