@@ -21,6 +21,13 @@ const QWEN_KEY = process.env.DASHSCOPE_API_KEY || '';
 // 用当前代有免费额度的代号；可在百炼控制台「免费额度」页查最新可用代号。
 const QWEN_MODEL = process.env.QWEN_MODEL || 'qwen3.6-flash-2026-04-16';
 const QWEN_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+// 火山方舟（豆包）——可选的解析引擎，与千问都是 OpenAI 兼容接口。
+// 接入点 ID（ep-...）当 model 用；鉴权同样是 Bearer <ARK_API_KEY>。
+const ARK_KEY = process.env.ARK_API_KEY || '';
+const ARK_MODEL = process.env.ARK_ENDPOINT_ID || process.env.ARK_MODEL || 'doubao-seed-2-0-lite-260215';
+const ARK_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+// 选引擎：显式 PARSE_PROVIDER 优先；否则有 ARK_API_KEY 就用豆包，没有就用千问。
+const PROVIDER = (process.env.PARSE_PROVIDER || (ARK_KEY ? 'ark' : 'qwen')).toLowerCase();
 // 服务器兜底"今天"：优先 VL_TODAY，否则真实日期。注意 toISOString 是 UTC——
 // 真正的日期以客户端 /parse 请求里带的 today/now 为准（见下），避免时区/跨午夜对不上。
 const SERVER_TODAY = process.env.VL_TODAY
@@ -71,29 +78,38 @@ const genToken = () => crypto.randomBytes(24).toString('hex');
 const ensureUser = (phone) => (STORE.users[phone] = STORE.users[phone] || { seq: 0, events: {} });
 function authPhone(req) { const m = /^Bearer\s+(.+)$/i.exec(req.headers['authorization'] || ''); return m ? (STORE.tokens[m[1]] || null) : null; }
 
-async function parseUtterance(text, today, now, events) {
-  if (!QWEN_KEY) throw new Error('未配置 DASHSCOPE_API_KEY');
-  const day = /^\d{4}-\d{2}-\d{2}$/.test(today || '') ? today : SERVER_TODAY;
-  const evList = Array.isArray(events) ? events.filter((e) => e && e.id && e.title).slice(0, 50) : [];
-  const r = await fetch(QWEN_URL, {
+// 统一的"对话→JSON"调用：按 PROVIDER 选千问或豆包（都 OpenAI 兼容）。密钥只在服务端。
+async function chatJSON(messages) {
+  const useArk = PROVIDER === 'ark' && ARK_KEY;
+  const url = useArk ? ARK_URL : QWEN_URL;
+  const key = useArk ? ARK_KEY : QWEN_KEY;
+  const model = useArk ? ARK_MODEL : QWEN_MODEL;
+  if (!key) throw new Error(useArk ? '未配置 ARK_API_KEY' : '未配置 DASHSCOPE_API_KEY');
+  const body = { model, messages, response_format: { type: 'json_object' }, temperature: 0.2 };
+  if (!useArk) body.enable_thinking = false; // qwen3 默认会"思考"，短抽取关掉更快更省；豆包用默认
+  const r = await fetch(url, {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + QWEN_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: QWEN_MODEL,
-      messages: [{ role: 'system', content: SYSTEM(day, /^\d{1,2}:\d{2}$/.test(now || '') ? now : '', evList) }, { role: 'user', content: text }],
-      response_format: { type: 'json_object' },
-      enable_thinking: false, // qwen3 系列默认会"思考"，短抽取无收益却慢 5 倍、贵几百倍——关掉
-      temperature: 0.2,
-    }),
+    headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   });
-  if (!r.ok) throw new Error(`Qwen HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  if (!r.ok) throw new Error(`${useArk ? 'Ark' : 'Qwen'} HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const data = await r.json();
   return JSON.parse(data.choices?.[0]?.message?.content || '{}');
 }
 
+async function parseUtterance(text, today, now, events) {
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(today || '') ? today : SERVER_TODAY;
+  const evList = Array.isArray(events) ? events.filter((e) => e && e.id && e.title).slice(0, 50) : [];
+  const messages = [
+    { role: 'system', content: SYSTEM(day, /^\d{1,2}:\d{2}$/.test(now || '') ? now : '', evList) },
+    { role: 'user', content: text },
+  ];
+  return chatJSON(messages);
+}
+
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { cors(res); res.writeHead(204); return res.end(); }
-  if (req.url === '/health') return json(res, 200, { ok: true, qwen: !!QWEN_KEY });
+  if (req.url === '/health') return json(res, 200, { ok: true, provider: PROVIDER, qwen: !!QWEN_KEY, ark: !!ARK_KEY });
   if (req.url === '/parse' && req.method === 'POST') {
     try {
       const { text, today, now, events } = JSON.parse((await readBody(req)) || '{}');
@@ -152,4 +168,4 @@ const server = http.createServer(async (req, res) => {
   return json(res, 404, { error: 'not found' });
 });
 
-server.listen(PORT, () => console.log(`VoiceLog 后端已启动 http://localhost:${PORT}  (qwen=${!!QWEN_KEY})`));
+server.listen(PORT, () => console.log(`VoiceLog 后端已启动 http://localhost:${PORT}  (解析引擎=${PROVIDER}, qwen=${!!QWEN_KEY}, ark=${!!ARK_KEY})`));
