@@ -880,7 +880,18 @@
               <window.FocusCard t={t} events={list} dayKey={sel} onOpen={app.openDetail} style={{ marginBottom: 14 }} />
               {list.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {list.map((ev) => <SwipeRow key={ev.id} t={t} ev={ev} conflict={conflictIds.has(ev.id)} onWarn={app.showMultitask} onToggle={app.toggleDone} onOpen={app.openDetail} onEdit={app.openEdit} onDelete={app.deleteEvent} onStar={app.toggleImportant} />)}
+                  {(() => {
+                    const grp = (ev) => { const m = window.VL.timeMode(ev); return m === 'allday' ? 'allday' : m === 'untimed' ? 'untimed' : 'timed'; };
+                    const HEAD = { allday: '全天 · 贯穿一整天', timed: '具体时间', untimed: '随手记 · 没有具体时间' };
+                    const mixed = new Set(list.map(grp)).size > 1; // 只在"既有精确又有模糊"时才显示分组标
+                    const out = []; let last = null;
+                    list.forEach((ev) => {
+                      const g = grp(ev);
+                      if (mixed && g !== last) { out.push(<div key={'h-' + g} style={{ fontSize: 11.5, fontWeight: 700, color: t.faint, letterSpacing: 0.5, marginLeft: 50, marginBottom: -4 }}>{HEAD[g]}</div>); last = g; }
+                      out.push(<SwipeRow key={ev.id} t={t} ev={ev} conflict={conflictIds.has(ev.id)} onWarn={app.showMultitask} onToggle={app.toggleDone} onOpen={app.openDetail} onEdit={app.openEdit} onDelete={app.deleteEvent} onStar={app.toggleImportant} />);
+                    });
+                    return out;
+                  })()}
                   <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 6 }}>← 左滑编辑/删除 · 右滑完成 →</div>
                 </div>
               ) : allEmpty ? (

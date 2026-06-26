@@ -134,7 +134,8 @@
           <window.FocusCard t={t} events={list} dayKey={dayKey} onOpen={app.openDetail} style={{ marginBottom: 16 }} />
           <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 12 }}>{w.today ? '今天' : `周${w.dow}`} · {w.month}月{w.day}日 <span style={{ fontSize: 13, fontWeight: 500, color: t.faint }}>{list.length} 项</span></div>
           {list.length ? <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {list.map((ev) => {
+            {(() => { const grp = (e) => { const m = window.VL.timeMode(e); return m === 'allday' ? 'allday' : m === 'untimed' ? 'untimed' : 'timed'; }; const HEAD = { allday: '全天 · 贯穿一整天', timed: '具体时间', untimed: '随手记 · 没有具体时间' }; const mixed = new Set(list.map(grp)).size > 1; const items = []; let last = null; list.forEach((e) => { const g = grp(e); if (mixed && g !== last) { items.push({ _hd: g, _label: HEAD[g] }); last = g; } items.push(e); }); return items; })().map((ev) => {
+              if (ev._hd) return <div key={'h-' + ev._hd} style={{ fontSize: 11, fontWeight: 700, color: t.faint, letterSpacing: 0.5, marginTop: 2 }}>{ev._label}</div>;
               const done = ev.status === 'done', cancelled = ev.status === 'cancelled';
               const conf = window.VL.overlaps(list, ev).length > 0 && !cancelled;
               return (
@@ -402,6 +403,15 @@
           <Row icon="redo" title="从备份恢复" sub="选择之前的 .json 备份覆盖恢复（会先确认）" right={<button onClick={() => fileRef.current && fileRef.current.click()} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: `1px solid ${t.border}`, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.surface, color: t.text }}>恢复</button>} last />
         </Card>
         <input ref={fileRef} type="file" accept="application/json,.json" onChange={onFile} style={{ display: 'none' }} />
+
+        <div style={{ display: 'flex', gap: 16, marginBottom: 16, marginTop: 16 }}>
+          <SectionLabel t={t} style={{ margin: 0 }}>示例数据</SectionLabel>
+        </div>
+        <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
+          {app.demoMode
+            ? <Row icon="redo" title="退出示例预览" sub="回到你自己的数据（你的内容一直安全保留）" right={<button onClick={app.exitDemo} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: `1px solid ${t.border}`, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.surface, color: t.text }}>退出</button>} last />
+            : <Row icon="sparkle" title="查看示例数据" sub="载入一份样例感受完整效果，随时可一键退出" right={<button onClick={app.enterDemo} style={{ height: 32, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, background: t.accent, color: t.accentText }}>查看</button>} last />}
+        </Card>
       </div>
     );
   }
@@ -506,6 +516,8 @@
     window.VL.timeFmt = timeFmt;
     const [events, setEvents] = useState(() => fresh ? {} : ((saved && saved.events) ? saved.events : {})); // 新用户默认空白；示例按需载入
     const [reflections, setReflections] = useState(() => (!fresh && saved && saved.reflections) ? saved.reflections : {}); // 个性化复盘
+    const [demoMode, setDemoMode] = useState(false); // 示例预览中：不落库、可一键退出
+    const demoBackup = useRef(null);
     const [tab, setTab] = useState('cal');
     const [selDay, setSelDay] = useState(window.VL.todayKey());
     const [detail, setDetail] = useState(null);
@@ -535,7 +547,7 @@
 
     const base = window.VL.themes[baseKey] || theme;
     const t = useMemo(() => { const a = base.accents.find((x) => x.key === accentKey) || base.accents[0]; return { ...base, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft }; }, [base, accentKey]);
-    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, reflections, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt })); } catch (e) {} }, [events, reflections, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt, fresh]);
+    useEffect(() => { if (fresh || demoMode) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, reflections, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt })); } catch (e) {} }, [events, reflections, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt, fresh, demoMode]);
 
     const markActive = () => { const today = todayStr(); setLastActiveDay((p) => { if (p !== today) setAccDays((d) => d + 1); return today; }); };
     const awardXp = (amount) => { markActive(); setXp((p) => { const nv = p + amount; if (window.VL.levelFromXp(nv).lv > window.VL.levelFromXp(p).lv) setLevelUp(window.VL.levelFromXp(nv)); return nv; }); };
@@ -580,7 +592,18 @@
       openVoice: () => setVoiceOpen(true),
       showMultitask: () => setMtOpen(true),
       setBase: (k) => { setBaseKey(k); setToast('已切换视觉方向', 'check'); },
-      loadDemo: () => { setEvents(clone(window.VL.data.events)); setReflections({}); setXp(320); setAccDays(86); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
+      demoMode,
+      enterDemo: () => {
+        if (!demoMode) demoBackup.current = { events, reflections, xp, accumulatedDays, lastActiveDay, lastReviewDay };
+        setEvents(clone(window.VL.data.events)); setReflections({}); setXp(320); setAccDays(86);
+        setSelDay(window.VL.todayKey()); setTab('cal'); setDemoMode(true); setToast('已进入示例预览 · 随时可退出', 'sparkle');
+      },
+      exitDemo: () => {
+        const b = demoBackup.current;
+        if (b) { setEvents(b.events); setReflections(b.reflections || {}); setXp(b.xp); setAccDays(b.accumulatedDays); setLastActiveDay(b.lastActiveDay); setLastReviewDay(b.lastReviewDay); }
+        demoBackup.current = null; setDemoMode(false); setSelDay(window.VL.todayKey()); setTab('cal'); setToast('已退出示例 · 回到你的数据', 'check');
+      },
+      loadDemo: () => app.enterDemo(), // 兼容旧入口
       backup: () => {
         try {
           const blob = { _app: 'voicelog', _v: 1, _at: new Date().toISOString(), events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt };
@@ -734,12 +757,19 @@
     return (
       <div style={{ position: 'absolute', inset: 0, background: t.bg, color: t.text, fontFamily: t.font, display: 'flex', overflow: 'hidden', WebkitFontSmoothing: 'antialiased' }}>
         <Sidebar t={t} tab={tab} setTab={(k) => (k === 'growth' ? app.goGrowth() : setTab(k))} onVoice={() => setVoiceOpen(true)} aiEngine={aiEngine} level={app.level} xp={xp} onGrowth={app.goGrowth} />
-        <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
-          {tab === 'cal' && (isEmpty ? <window.WebWelcome t={t} app={app} /> : <CalView t={t} app={app} />)}
-          {tab === 'review' && <ReviewView t={t} app={app} />}
-          {tab === 'growth' && <window.WebGrowth t={t} app={app} />}
-          {tab === 'export' && <ExportView t={t} app={app} />}
-          {tab === 'me' && <SettingsView t={t} app={app} baseKey={baseKey} />}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          {demoMode && (
+            <div onClick={app.exitDemo} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 14px', background: t.accent, color: t.onAccent, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+              <Icon name="sparkle" size={15} color={t.onAccent} />示例预览中 · 点此退出，回到你的数据
+            </div>
+          )}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
+            {tab === 'cal' && (isEmpty ? <window.WebWelcome t={t} app={app} /> : <CalView t={t} app={app} />)}
+            {tab === 'review' && <ReviewView t={t} app={app} />}
+            {tab === 'growth' && <window.WebGrowth t={t} app={app} />}
+            {tab === 'export' && <ExportView t={t} app={app} />}
+            {tab === 'me' && <SettingsView t={t} app={app} baseKey={baseKey} />}
+          </div>
         </div>
         <DetailModal t={t} app={app} />
         <EditModal t={t} app={app} />
