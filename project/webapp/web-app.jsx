@@ -107,7 +107,7 @@
     const [text, setText] = useState('');
     const [capDismiss, setCapDismiss] = useState({});
     const [rollDismiss, setRollDismiss] = useState(false);
-    const list = (app.events[dayKey] || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+    const list = (app.events[dayKey] || []).slice().sort((a, b) => window.VL.sortMin(a) - window.VL.sortMin(b) || a.t.localeCompare(b.t));
     const load = window.VL.dayLoad(list);
     const todayKey = window.VL.todayKey();
     const prevKey = window.VL.prevKey(todayKey);
@@ -147,7 +147,7 @@
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: done || cancelled ? t.faint : t.text, textDecoration: done || cancelled ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 3 }}>
-                      <span style={{ fontSize: 11.5, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtRange(ev.t, ev.dur)}</span>
+                      <span style={{ fontSize: 11.5, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{window.VL.timeMode(ev) === 'at' ? window.VL.fmtRange(ev.t, ev.dur) : (window.VL.timeLabel(ev) || '随手记')}</span>
                       {ev.loc && <span style={{ fontSize: 11.5, color: t.faint }}>{ev.loc}</span>}
                       {conf && <span onClick={(e) => { e.stopPropagation(); app.showMultitask(); }} style={{ fontSize: 11, fontWeight: 600, color: 'oklch(0.58 0.15 60)', background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', padding: '1px 7px', borderRadius: 999 }}>重叠</span>}
                     </div>
@@ -209,6 +209,25 @@
   }
 
   // ── 复盘视图 ──
+  // 「我的复盘」——桌面版可编辑心声块
+  function WebReflectBlock({ t, app }) {
+    const today = window.VL.todayKey();
+    const cur = (app.reflections && app.reflections[today]) || null;
+    const [text, setText] = useState(cur ? cur.text : '');
+    useEffect(() => { setText(cur ? cur.text : ''); }, [cur ? cur.text : '']);
+    const save = () => { const v = (text || '').trim(); if (v !== (cur ? cur.text : '')) app.saveReflection(today, v); };
+    return (
+      <Card t={t}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: t.faint, letterSpacing: 0.3 }}>我的复盘 · 你想说的</span>
+          <button onClick={app.openReflect} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 11px', borderRadius: 999, border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, color: t.accentText }}><Icon name="mic" size={14} color={t.accentText} />说一段</button>
+        </div>
+        <textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={4} placeholder="今天过得怎么样？随便写写，或点「说一段」用语音记。" style={{ width: '100%', resize: 'none', border: 'none', outline: 'none', background: 'transparent', color: t.text, font: 'inherit', fontSize: 14.5, lineHeight: 1.6 }} />
+        {cur && <div style={{ fontSize: 11.5, color: t.faint, marginTop: 6 }}>记于 {new Date(cur.ts).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
+      </Card>
+    );
+  }
+
   function ReviewView({ t, app }) {
     const [period, setPeriod] = useState('day');
     const r = window.VL.getReview(period, app.events);
@@ -220,14 +239,17 @@
           <div style={{ width: 320 }}><Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} /></div>
         </div>
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-          <Card t={t} style={{ width: 320, flexShrink: 0 }}>
-            <div style={{ fontSize: 13, color: t.muted, fontWeight: 600 }}>{r.label} · {r.range}</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '14px 0' }}>
-              <div><div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}><span style={{ fontSize: 44, fontWeight: 780, color: t.text, letterSpacing: -1, lineHeight: 1 }}>{fmtH(r.total)}</span><span style={{ fontSize: 15, color: t.muted, fontWeight: 600 }}>小时</span></div><div style={{ fontSize: 13, color: t.faint, marginTop: 6 }}>共 {r.count} 项日程</div></div>
-              <Ring t={t} value={r.rate} size={96} />
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>{[['完成', r.done], ['取消', r.cancelled], ['待办', r.todo]].map(([k, v]) => <div key={k} style={{ flex: 1, padding: '10px 0', borderRadius: t.radius - 4, background: t.surface2, textAlign: 'center' }}><div style={{ fontSize: 19, fontWeight: 720, color: t.text }}>{v}</div><div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{k}</div></div>)}</div>
-          </Card>
+          <div style={{ width: 320, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Card t={t}>
+              <div style={{ fontSize: 13, color: t.muted, fontWeight: 600 }}>{r.label} · {r.range}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '14px 0' }}>
+                <div><div style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}><span style={{ fontSize: 44, fontWeight: 780, color: t.text, letterSpacing: -1, lineHeight: 1 }}>{fmtH(r.total)}</span><span style={{ fontSize: 15, color: t.muted, fontWeight: 600 }}>小时</span></div><div style={{ fontSize: 13, color: t.faint, marginTop: 6 }}>共 {r.count} 项日程</div></div>
+                <Ring t={t} value={r.rate} size={96} />
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>{[['完成', r.done], ['取消', r.cancelled], ['待办', r.todo]].map(([k, v]) => <div key={k} style={{ flex: 1, padding: '10px 0', borderRadius: t.radius - 4, background: t.surface2, textAlign: 'center' }}><div style={{ fontSize: 19, fontWeight: 720, color: t.text }}>{v}</div><div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{k}</div></div>)}</div>
+            </Card>
+            {period === 'day' && <WebReflectBlock t={t} app={app} />}
+          </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <SectionLabel t={t}>时间去向</SectionLabel>
             {r.alloc.length ? <Card t={t} style={{ marginBottom: 18 }}><StackBar t={t} alloc={r.alloc} total={r.total} h={18} /><div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 18 }}>{r.alloc.map((a) => <AllocRow key={a.cat} t={t} a={a} total={r.total} max={max} />)}</div></Card> : <Card t={t} style={{ marginBottom: 18, textAlign: 'center', color: t.faint, padding: 24 }}>这个周期还没有日程</Card>}
@@ -397,7 +419,7 @@
           <button onClick={() => app.toggleImportant(ev.id)} title="重要" style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.important ? 'starFill' : 'star'} size={18} color={ev.important ? 'oklch(0.76 0.14 80)' : t.muted} fill={ev.important} /></button>
           <button onClick={() => app.toggleUrgent(ev.id)} title="紧急" style={{ width: 36, height: 36, borderRadius: 999, cursor: 'pointer', flexShrink: 0, border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ev.urgent ? 'flagFill' : 'flag'} size={18} color={ev.urgent ? 'oklch(0.62 0.19 25)' : t.muted} fill={ev.urgent} /></button>
         </div>
-        <div style={{ marginTop: 12 }}>{meta('clock', '时间', `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟`)}{ev.repeat && (
+        <div style={{ marginTop: 12 }}>{meta('clock', '时间', window.VL.timeMode(ev) === 'at' ? `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟` : (window.VL.timeMode(ev) === 'allday' ? '全天 · 贯穿一整天' : (window.VL.timeLabel(ev) || '随手记 · 未设时间')))}{ev.repeat && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${t.border}` }}>
             <Icon name="repeat" size={17} color={t.faint} />
             <span style={{ fontSize: 14, color: t.muted, width: 52 }}>重复</span>
@@ -435,7 +457,8 @@
     const ev = app.editEv;
     const [st, setSt] = useState(null);
     const titleRef = useRef(null), locRef = useRef(null);
-    useEffect(() => { if (ev) { const [h, m] = ev.t.split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent }); } }, [ev]);
+    const noteRef = useRef(null);
+    useEffect(() => { if (ev) { const [h, m] = (ev.t || '09:00').split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent, timeMode: window.VL.timeMode(ev), daypart: ev.daypart || 'afternoon' }); } }, [ev]);
     if (!ev || !st) return null;
     const bump = (d) => setSt((s) => { const tot = (s.hh * 60 + s.mm + d + 1440) % 1440; return { ...s, hh: Math.floor(tot / 60), mm: tot % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
@@ -445,9 +468,15 @@
       <Modal t={t} open={!!ev} onClose={() => app.setEditEv(null)}>
         <h3 style={{ margin: '0 0 16px', fontSize: 20, fontWeight: 720, color: t.text }}>编辑日程</h3>
         {row('标题', ed(titleRef, ev.title))}
-        {row('时间', <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><button onClick={() => bump(-15)} style={stepBtn(t)}><Icon name="minus" size={18} color={t.text} sw={2.2} /></button><span style={{ fontSize: 22, fontWeight: 720, color: t.text, fontVariantNumeric: 'tabular-nums', minWidth: 78, textAlign: 'center' }}>{time}</span><button onClick={() => bump(15)} style={stepBtn(t)}><Icon name="plus" size={18} color={t.text} sw={2.2} /></button><span style={{ fontSize: 12.5, color: t.faint, marginLeft: 4 }}>每档 15 分钟</span></div>)}
+        {row('时间', <div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>{[['at', '精确'], ['period', '时段'], ['allday', '全天'], ['untimed', '随手记']].map(([k, lab]) => { const on = st.timeMode === k; return <button key={k} onClick={() => setSt({ ...st, timeMode: k })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>; })}</div>
+          {st.timeMode === 'at' && <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><button onClick={() => bump(-15)} style={stepBtn(t)}><Icon name="minus" size={18} color={t.text} sw={2.2} /></button><span style={{ fontSize: 22, fontWeight: 720, color: t.text, fontVariantNumeric: 'tabular-nums', minWidth: 78, textAlign: 'center' }}>{time}</span><button onClick={() => bump(15)} style={stepBtn(t)}><Icon name="plus" size={18} color={t.text} sw={2.2} /></button><span style={{ fontSize: 12.5, color: t.faint, marginLeft: 4 }}>每档 15 分钟</span></div>}
+          {st.timeMode === 'period' && <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{window.VL.DAYPARTS.map((d) => { const on = st.daypart === d.key; return <button key={d.key} onClick={() => setSt({ ...st, daypart: d.key })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}</div>}
+          {(st.timeMode === 'allday' || st.timeMode === 'untimed') && <div style={{ fontSize: 12.5, color: t.faint }}>{st.timeMode === 'allday' ? '贯穿一整天，不占具体时段' : '只是记一笔，不设时间'}</div>}
+        </div>)}
         {row('类别', <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>{CATS.map((c) => { const on = st.cat === c; return <button key={c} onClick={() => setSt({ ...st, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}</div>)}
         {row('地点', ed(locRef, ev.loc || ''))}
+        {row('备注 / 子任务', <span ref={noteRef} contentEditable suppressContentEditableWarning style={{ display: 'block', fontSize: 14.5, fontWeight: 500, color: t.text, outline: 'none', borderRadius: 8, padding: '10px 12px', background: t.surface2, minHeight: 54, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{ev.note || ''}</span>)}
         {row('提醒', <div style={{ display: 'flex', gap: 7 }}>{[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}</div>)}
         {row('优先级', <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => setSt({ ...st, important: !st.important })} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.important ? 'transparent' : t.border}`, background: st.important ? 'color-mix(in oklch, oklch(0.76 0.14 80) 18%, transparent)' : 'transparent', color: st.important ? t.text : t.muted }}><Icon name={st.important ? 'starFill' : 'star'} size={16} color={st.important ? 'oklch(0.72 0.14 80)' : t.muted} fill={st.important} />重要</button>
@@ -457,7 +486,7 @@
         <window.RescheduleCard t={t} dayEvents={app.events[app.selDay] || []} ev={{ id: ev.id, t: time, dur: ev.dur, status: ev.status }} onPick={(s) => { const [h, m] = s.time.split(':').map(Number); setSt((p) => ({ ...p, hh: h, mm: m })); }} style={{ marginBottom: 14 }} />
         <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
           <Btn t={t} kind="ghost" onClick={() => app.setEditEv(null)} style={{ flex: 1 }}>取消</Btn>
-          <Btn t={t} kind="primary" icon="check" onClick={() => { const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title; const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc; app.saveEvent(ev.id, { title, t: time, cat: st.cat, reminder: st.reminder, loc: loc || null, important: st.important, urgent: st.urgent }); app.setEditEv(null); }} style={{ flex: 2 }}>保存</Btn>
+          <Btn t={t} kind="primary" icon="check" onClick={() => { const title = (titleRef.current ? titleRef.current.textContent.trim() : ev.title) || ev.title; const loc = locRef.current ? locRef.current.textContent.trim() : ev.loc; const note = noteRef.current ? noteRef.current.innerText.trim() : ev.note; const tmode = st.timeMode || 'at'; let nt = time, ndur = ev.dur || 60, ndaypart = null; if (tmode === 'period') { ndaypart = st.daypart; const dp = window.VL.daypartOf(st.daypart); nt = dp ? dp.rep : '15:00'; ndur = 0; } else if (tmode === 'allday') { nt = '00:00'; ndur = 0; } else if (tmode === 'untimed') { ndur = 0; } app.saveEvent(ev.id, { title, t: nt, dur: ndur, timeMode: tmode, daypart: ndaypart, cat: st.cat, reminder: st.reminder, loc: loc || null, note: note || null, important: st.important, urgent: st.urgent }); app.setEditEv(null); }} style={{ flex: 2 }}>保存</Btn>
         </div>
       </Modal>
     );
@@ -476,6 +505,7 @@
     const [timeFmt, setTimeFmt] = useState(() => (saved && saved.timeFmt) || '24'); // '24' | '12'
     window.VL.timeFmt = timeFmt;
     const [events, setEvents] = useState(() => fresh ? {} : ((saved && saved.events) ? saved.events : {})); // 新用户默认空白；示例按需载入
+    const [reflections, setReflections] = useState(() => (!fresh && saved && saved.reflections) ? saved.reflections : {}); // 个性化复盘
     const [tab, setTab] = useState('cal');
     const [selDay, setSelDay] = useState(window.VL.todayKey());
     const [detail, setDetail] = useState(null);
@@ -505,7 +535,7 @@
 
     const base = window.VL.themes[baseKey] || theme;
     const t = useMemo(() => { const a = base.accents.find((x) => x.key === accentKey) || base.accents[0]; return { ...base, accent: a.accent, accentText: a.accentText, accentSoft: a.accentSoft }; }, [base, accentKey]);
-    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt })); } catch (e) {} }, [events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt, fresh]);
+    useEffect(() => { if (fresh) return; try { localStorage.setItem(SKEY, JSON.stringify({ events, reflections, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt })); } catch (e) {} }, [events, reflections, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt, fresh]);
 
     const markActive = () => { const today = todayStr(); setLastActiveDay((p) => { if (p !== today) setAccDays((d) => d + 1); return today; }); };
     const awardXp = (amount) => { markActive(); setXp((p) => { const nv = p + amount; if (window.VL.levelFromXp(nv).lv > window.VL.levelFromXp(p).lv) setLevelUp(window.VL.levelFromXp(nv)); return nv; }); };
@@ -526,20 +556,31 @@
     const hasPending = useMemo(() => Object.values(events).some((arr) => (arr || []).some((e) => e.repeat && !e.repeat.until)), [events]);
     const pendingCount = useMemo(() => Object.values(events).reduce((n, arr) => n + (arr || []).filter((e) => e.repeat && !e.repeat.until).length, 0), [events]);
     const mutate = (day, fn) => setEvents((prev) => { const next = { ...prev, [day]: (prev[day] || []).map((e) => ({ ...e })) }; next[day] = fn(next[day]); return next; });
-    const addEvent = (p) => { const ev = { id: 'v' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, dur: p.dur || 60, title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: p.status === 'done' ? 'done' : 'todo', important: !!p.important, urgent: !!p.urgent, note: p.note || undefined, progress: p.progress || undefined }; mutate(p.dateKey, (arr) => [...arr, ev]); setSelDay(p.dateKey); awardXp(XP.create); return ev; };
+    const addEvent = (p) => { const ev = { id: 'v' + Date.now() + Math.random().toString(36).slice(2, 5), t: p.time, timeMode: p.timeMode || undefined, daypart: p.daypart || undefined, dur: (p.timeMode && p.timeMode !== 'at') ? 0 : (p.dur || 60), title: p.title, cat: p.cat, loc: p.loc, reminder: p.reminder || 0, status: p.status === 'done' ? 'done' : 'todo', important: !!p.important, urgent: !!p.urgent, note: p.note || undefined, progress: p.progress || undefined }; mutate(p.dateKey, (arr) => [...arr, ev]); setSelDay(p.dateKey); awardXp(XP.create); return ev; };
 
     const app = {
       events, selDay, detail, editEv, aiEngine, notify, accentKey, hasPending, pendingCount, burst,
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelDay, setToast, setDetail, setEditEv, setTab,
       goGrowth: () => setTab('growth'), // 只导航；成长 XP 只由真实动作触发
+      reflections,
+      saveReflection: (dayKey, text) => {
+        const key = dayKey || window.VL.todayKey();
+        const txt = (text || '').trim();
+        const first = !(reflections[key] && reflections[key].text);
+        setReflections((prev) => { const next = { ...prev }; if (txt) next[key] = { text: txt, ts: Date.now() }; else delete next[key]; return next; });
+        if (txt && first) { awardXp(XP.reflect); setToast('记下复盘 · 成长 +' + XP.reflect + ' XP', 'sparkle'); }
+        else if (txt) setToast('复盘已更新', 'check');
+        else setToast('已清空这天的复盘', 'check');
+      },
+      openReflect: () => setVoiceOpen('reflect'),
       openDetail: (ev) => setDetail(ev),
       openEdit: (ev) => { setDetail(null); setEditEv(ev); },
       openRecur: () => setRecurOpen(true),
       openVoice: () => setVoiceOpen(true),
       showMultitask: () => setMtOpen(true),
       setBase: (k) => { setBaseKey(k); setToast('已切换视觉方向', 'check'); },
-      loadDemo: () => { setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
+      loadDemo: () => { setEvents(clone(window.VL.data.events)); setReflections({}); setXp(320); setAccDays(86); setSelDay(window.VL.todayKey()); setToast('已载入示例数据', 'sparkle'); },
       backup: () => {
         try {
           const blob = { _app: 'voicelog', _v: 1, _at: new Date().toISOString(), events, baseKey, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, timeFmt };
@@ -556,6 +597,7 @@
         if (!parsed || typeof parsed !== 'object' || !parsed.events) { setToast('文件格式不对，未恢复', 'info'); return; }
         try {
           setEvents(parsed.events || {});
+          if (parsed.reflections) setReflections(parsed.reflections);
           if (parsed.accentKey) setAccentKey(parsed.accentKey);
           if (parsed.baseKey) setBaseKey(parsed.baseKey);
           if (typeof parsed.xp === 'number') setXp(parsed.xp);
@@ -701,7 +743,7 @@
         </div>
         <DetailModal t={t} app={app} />
         <EditModal t={t} app={app} />
-        <window.WebVoiceModal t={t} open={voiceOpen} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} onExtracted={app.addExtracted} onCourses={app.addCourses} onBatch={(acts) => { setVoiceOpen(false); app.openBatch(acts); }} aiEngine={aiEngine} dayEventsFor={(k) => events[k] || []} allEvents={events} />
+        <window.WebVoiceModal t={t} open={voiceOpen} openMode={voiceOpen === 'reflect' ? 'reflect' : 'voice'} onClose={() => setVoiceOpen(false)} onConfirm={onConfirmVoice} onReflect={app.saveReflection} onExtracted={app.addExtracted} onCourses={app.addCourses} onBatch={(acts) => { setVoiceOpen(false); app.openBatch(acts); }} aiEngine={aiEngine} dayEventsFor={(k) => events[k] || []} allEvents={events} />
         <RecurrenceModal t={t} open={recurOpen} onClose={() => setRecurOpen(false)} count={pendingCount} onConfirm={(u, ut) => { app.setCourseRange(u, ut); setRecurOpen(false); }} />
         <Modal t={t} open={mtOpen} onClose={() => setMtOpen(false)} width={420}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}><div style={{ width: 40, height: 40, borderRadius: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bolt" size={20} color={'oklch(0.6 0.15 60)'} /></div><h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>关于一心多用</h3></div>
@@ -765,7 +807,7 @@
               {trash.map((it) => { const wk = window.VL.data.week.find((x) => x.key === it.day); return (
                 <div key={it.ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.bg }}>
                   <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: catColor(t, it.ev.cat) }} />
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · ${wk.month}月${wk.day}日` : it.day} · {window.VL.fmtTime(it.ev.t)}</div></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · ${wk.month}月${wk.day}日` : it.day} · {window.VL.timeLabel(it.ev) || '随手记'}</div></div>
                   <button onClick={() => app.restoreEvent(it)} style={{ flexShrink: 0, height: 32, padding: '0 13px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>恢复</button>
                 </div>
               ); })}

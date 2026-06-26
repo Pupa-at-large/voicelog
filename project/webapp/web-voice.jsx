@@ -15,7 +15,7 @@
     );
   }
 
-  function WebVoiceModal({ t, open, onClose, onConfirm, onExtracted, onCourses, onBatch, aiEngine, dayEventsFor, allEvents }) {
+  function WebVoiceModal({ t, open, openMode, onClose, onConfirm, onReflect, onExtracted, onCourses, onBatch, aiEngine, dayEventsFor, allEvents }) {
     const V = window.VL.data.voice;
     const [phase, setPhase] = useState('listening');
     const [engineUsed, setEngineUsed] = useState(null); // 'ai' | 'rule' | null
@@ -23,6 +23,7 @@
     const [heardNothing, setHeardNothing] = useState(false);
     const [typedText, setTypedText] = useState('');
     const [transcript, setTranscript] = useState('');
+    const [reflectText, setReflectText] = useState('');
     const [mode, setMode] = useState('real');
     const [draft, setDraft] = useState(null);
     const [run, setRun] = useState(0);
@@ -60,7 +61,7 @@
 
     useEffect(() => {
       if (!open) return;
-      const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false };
+      const ctx = R.current = { phase: 'listening', fellBack: false, finalText: '', parsing: false, reflectMode: (openMode === 'reflect') };
       setPhase('listening'); setTranscript(''); setDraft(null); setEngineUsed(null); setExistResched(null); setHeardNothing(false);
       const setP = (p) => { ctx.phase = p; setPhase(p); };
       const showActs = (acts) => {
@@ -77,6 +78,10 @@
       };
       const startParse = async (text, curated) => {
         if (ctx.parsing) return;
+        // 复盘模式 / 识别到"我想复盘一下" → 不建日程，转成"我的复盘"
+        if (!curated && (ctx.reflectMode || (window.VL.isReflectIntent && window.VL.isReflectIntent(text)))) {
+          ctx.parsing = true; setReflectText(ctx.reflectMode ? text : window.VL.stripReflectTrigger(text)); setEngineUsed('reflect'); setP('reflect'); return;
+        }
         // 开启「AI 解析」且配置了后端 → 先走千问真·AI 解析；失败/未配置自动回退规则引擎
         if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
           ctx.parsing = true; setP('parsing');
@@ -102,7 +107,7 @@
           rec.start(); started = true;
         } catch (e) { started = false; }
       }
-      if (!started) { ctx.real = false; setMode('demo'); noSpeech(); }
+      if (!started) { if (ctx.reflectMode) { setReflectText(''); setP('reflect'); } else { ctx.real = false; setMode('demo'); noSpeech(); } }
       return () => { try { ctx.rec && ctx.rec.stop(); } catch (e) {} clearInterval(ctx.sim); clearTimeout(ctx.t1); clearTimeout(ctx.t2); clearTimeout(utRef.current); };
     }, [open, run]);
 
@@ -169,6 +174,18 @@
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <Btn t={t} kind="ghost" onClick={() => setPhase('listening')} style={{ flex: 1 }}>返回</Btn>
                 <Btn t={t} kind="primary" icon="sparkle" onClick={() => doParse(typedText)} style={{ flex: 2 }}>解析</Btn>
+              </div>
+            </div>
+          )}
+
+          {phase === 'reflect' && (
+            <div style={{ padding: '6px 2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="sparkle" size={17} color={t.accentText} /><span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>今天的复盘</span></div>
+              <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>说说今天的想法、感受、收获——给你自己的记录，不会被解析成日程</div>
+              <textarea value={reflectText} onChange={(e) => setReflectText(e.target.value)} autoFocus rows={5} placeholder="例如：今天效率不错，专注写完了报告；晚上有点累，明天想早点睡。" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.6, outline: 'none' }} />
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" onClick={onClose} style={{ flex: 1 }}>取消</Btn>
+                <Btn t={t} kind="primary" icon="check" onClick={() => { if (onReflect && reflectText.trim()) onReflect(window.VL.todayKey(), reflectText.trim()); onClose(); }} style={{ flex: 2 }}>存为今天的复盘</Btn>
               </div>
             </div>
           )}
@@ -353,7 +370,12 @@
               <div style={{ border: `1px solid ${t.border}`, borderRadius: t.radius, overflow: 'hidden', background: t.raised }}>
                 {field('标题', <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>, 'pencil')}
                 {field('日期', <div><input type="date" value={draftISO} onChange={(e) => setDraftDate(e.target.value)} style={inputStyle} /><div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>{draft.dateText}</div></div>, 'clock')}
-                {field('时间', <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} /><span style={{ color: t.faint }}>到</span><input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} /><span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span></div>, 'clock')}
+                {field('时间', <div style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>{[['at', '精确'], ['period', '时段'], ['allday', '全天'], ['untimed', '随手记']].map(([k, lab]) => { const on = window.VL.timeMode(draft) === k; return <button key={k} onClick={() => setDraft((dr) => { const nx = { ...dr, timeMode: k }; if (k === 'period') { nx.daypart = dr.daypart || 'afternoon'; const dp = window.VL.daypartOf(nx.daypart); nx.time = dp ? dp.rep : '15:00'; nx.dur = 0; } else if (k === 'allday') { nx.time = '00:00'; nx.dur = 0; } else if (k === 'untimed') { nx.dur = 0; } else { nx.dur = dr.dur || 60; } return nx; })} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>; })}</div>
+                  {window.VL.timeMode(draft) === 'at' && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} /><span style={{ color: t.faint }}>到</span><input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} /><span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span></div>}
+                  {window.VL.timeMode(draft) === 'period' && <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{window.VL.DAYPARTS.map((d) => { const on = draft.daypart === d.key; return <button key={d.key} onClick={() => setDraft((dr) => ({ ...dr, daypart: d.key, time: (window.VL.daypartOf(d.key) || {}).rep || '15:00' }))} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}</div>}
+                  {(window.VL.timeMode(draft) === 'allday' || window.VL.timeMode(draft) === 'untimed') && <span style={{ fontSize: 12.5, color: t.faint }}>{window.VL.timeMode(draft) === 'allday' ? '贯穿一整天，不占具体时段' : '只记一笔，不设时间'}</span>}
+                </div>, 'clock')}
                 {field('地点', <span style={{ fontSize: 15, color: draft.loc ? t.text : t.faint }}>{draft.loc || '未识别 · 可不填'}</span>, 'pin')}
                 {field('提醒', <div style={{ display: 'flex', gap: 6 }}>{[0, 15, 30].map((m) => <button key={m} onClick={() => setDraft({ ...draft, reminder: m })} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${draft.reminder === m ? 'transparent' : t.border}`, background: draft.reminder === m ? t.accentSoft : 'transparent', color: draft.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}</div>)}
                 {field('类别', <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{CATS.map((c) => { const on = draft.cat === c; return <button key={c} onClick={() => setDraft({ ...draft, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}</div>, null, true)}
