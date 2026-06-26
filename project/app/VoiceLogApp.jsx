@@ -127,6 +127,7 @@
     const [tab, setTab] = useState('home');
     const [selectedDay, setSelectedDay] = useState(window.VL.todayKey());
     const [events, setEvents] = useState(() => (saved && saved.events) ? saved.events : {}); // 新用户默认空白；示例从欢迎页按需载入
+    const [reflections, setReflections] = useState(() => (saved && saved.reflections) ? saved.reflections : {}); // 个性化复盘：{ dayKey: { text, ts } }
     const [accentKey, setAccentKey] = useState(() => (saved && saved.accentKey) || theme.accents[0].key);
     // 成长系统：XP（只升不降）+ 累计天数；首次落在 LV.4 区间，贴近设计稿
     const [xp, setXp] = useState(() => (saved && typeof saved.xp === 'number') ? saved.xp : 0);
@@ -165,8 +166,8 @@
     }, [theme, accentKey]);
     useEffect(() => {
       if (demoMode) return; // 示例预览不落库，绝不覆盖你的真实数据
-      try { localStorage.setItem(DATA_KEY, JSON.stringify({ events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt })); } catch (e) {}
-    }, [events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt, demoMode]);
+      try { localStorage.setItem(DATA_KEY, JSON.stringify({ events, reflections, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt })); } catch (e) {}
+    }, [events, reflections, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt, demoMode]);
 
     // 任意 XP 行为都记一次「活跃」，累计天数只增不减
     const markActive = () => {
@@ -205,20 +206,32 @@
       setToast,
       // 只导航，不发 XP。成长 XP 只由真实动作触发：记录 / 完成 / 写复盘（见成长页「成长规则」）
       goGrowth: () => setTab('growth'),
+      reflections,
+      // 个性化复盘：打字或语音写下当天/某天的想法。当天第一次写 +XP（动作驱动）
+      saveReflection: (dayKey, text) => {
+        const key = dayKey || window.VL.todayKey();
+        const txt = (text || '').trim();
+        const first = !(reflections[key] && reflections[key].text);
+        setReflections((prev) => { const next = { ...prev }; if (txt) next[key] = { text: txt, ts: Date.now() }; else delete next[key]; return next; });
+        if (txt && first) { awardXp(XP.reflect); setToast('记下复盘 · 成长 +' + XP.reflect + ' XP', 'sparkle'); }
+        else if (txt) setToast('复盘已更新', 'check');
+        else setToast('已清空这天的复盘', 'check');
+      },
+      openReflect: () => { setVoiceMode('reflect'); setVoiceOpen(true); },
       openVoice: () => { setVoiceMode('voice'); setVoiceOpen(true); },
       openUpload: () => { setVoiceMode('upload'); setVoiceOpen(true); },
       demoMode,
       // 进示例预览：先把你的真实数据快照存到内存，再载入示例（示例不落库）
       enterDemo: () => {
-        if (!demoMode) demoBackup.current = { events, xp, accumulatedDays, lastActiveDay, lastReviewDay };
-        setEvents(clone(window.VL.data.events)); setXp(320); setAccDays(86);
+        if (!demoMode) demoBackup.current = { events, reflections, xp, accumulatedDays, lastActiveDay, lastReviewDay };
+        setEvents(clone(window.VL.data.events)); setReflections({}); setXp(320); setAccDays(86);
         setSelectedDay(window.VL.todayKey()); setTab('home'); setDemoMode(true);
         setToast('已进入示例预览 · 随时可退出', 'sparkle');
       },
       // 退出示例：从快照恢复你自己的日程
       exitDemo: () => {
         const b = demoBackup.current;
-        if (b) { setEvents(b.events); setXp(b.xp); setAccDays(b.accumulatedDays); setLastActiveDay(b.lastActiveDay); setLastReviewDay(b.lastReviewDay); }
+        if (b) { setEvents(b.events); setReflections(b.reflections || {}); setXp(b.xp); setAccDays(b.accumulatedDays); setLastActiveDay(b.lastActiveDay); setLastReviewDay(b.lastReviewDay); }
         demoBackup.current = null; setDemoMode(false);
         setSelectedDay(window.VL.todayKey()); setTab('home'); setToast('已退出示例 · 回到你的日程', 'check');
       },
@@ -226,7 +239,7 @@
       // 本地优先的「别丢数据」方案：把全部数据下载成一个 .json 备份文件。不需要账号。
       backup: () => {
         try {
-          const blob = { _app: 'voicelog', _v: 1, _at: new Date().toISOString(), events, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt };
+          const blob = { _app: 'voicelog', _v: 1, _at: new Date().toISOString(), events, reflections, accentKey, xp, accumulatedDays, lastActiveDay, lastReviewDay, rolloverSnoozeMins, rolloverSnoozeUntil, timeFmt };
           const a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob([JSON.stringify(blob, null, 2)], { type: 'application/json' }));
           a.download = 'voicelog-备份-' + todayStr() + '.json';
@@ -240,6 +253,7 @@
         if (!parsed || typeof parsed !== 'object' || !parsed.events) { setToast('文件格式不对，未恢复', 'info'); return; }
         try {
           setEvents(parsed.events || {});
+          if (parsed.reflections) setReflections(parsed.reflections);
           if (parsed.accentKey) setAccentKey(parsed.accentKey);
           if (typeof parsed.xp === 'number') setXp(parsed.xp);
           if (typeof parsed.accumulatedDays === 'number') setAccDays(parsed.accumulatedDays);

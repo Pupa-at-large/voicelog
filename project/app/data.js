@@ -358,6 +358,12 @@
   };
   window.VL.MULTITASK_NOTE = '一心多用时，前额叶要在任务间反复切换，认知负担更重、出错更多，长期还可能削弱专注力。能错开就错开，让需要专注的事各自独占一段时间。';
 
+  // ── 语音复盘意图：用户说"我想复盘一下/复盘/记一下想法/今天感觉…"→ 不建日程，转成"个性化复盘" ──
+  const REFLECT_TRIGGER = /^(嗯+|那个|我?想?)?\s*(复盘一?下?|做个?复盘|记一?下?(我的)?(想法|感受|心情)|说(说|下)(今天|这周)?(的)?(想法|感受|总结)|总结一?下?(今天|这周)?|今天(的)?(感觉|感受|想说)|聊聊今天)/;
+  window.VL.isReflectIntent = (text) => REFLECT_TRIGGER.test(String(text || '').trim());
+  // 去掉开头的触发语，留下真正的复盘内容
+  window.VL.stripReflectTrigger = (text) => String(text || '').trim().replace(REFLECT_TRIGGER, '').replace(/^[，,。、:：\s]+/, '').trim();
+
   // ── 建议式改期：找空档（artifact 不会自动重排，只列选项给用户挑）──
   // 在 SLOT_START–SLOT_END 内，为 ev 找最多 3 个「不与他人重叠」的空档，优先离原时间近的。
   // 纯函数：返回 [{ time:'HH:MM', end:'HH:MM', label }]。每个空档取离原时间最近的可行起点，互不重复。

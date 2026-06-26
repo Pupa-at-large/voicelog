@@ -1,7 +1,28 @@
 /* VoiceLog · 复盘 */
 (function () {
-  const { useState } = React;
+  const { useState, useEffect } = React;
   const { Icon, Card, Btn, Segmented, Ring, StackBar, AllocRow, Dot, SectionLabel, catColor, catLabel, fmtH } = window;
+
+  // 「我的复盘」——个性化、可编辑的心声，与 AI 数据复盘并列。打字或点「说一段」语音记。
+  function ReflectBlock({ t, app }) {
+    const today = window.VL.todayKey();
+    const cur = (app.reflections && app.reflections[today]) || null;
+    const [text, setText] = useState(cur ? cur.text : '');
+    useEffect(() => { setText(cur ? cur.text : ''); }, [cur ? cur.text : '']);
+    const save = () => { const v = (text || '').trim(); if (v !== (cur ? cur.text : '')) app.saveReflection(today, v); };
+    return (
+      <React.Fragment>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '6px 2px 8px' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: t.faint, letterSpacing: 0.3 }}>我的复盘 · 你想说的</span>
+          <button onClick={app.openReflect} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 11px', borderRadius: 999, border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, color: t.accentText }}><Icon name="mic" size={14} color={t.accentText} />说一段</button>
+        </div>
+        <Card t={t} style={{ marginBottom: 14 }}>
+          <textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={3} placeholder="今天过得怎么样？随便写写，或点「说一段」用语音记。" style={{ width: '100%', resize: 'none', border: 'none', outline: 'none', background: 'transparent', color: t.text, font: 'inherit', fontSize: 14.5, lineHeight: 1.6 }} />
+          {cur && <div style={{ fontSize: 11.5, color: t.faint, marginTop: 6 }}>记于 {new Date(cur.ts).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
+        </Card>
+      </React.Fragment>
+    );
+  }
 
   function ReviewScreen({ t, app }) {
     const [period, setPeriod] = useState('day');
@@ -43,6 +64,8 @@
               ))}
             </div>
           </Card>
+
+          {period === 'day' && <ReflectBlock t={t} app={app} />}
 
           <SectionLabel t={t}>时间去向</SectionLabel>
           {r.alloc.length > 0 ? (

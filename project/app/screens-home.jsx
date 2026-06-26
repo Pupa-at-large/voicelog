@@ -43,6 +43,7 @@
     const [heardNothing, setHeardNothing] = useState(false); // 没识别到内容：停在监听屏给重试/上传，不再凭空造日程
     const [typedText, setTypedText] = useState(''); // 打字输入(语音不可用时的退路 + 引导第一步)
     const [transcript, setTranscript] = useState('');
+    const [reflectText, setReflectText] = useState(''); // 语音/打字复盘内容
     const [mode, setMode] = useState('real'); // real | demo
     const [draft, setDraft] = useState(null);
     const [run, setRun] = useState(0);
@@ -82,6 +83,7 @@
 
       // 上传入口：不自动听，直接进"拍照/上传"选择屏
       if (openMode === 'upload') { setPhase('uploadStart'); return () => { clearTimeout(utRef.current); }; }
+      ctx.reflectMode = (openMode === 'reflect'); // 复盘模式：说完不建日程，存为"我的复盘"
 
       const showActs = (acts) => {
         if (acts.length === 1 && acts[0].kind === 'create') { setDraft(acts[0].draft); setP('preview'); }
@@ -101,6 +103,13 @@
       };
       const startParse = async (text, curated) => {
         if (ctx.parsing) return;
+        // 复盘模式 / 识别到"我想复盘一下"意图 → 不建日程，转成"我的复盘"
+        if (!curated && (ctx.reflectMode || (window.VL.isReflectIntent && window.VL.isReflectIntent(text)))) {
+          ctx.parsing = true;
+          setReflectText(ctx.reflectMode ? text : window.VL.stripReflectTrigger(text));
+          setEngineUsed('reflect'); setP('reflect');
+          return;
+        }
         // 开启「AI 解析」且配置了后端 → 先走千问真·AI 解析；失败/未配置自动回退本地规则引擎
         if (!curated && aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
           ctx.parsing = true; setP('parsing');
@@ -157,7 +166,7 @@
           rec.start(); started = true;
         } catch (e) { started = false; }
       }
-      if (!started) { ctx.real = false; setMode('demo'); noSpeech(); }
+      if (!started) { if (ctx.reflectMode) { setReflectText(''); setPhase('reflect'); } else { ctx.real = false; setMode('demo'); noSpeech(); } }
 
       return () => {
         try { ctx.rec && ctx.rec.stop && ctx.rec.stop(); } catch (e) {}
@@ -259,6 +268,21 @@
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                 <Btn t={t} kind="ghost" onClick={() => setPhase('uploadStart')} style={{ flex: 1 }}>返回</Btn>
                 <Btn t={t} kind="primary" icon="sparkle" onClick={() => doParse(typedText)} style={{ flex: 2 }}>解析</Btn>
+              </div>
+            </div>
+          )}
+
+          {phase === 'reflect' && (
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '14px 4px 6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <Icon name="sparkle" size={17} color={t.accentText} />
+                <span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>今天的复盘</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>说说今天的想法、感受、收获——这是给你自己的记录，不会被解析成日程</div>
+              <textarea value={reflectText} onChange={(e) => setReflectText(e.target.value)} autoFocus rows={5} placeholder="例如：今天效率不错，专注写完了报告；晚上有点累，明天想早点睡。" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.6, outline: 'none' }} />
+              <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                <Btn t={t} kind="ghost" onClick={onClose} style={{ flex: 1 }}>取消</Btn>
+                <Btn t={t} kind="primary" icon="check" onClick={() => { if (app && reflectText.trim()) app.saveReflection(window.VL.todayKey(), reflectText.trim()); onClose(); }} style={{ flex: 2 }}>存为今天的复盘</Btn>
               </div>
             </div>
           )}
