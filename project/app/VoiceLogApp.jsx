@@ -65,7 +65,7 @@
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}>
               <Icon name={it.icon} size={23} color={on ? t.accent : t.faint} sw={on ? 2.2 : 1.9} />
-              <span style={{ fontSize: 10.5, fontWeight: on ? 680 : 550, color: on ? t.accent : t.faint }}>{it.label}</span>
+              <span style={{ fontSize: 11, fontWeight: on ? 680 : 550, color: on ? t.accent : t.faint }}>{it.label}</span>
             </button>
           );
         })}
@@ -90,7 +90,7 @@
           <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {toast ? toast.msg : ''}
           </span>
-          {hasAction && <button onClick={toast.action.fn} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, background: 'rgba(255,255,255,0.18)', color: '#fff', flexShrink: 0 }}>{toast.action.label}</button>}
+          {hasAction && <button onClick={toast.action.fn} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 700, background: 'rgba(255,255,255,0.18)', color: '#fff', flexShrink: 0 }}>{toast.action.label}</button>}
         </div>
       </div>
     );
@@ -435,7 +435,7 @@
         </div>
 
         {demoMode && (
-          <div onClick={app.exitDemo} style={{ flexShrink: 0, zIndex: 31, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 14px', background: t.accent, color: t.onAccent, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+          <div onClick={app.exitDemo} style={{ flexShrink: 0, zIndex: 31, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '9px 14px', background: t.accent, color: t.onAccent, cursor: 'pointer', fontSize: 13.5, fontWeight: 700 }}>
             <Icon name="sparkle" size={15} color={t.onAccent} />示例预览中 · 点此退出，回到你的日程
           </div>
         )}
@@ -454,7 +454,7 @@
             <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>关于一心多用</h3>
           </div>
           <p style={{ margin: '0 0 12px', fontSize: 14.5, lineHeight: 1.65, color: t.text }}>{window.VL.MULTITASK_NOTE}</p>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: t.muted }}>VoiceLog 不会阻止你叠加日程——你最了解自己的节奏。它只是温和提个醒。</p>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: t.muted }}>VoiceLog 不会阻止你叠加日程——你最了解自己的节奏。它只是温和提个醒。</p>
           <div style={{ marginTop: 16 }}><Btn t={t} kind="primary" full onClick={() => setMtOpen(false)}>知道了</Btn></div>
         </Sheet>
         <ReminderBanner t={t} ev={reminderEv} onClose={() => setReminderEv(null)}
@@ -473,7 +473,7 @@
               </div>
             ); })}
           </div>
-          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: t.muted }}>{window.VL.MATRIX_NOTE}</p>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.65, color: t.muted }}>{window.VL.MATRIX_NOTE}</p>
           <div style={{ marginTop: 16 }}><Btn t={t} kind="primary" full onClick={() => setMatrixOpen(false)}>知道了</Btn></div>
         </Sheet>
         <Sheet t={t} open={trashOpen} onClose={() => setTrashOpen(false)}>
@@ -481,14 +481,14 @@
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>
             <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>回收站</h3>
           </div>
-          <p style={{ margin: '0 0 14px', fontSize: 13, lineHeight: 1.55, color: t.muted }}>删除的日程都先放这里，随时可以找回。</p>
+          <p style={{ margin: '0 0 14px', fontSize: 13.5, lineHeight: 1.55, color: t.muted }}>删除的日程都先放这里，随时可以找回。</p>
           {trash.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
               {trash.map((it) => { const wk = window.VL.data.week.find((x) => x.key === it.day); return (
                 <div key={it.ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface2 }}>
                   <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: window.catColor(t, it.ev.cat) }} />
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · ${wk.month}月${wk.day}日` : it.day} · {window.VL.fmtTime(it.ev.t)}</div></div>
-                  <button onClick={() => app.restoreEvent(it)} style={{ flexShrink: 0, height: 32, padding: '0 13px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>恢复</button>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · ${wk.month}月${wk.day}日` : it.day} · {window.VL.fmtTime(it.ev.t)}</div></div>
+                  <button onClick={() => app.restoreEvent(it)} style={{ flexShrink: 0, height: 32, padding: '0 13px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>恢复</button>
                 </div>
               ); })}
             </div>

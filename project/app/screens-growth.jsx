@@ -39,11 +39,11 @@
             <div key={a.cat} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none' }}>
               <Dot color={catColor(t, a.cat)} size={9} />
               <span style={{ flex: 1, fontSize: 13.5, color: t.text, fontWeight: 550 }}>{catLabel(t, a.cat)}</span>
-              <span style={{ fontSize: 13, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{fmtH(a.hours)}h</span>
-              <span style={{ width: 40, textAlign: 'right', fontSize: 13, fontWeight: 680, color: t.text, fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
+              <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums' }}>{fmtH(a.hours)}h</span>
+              <span style={{ width: 40, textAlign: 'right', fontSize: 13.5, fontWeight: 680, color: t.text, fontVariantNumeric: 'tabular-nums' }}>{pct}%</span>
             </div>
           );
-        }) : <div style={{ fontSize: 13, color: t.faint, textAlign: 'center', padding: '12px 0' }}>本周还没有数据</div>}
+        }) : <div style={{ fontSize: 13.5, color: t.faint, textAlign: 'center', padding: '12px 0' }}>本周还没有数据</div>}
       </div>
     );
     return (
@@ -100,15 +100,15 @@
                 <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: t.radius - 4, background: t.surface2 }}>
                   <Icon name={rule.icon} size={16} color={t.accentText} style={{ flexShrink: 0 }} />
                   <span style={{ flex: 1, fontSize: 13.5, color: t.text }}>{rule.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 720, color: GOLD }}>+{rule.xp}</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 720, color: GOLD }}>+{rule.xp}</span>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 12, color: t.faint, marginTop: 12, marginBottom: 6, fontWeight: 600 }}>接下来的等级</div>
+            <div style={{ fontSize: 12.5, color: t.faint, marginTop: 12, marginBottom: 6, fontWeight: 600 }}>接下来的等级</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {ladder.map((L) => (
                 <div key={L.lv} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: L.lv === level.lv ? t.text : t.muted }}>
-                  <span style={{ width: 20, height: 20, borderRadius: 999, flexShrink: 0, border: `1.5px solid ${L.lv === level.lv ? GOLD : t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10.5, fontWeight: 720, color: L.lv === level.lv ? GOLD : t.faint }}>{L.lv}</span>
+                  <span style={{ width: 20, height: 20, borderRadius: 999, flexShrink: 0, border: `1.5px solid ${L.lv === level.lv ? GOLD : t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 720, color: L.lv === level.lv ? GOLD : t.faint }}>{L.lv}</span>
                   <span style={{ flex: 1 }}>{L.name}</span>
                   <span style={{ color: t.faint }}>{L.need} XP</span>
                 </div>
@@ -137,9 +137,9 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: 'max(env(safe-area-inset-top, 0px), 14px) 20px 10px', flexShrink: 0 }}>
-          <button onClick={() => app.setTab('home')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 12px 0 8px', marginBottom: 8, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.muted, font: 'inherit', fontSize: 13, fontWeight: 600 }}><Icon name="chevL" size={15} color={t.muted} sw={2.2} />日程</button>
+          <button onClick={() => app.setTab('home')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 12px 0 8px', marginBottom: 8, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.muted, font: 'inherit', fontSize: 13.5, fontWeight: 600 }}><Icon name="chevL" size={15} color={t.muted} sw={2.2} />日程</button>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>成长</h1>
-          <div style={{ fontSize: 13, color: t.muted, marginTop: 2 }}>时间是你最大的资产</div>
+          <div style={{ fontSize: 13.5, color: t.muted, marginTop: 2 }}>时间是你最大的资产</div>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
@@ -148,12 +148,12 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <LevelBadge t={t} lv={L.lv} />
               <div>
-                <div style={{ fontSize: 10.5, color: GOLD, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4, fontWeight: 650 }}>Level {L.lv}</div>
+                <div style={{ fontSize: 11, color: GOLD, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4, fontWeight: 650 }}>Level {L.lv}</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color: t.text, lineHeight: 1.2 }}>{L.name}</div>
               </div>
             </div>
             <div style={{ marginTop: 18 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 7 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, marginBottom: 7 }}>
                 <span style={{ color: GOLD, fontWeight: 650 }}>{app.xp || 0} XP</span>
                 <span style={{ color: t.faint }}>{L.next ? `距 LV.${L.next.lv} · 还差 ${L.remain}` : '已达最高等级'}</span>
               </div>
@@ -213,7 +213,7 @@
           <div style={{ width: 80, height: 80, margin: '0 auto 16px', borderRadius: 999, background: t.mode === 'dark' ? '#0c1e1a' : t.surface, border: `2px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: 34, fontWeight: 720, color: GOLD }}>{level.lv}</span>
           </div>
-          <div style={{ fontSize: 12, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 650 }}>Level Up</div>
+          <div style={{ fontSize: 12.5, color: GOLD, letterSpacing: 2, textTransform: 'uppercase', fontWeight: 650 }}>Level Up</div>
           <div style={{ fontSize: 22, fontWeight: 720, color: t.text, margin: '6px 0 16px' }}>LV.{level.lv} {level.name}</div>
           <Btn t={t} kind="primary" onClick={onClose}>继续前行</Btn>
         </div>

@@ -49,7 +49,7 @@
           <Dot color="oklch(0.7 0.16 25)" size={9} /><Dot color="oklch(0.82 0.14 80)" size={9} /><Dot color="oklch(0.72 0.15 150)" size={9} />
           <span style={{ marginLeft: 6, fontSize: 11.5, color: 'rgba(255,255,255,0.4)', fontFamily: 'ui-monospace, monospace' }}>{fname}</span>
         </div>
-        <pre style={{ margin: 0, fontSize: 12, lineHeight: 1.7, color: 'rgba(255,255,255,0.85)', fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 230, overflow: 'auto' }}>{buildMD(r)}</pre>
+        <pre style={{ margin: 0, fontSize: 12.5, lineHeight: 1.7, color: 'rgba(255,255,255,0.85)', fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 230, overflow: 'auto' }}>{buildMD(r)}</pre>
       </div>
     );
   }
@@ -71,8 +71,8 @@
     return (
       <div style={{ borderRadius: t.radius, overflow: 'hidden', border: `1px solid ${t.border}`, boxShadow: t.shadow }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: '#2B579A' }}>
-          <span style={{ width: 20, height: 20, borderRadius: 4, background: '#fff', color: '#2B579A', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>W</span>
-          <span style={{ fontSize: 12, color: '#fff', opacity: 0.95, fontWeight: 500 }}>{fname}</span>
+          <span style={{ width: 20, height: 20, borderRadius: 4, background: '#fff', color: '#2B579A', fontSize: 13.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>W</span>
+          <span style={{ fontSize: 12.5, color: '#fff', opacity: 0.95, fontWeight: 500 }}>{fname}</span>
         </div>
         <div style={{ background: '#fff', padding: '22px 24px', maxHeight: 300, overflow: 'auto' }}>
           <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 21, fontWeight: 700, color: ink, letterSpacing: -0.2 }}>{r.label}</div>
@@ -95,7 +95,7 @@
           <ul style={{ margin: 0, paddingLeft: 18, color: ink }}>
             {r.insights.map((s, i) => <li key={i} style={{ fontSize: 12.5, lineHeight: 1.65, marginBottom: 5 }}>{s}</li>)}
           </ul>
-          <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #EAEbed', fontSize: 12, color: sub, fontStyle: 'italic' }}>完成率 {r.rate}%（完成 {r.done} / 取消 {r.cancelled} / 待办 {r.todo}）</div>
+          <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #EAEbed', fontSize: 12.5, color: sub, fontStyle: 'italic' }}>完成率 {r.rate}%（完成 {r.done} / 取消 {r.cancelled} / 待办 {r.todo}）</div>
         </div>
       </div>
     );
@@ -128,7 +128,7 @@
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: 'max(env(safe-area-inset-top, 0px), 14px) 20px 10px', flexShrink: 0 }}>
-          <button onClick={() => app.setTab('growth')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 12px 0 8px', marginBottom: 8, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.muted, font: 'inherit', fontSize: 13, fontWeight: 600 }}><Icon name="chevL" size={15} color={t.muted} sw={2.2} />返回</button>
+          <button onClick={() => app.setTab('growth')} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 30, padding: '0 12px 0 8px', marginBottom: 8, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.muted, font: 'inherit', fontSize: 13.5, fontWeight: 600 }}><Icon name="chevL" size={15} color={t.muted} sw={2.2} />返回</button>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>导出</h1>
           <div style={{ marginTop: 14 }}><Segmented t={t} value={period} onChange={setPeriod} items={window.VL.periods} /></div>
         </div>
@@ -141,10 +141,10 @@
               return (
                 <button key={f.key} onClick={() => setFmt(f.key)} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: 15, cursor: 'pointer', borderRadius: t.radius, font: 'inherit', textAlign: 'left', background: on ? t.accentSoft : t.surface, border: `1.5px solid ${on ? t.accentText : t.border}`, boxShadow: on ? 'none' : t.shadow, transition: 'all .15s' }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, background: on ? t.accent : t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 760, color: on ? t.onAccent : t.muted, letterSpacing: -0.3 }}>{f.ext.replace('.', '').toUpperCase()}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 760, color: on ? t.onAccent : t.muted, letterSpacing: -0.3 }}>{f.ext.replace('.', '').toUpperCase()}</span>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15.5, fontWeight: 650, color: t.text }}>{f.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 650, color: t.text }}>{f.name}</div>
                     <div style={{ fontSize: 12.5, color: t.muted, marginTop: 2, lineHeight: 1.4 }}>{f.desc}</div>
                   </div>
                   <div style={{ width: 22, height: 22, borderRadius: 999, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? t.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
@@ -179,7 +179,7 @@
         <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={18} color={t.muted} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>{title}</div>
-          {sub && <div style={{ fontSize: 12, color: t.faint, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
+          {sub && <div style={{ fontSize: 12.5, color: t.faint, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
         </div>
         {right}
       </div>
@@ -219,7 +219,7 @@
             <Icon name="shield" size={22} color={t.accentText} style={{ flexShrink: 0, marginTop: 1 }} />
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: t.accentText }}>本地优先</div>
-              <div style={{ fontSize: 13, color: t.accentText, opacity: 0.85, marginTop: 3, lineHeight: 1.5 }}>所有日程与复盘都存在你自己的机器上，核心功能离线即可运行，不依赖任何云服务。</div>
+              <div style={{ fontSize: 13.5, color: t.accentText, opacity: 0.85, marginTop: 3, lineHeight: 1.5 }}>所有日程与复盘都存在你自己的机器上，核心功能离线即可运行，不依赖任何云服务。</div>
             </div>
           </div>
 
@@ -231,7 +231,7 @@
                 <Row t={t} icon={t.mode === 'dark' ? 'flame' : 'sun'} title="外观" sub={`主题 ${t.name} · 主题色可调`} onClick={() => setOpenSec(openSec === 'look' ? null : 'look')} right={<Icon name={openSec === 'look' ? 'chevD' : 'chevR'} size={18} color={t.faint} />} />
                 {openSec === 'look' && (
                   <div style={{ padding: '4px 14px 16px', background: t.surface2 }}>
-                    <div style={{ fontSize: 12, color: t.faint, fontWeight: 600, margin: '8px 0 8px 2px' }}>主题</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600, margin: '8px 0 8px 2px' }}>主题</div>
                     <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
                       {[['cloud', '云', '晴空浅色'], ['dawn', '暖', '晨曦暖色'], ['night', '夜', '夜间深色']].map(([k, name, desc]) => {
                         const on = app.themeKey === k;
@@ -243,7 +243,7 @@
                         );
                       })}
                     </div>
-                    <div style={{ fontSize: 12, color: t.faint, fontWeight: 600, margin: '0 0 8px 2px' }}>主题色 · 点色块即时换</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600, margin: '0 0 8px 2px' }}>主题色 · 点色块即时换</div>
                     <div style={{ display: 'flex', gap: 12 }}>
                       {t.accents.map((a) => {
                         const on = app.accentKey === a.key;
@@ -329,7 +329,7 @@
             <Row t={t} icon="export" title="备份文件 .json" sub="点上面「备份到文件」导出一份，可换设备、可喂给任何大模型" last />
           </Card>
 
-          <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, lineHeight: 1.6 }}>语迹 VoiceLog · 对着它说话，就能管日程<br />本地优先 · 永不崩 · 可导出喂给任何大模型</div>
+          <div style={{ textAlign: 'center', fontSize: 12.5, color: t.faint, lineHeight: 1.6 }}>语迹 VoiceLog · 对着它说话，就能管日程<br />本地优先 · 永不崩 · 可导出喂给任何大模型</div>
         </div>
       </div>
     );

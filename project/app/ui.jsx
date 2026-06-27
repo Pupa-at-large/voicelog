@@ -143,7 +143,7 @@
         </div>
         <div style={{ width: 72, textAlign: 'right', flexShrink: 0 }}>
           <span style={{ fontSize: 13.5, color: t.text, fontWeight: 600 }}>{fmtH(a.hours)}h</span>
-          <span style={{ fontSize: 12, color: t.faint, marginLeft: 5 }}>{pct}%</span>
+          <span style={{ fontSize: 12.5, color: t.faint, marginLeft: 5 }}>{pct}%</span>
         </div>
       </div>
     );
@@ -233,9 +233,9 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: isNow ? t.accentText : t.faint, textTransform: 'uppercase' }}>{label}</span>
             {isNow && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'oklch(0.62 0.2 25)', boxShadow: '0 0 0 3px color-mix(in oklch, oklch(0.62 0.2 25) 25%, transparent)' }} />}
-            <span style={{ fontSize: 12, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtRange(ev.t, ev.dur)} · {isNow ? remain(ev) : rel(ev)}</span>
+            <span style={{ fontSize: 12.5, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtRange(ev.t, ev.dur)} · {isNow ? remain(ev) : rel(ev)}</span>
           </div>
-          <div style={{ fontSize: 15.5, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{ev.important ? '★ ' : ''}{ev.title}{ev.loc ? <span style={{ fontSize: 12.5, fontWeight: 500, color: t.muted }}> · {ev.loc}</span> : null}</div>
+          <div style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{ev.important ? '★ ' : ''}{ev.title}{ev.loc ? <span style={{ fontSize: 12.5, fontWeight: 500, color: t.muted }}> · {ev.loc}</span> : null}</div>
         </div>
         <Icon name="chevR" size={16} color={t.faint} />
       </button>
@@ -345,13 +345,13 @@
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12.5, color: t.muted }}>{detail}</span>
-                    {!isEdit && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>}
-                    {!isEdit && d.loc && <span style={{ fontSize: 12, color: t.faint }}>· {d.loc}</span>}
-                    {!isEdit && d.reminder ? <span style={{ fontSize: 12, color: t.faint }}>· 提前{d.reminder}分</span> : null}
+                    {!isEdit && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, color: t.faint }}><Dot color={catColor(t, d.cat)} size={7} />{catLabel(t, d.cat)}</span>}
+                    {!isEdit && d.loc && <span style={{ fontSize: 12.5, color: t.faint }}>· {d.loc}</span>}
+                    {!isEdit && d.reminder ? <span style={{ fontSize: 12.5, color: t.faint }}>· 提前{d.reminder}分</span> : null}
                   </div>
                   {d.subtasks && d.subtasks.length > 0 && (
                     <div style={{ marginTop: 5, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {d.subtasks.map((s, j) => <div key={j} style={{ fontSize: 12, color: t.faint }}>· {s}</div>)}
+                      {d.subtasks.map((s, j) => <div key={j} style={{ fontSize: 12.5, color: t.faint }}>· {s}</div>)}
                     </div>
                   )}
                 </div>
@@ -365,7 +365,7 @@
                     <input type="time" value={d.time || '09:00'} onChange={(e) => e.target.value && onEdit(i, { time: e.target.value })} style={{ ...inp, flex: 1 }} />
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {['meet', 'deep', 'life', 'learn', 'misc'].map((c) => { const con = d.cat === c; return <button key={c} onClick={() => onEdit(i, { cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12, fontWeight: 600, border: `1px solid ${con ? 'transparent' : t.border}`, background: con ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: con ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}
+                    {['meet', 'deep', 'life', 'learn', 'misc'].map((c) => { const con = d.cat === c; return <button key={c} onClick={() => onEdit(i, { cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${con ? 'transparent' : t.border}`, background: con ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: con ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>; })}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <button onClick={() => onEdit(i, { status: d.status === 'done' ? 'todo' : 'done' })} style={{ height: 28, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${t.border}`, background: d.status === 'done' ? `color-mix(in oklch, ${green} 16%, transparent)` : 'transparent', color: d.status === 'done' ? green : t.muted }}>{d.status === 'done' ? '已记录·已完成' : '标为已记录'}</button>
@@ -384,7 +384,7 @@
   function QuadrantChip({ t, ev, style }) {
     const q = window.VL.quadrant(ev);
     return (
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 24, padding: '0 9px', borderRadius: 999, fontSize: 12, fontWeight: 600, color: q.color, background: `color-mix(in oklch, ${q.color} 15%, transparent)`, ...style }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 24, padding: '0 9px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: q.color, background: `color-mix(in oklch, ${q.color} 15%, transparent)`, ...style }}>
         <span style={{ width: 6, height: 6, borderRadius: 999, background: q.color }} />{q.advice}
       </span>
     );
@@ -406,14 +406,14 @@
               <span style={{ fontSize: 12.5, fontWeight: 700, color: t.text, whiteSpace: 'nowrap' }}>{q.advice}</span>
               <span style={{ fontSize: 11, color: t.faint, marginLeft: 'auto' }}>{items.length}</span>
             </div>
-            <div style={{ fontSize: 10.5, color: t.faint, marginTop: 2 }}>{q.label}</div>
+            <div style={{ fontSize: 11, color: t.faint, marginTop: 2 }}>{q.label}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, overflowY: 'auto', flex: 1 }}>
             {items.length ? items.map((e) => (
               <button key={e.id} onClick={() => onOpen && onOpen(e)} style={{ display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', font: 'inherit', cursor: 'pointer', border: 'none', background: t.surface2, borderRadius: 8, padding: '6px 8px' }}>
                 <span style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: catColor(t, e.cat), flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 550, color: e.status === 'done' ? t.faint : t.text, textDecoration: e.status === 'done' ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
-                <span style={{ fontSize: 10.5, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{window.VL.fmtTime(e.t)}</span>
+                <span style={{ fontSize: 11, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{window.VL.fmtTime(e.t)}</span>
               </button>
             )) : <div style={{ fontSize: 11.5, color: t.faint, padding: '10px 0', textAlign: 'center' }}>—</div>}
           </div>
@@ -444,7 +444,7 @@
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 10 }}>
           {order.map((k) => { const q = Q[k], h = stats.byKey[k].hours; const pct = total ? Math.round((h / total) * 100) : 0; return (
-            <div key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+            <div key={k} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5 }}>
               <span style={{ width: 7, height: 7, borderRadius: 999, background: q.color }} />
               <span style={{ color: t.muted }}>{q.advice}</span>
               <span style={{ color: t.text, fontWeight: 650 }}>{pct}%</span>
@@ -470,7 +470,7 @@
           <button key={i} onClick={() => onPick(s)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${t.border}`, background: t.surface, color: t.text }}>
             <Icon name="clock" size={14} color={t.accentText} />
             <span style={{ fontVariantNumeric: 'tabular-nums' }}>{s.time} – {s.end}</span>
-            {s.label && <span style={{ fontSize: 12, color: t.faint, fontWeight: 500 }}>· {s.label}</span>}
+            {s.label && <span style={{ fontSize: 12.5, color: t.faint, fontWeight: 500 }}>· {s.label}</span>}
           </button>
         ))}
       </div>

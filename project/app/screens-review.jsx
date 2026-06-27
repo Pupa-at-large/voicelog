@@ -39,16 +39,16 @@
         <Card t={t} style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontSize: 13, color: t.muted, fontWeight: 600 }}>{r.label} · {r.range}</div>
+                <div style={{ fontSize: 13.5, color: t.muted, fontWeight: 600 }}>{r.label} · {r.range}</div>
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'baseline', gap: 6 }}>
                   <span style={{ fontSize: 38, fontWeight: 780, color: t.text, letterSpacing: -1, lineHeight: 1 }}>{fmtH(r.total)}</span>
                   <span style={{ fontSize: 15, color: t.muted, fontWeight: 600 }}>小时</span>
                 </div>
-                <div style={{ fontSize: 13, color: t.faint, marginTop: 6 }}>共 {r.count} 项日程</div>
+                <div style={{ fontSize: 13.5, color: t.faint, marginTop: 6 }}>共 {r.count} 项日程</div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                 <Ring t={t} value={r.rate} size={88} />
-                <span style={{ fontSize: 12, color: t.faint }}>完成率</span>
+                <span style={{ fontSize: 12.5, color: t.faint }}>完成率</span>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>

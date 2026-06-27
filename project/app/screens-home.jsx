@@ -307,10 +307,10 @@
                 <div style={{ width: 48 }} />
               </div>
               <span style={{ fontSize: 12.5, color: t.faint, marginTop: 12 }}>{heardNothing ? '点这里重新听' : '说完点「停止」· 长句、多条都能说'}</span>
-              {heardNothing && <button onClick={openTyping} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>}
+              {heardNothing && <button onClick={openTyping} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 700, color: t.accentText }}>改用打字</button>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '16px 0 2px' }}>
                 <div style={{ flex: 1, height: 1, background: t.border }} />
-                <span style={{ fontSize: 12, color: t.faint }}>或</span>
+                <span style={{ fontSize: 12.5, color: t.faint }}>或</span>
                 <div style={{ flex: 1, height: 1, background: t.border }} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%', marginTop: 6 }}>
@@ -330,7 +330,7 @@
               <div style={{ width: 40, height: 40, borderRadius: 999, border: `3px solid ${t.chartTrack}`, borderTopColor: t.accent, animation: 'vlspin .8s linear infinite' }} />
               <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>正在解析…</span>
               <Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
-              {aiEngine && !engineUsed && !warmed && <span style={{ fontSize: 12, color: t.faint, marginTop: -4 }}>首次唤醒云端可能要等几十秒…</span>}
+              {aiEngine && !engineUsed && !warmed && <span style={{ fontSize: 12.5, color: t.faint, marginTop: -4 }}>首次唤醒云端可能要等几十秒…</span>}
             </div>
           )}
 
@@ -367,8 +367,8 @@
                       <div style={{ fontSize: 15, fontWeight: 650, color: t.text }}>{x.title}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 12.5, color: t.muted }}>{x.dateText.split(' · ')[0]} {x.time}</span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, x.cat)} size={7} />{catLabel(t, x.cat)}</span>
-                        {x.loc && <span style={{ fontSize: 12, color: t.faint }}>· {x.loc}</span>}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, color: t.faint }}><Dot color={catColor(t, x.cat)} size={7} />{catLabel(t, x.cat)}</span>
+                        {x.loc && <span style={{ fontSize: 12.5, color: t.faint }}>· {x.loc}</span>}
                       </div>
                     </div>
                   </button>
@@ -439,18 +439,18 @@
                       <Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} />
                       <span style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>和「{conflict.map((c) => c.title).join('、')}」{C.t} 撞了，怎么办？</span>
                     </div>
-                    <div style={{ fontSize: 12, color: t.faint, margin: '0 0 5px' }}>把『{draft.title}』错开到：</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 5px' }}>把『{draft.title}』错开到：</div>
                     <window.SlotSuggestions t={t} slots={newSlots} onPick={(s) => { setDraft((dr) => ({ ...dr, time: s.time })); setExistResched(null); }} />
                     {oldSlots && oldSlots.length > 0 && (
                       <div style={{ marginTop: 10 }}>
-                        <div style={{ fontSize: 12, color: t.faint, margin: '0 0 5px' }}>或把『{C.title}』挪到：</div>
+                        <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 5px' }}>或把『{C.title}』挪到：</div>
                         <window.SlotSuggestions t={t} slots={oldSlots} onPick={(s) => setExistResched({ id: C.id, title: C.title, time: s.time })} />
                       </div>
                     )}
                     {existResched && existResched.id === C.id && (
                       <div style={{ marginTop: 9, fontSize: 12.5, color: t.accentText, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="check" size={13} color={t.accentText} />确认后把『{existResched.title}』挪到 {existResched.time}</div>
                     )}
-                    <div style={{ fontSize: 12, color: t.faint, marginTop: 9 }}>不想动？直接「加入日程」= 两个都留。</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, marginTop: 9 }}>不想动？直接「加入日程」= 两个都留。</div>
                   </div>
                 );
               })()}
@@ -474,10 +474,10 @@
                     </div>
                     {window.VL.timeMode(draft) === 'at' && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
+                        <input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15 }} />
                         <span style={{ color: t.faint }}>到</span>
-                        <input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} />
-                        <span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span>
+                        <input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15 }} />
+                        <span style={{ fontSize: 12.5, color: t.faint }}>· {draft.dur}分</span>
                       </div>
                     )}
                     {window.VL.timeMode(draft) === 'period' && (
@@ -528,7 +528,7 @@
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <div style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bell" size={19} color={t.accentText} /></div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: t.faint, fontWeight: 600 }}>{ev ? `提前 ${ev.reminder} 分钟 · ${window.VL.fmtTime(ev.t)}` : ''}</div>
+              <div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600 }}>{ev ? `提前 ${ev.reminder} 分钟 · ${window.VL.fmtTime(ev.t)}` : ''}</div>
               <div style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev ? ev.title : ''}{ev && ev.loc ? ` · ${ev.loc}` : ''}</div>
             </div>
           </div>
@@ -596,12 +596,12 @@
             style={{ position: 'relative', background: t.surface, border: `1px solid ${t.border}`, borderRadius: t.radius, padding: '13px 14px 13px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', touchAction: 'pan-y', transform: `translateX(${tx}px)`, transition: drag ? 'none' : 'transform .26s cubic-bezier(.32,.72,0,1)', opacity: cancelled ? 0.62 : 1 }}>
             <div style={{ position: 'absolute', left: 0, top: 12, bottom: 12, width: 3.5, borderRadius: 999, background: col, opacity: done || cancelled ? 0.4 : 1 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15.5, fontWeight: 600, color: done || cancelled ? t.faint : t.text, textDecoration: done || cancelled ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: done || cancelled ? t.faint : t.text, textDecoration: done || cancelled ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
               <div style={{ display: 'flex', gap: 12, marginTop: 5, alignItems: 'center' }}>
                 {ev.loc && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, color: t.muted }}><Icon name="pin" size={13} color={t.faint} />{ev.loc}</span>}
                 {ev.reminder ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, color: t.muted }}><Icon name="bell" size={13} color={t.faint} />提前{ev.reminder}分</span> : null}
-                {ev.urgent && !cancelled && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: 'oklch(0.62 0.19 25)' }}><Icon name="flagFill" size={12} color={'oklch(0.62 0.19 25)'} fill />急</span>}
-                {conflict && !cancelled && <span onClick={(e) => { e.stopPropagation(); onWarn && onWarn(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 600, color: 'oklch(0.58 0.15 60)', background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', padding: '2px 8px', borderRadius: 999 }}><Icon name="bolt" size={12} color={'oklch(0.58 0.15 60)'} sw={2.2} />重叠</span>}
+                {ev.urgent && !cancelled && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, fontWeight: 600, color: 'oklch(0.62 0.19 25)' }}><Icon name="flagFill" size={12} color={'oklch(0.62 0.19 25)'} fill />急</span>}
+                {conflict && !cancelled && <span onClick={(e) => { e.stopPropagation(); onWarn && onWarn(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12.5, fontWeight: 600, color: 'oklch(0.58 0.15 60)', background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', padding: '2px 8px', borderRadius: 999 }}><Icon name="bolt" size={12} color={'oklch(0.58 0.15 60)'} sw={2.2} />重叠</span>}
                 {cancelled && <span style={{ fontSize: 12.5, color: t.faint }}>已取消</span>}
               </div>
             </div>
@@ -658,7 +658,7 @@
         </div>
         {ev.note && (
           <div style={{ marginTop: 14, padding: 14, borderRadius: t.radius - 2, background: t.surface2 }}>
-            <div style={{ fontSize: 12, color: t.faint, fontWeight: 600, marginBottom: 5 }}>备注</div>
+            <div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600, marginBottom: 5 }}>备注</div>
             <div style={{ fontSize: 14.5, color: t.text, lineHeight: 1.55 }}>{ev.note}</div>
           </div>
         )}
@@ -684,7 +684,7 @@
     const bump = (delta) => setSt((s) => { let total = (s.hh * 60 + s.mm + delta + 1440) % 1440; return { ...s, hh: Math.floor(total / 60), mm: total % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
     const editable = (ref, val) => (
-      <span ref={ref} contentEditable suppressContentEditableWarning style={{ fontSize: 15.5, fontWeight: 600, color: t.text, outline: 'none', borderRadius: 6, padding: '6px 10px', background: t.surface2, display: 'inline-block', minWidth: 120 }}>{val}</span>
+      <span ref={ref} contentEditable suppressContentEditableWarning style={{ fontSize: 15, fontWeight: 600, color: t.text, outline: 'none', borderRadius: 6, padding: '6px 10px', background: t.surface2, display: 'inline-block', minWidth: 120 }}>{val}</span>
     );
     const row = (label, node) => (
       <div style={{ marginBottom: 16 }}>
@@ -701,7 +701,7 @@
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
               {[['at', '精确'], ['period', '时段'], ['allday', '全天'], ['untimed', '随手记']].map(([k, lab]) => {
                 const on = st.timeMode === k;
-                return <button key={k} onClick={() => setSt({ ...st, timeMode: k })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>;
+                return <button key={k} onClick={() => setSt({ ...st, timeMode: k })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>;
               })}
             </div>
             {st.timeMode === 'at' && (
@@ -714,7 +714,7 @@
             )}
             {st.timeMode === 'period' && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {window.VL.DAYPARTS.map((d) => { const on = st.daypart === d.key; return <button key={d.key} onClick={() => setSt({ ...st, daypart: d.key })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}
+                {window.VL.DAYPARTS.map((d) => { const on = st.daypart === d.key; return <button key={d.key} onClick={() => setSt({ ...st, daypart: d.key })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}
               </div>
             )}
             {(st.timeMode === 'allday' || st.timeMode === 'untimed') && (
@@ -726,7 +726,7 @@
           <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
             {CATS_ORDER.map((c) => {
               const on = st.cat === c;
-              return <button key={c} onClick={() => setSt({ ...st, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>;
+              return <button key={c} onClick={() => setSt({ ...st, cat: c })} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? `color-mix(in oklch, ${catColor(t, c)} 16%, transparent)` : 'transparent', color: on ? t.text : t.muted }}><Dot color={catColor(t, c)} size={7} />{catLabel(t, c)}</button>;
             })}
           </div>
         ))}
@@ -736,7 +736,7 @@
         ))}
         {row('提醒', (
           <div style={{ display: 'flex', gap: 7 }}>
-            {[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}
+            {[0, 10, 15, 30].map((m) => <button key={m} onClick={() => setSt({ ...st, reminder: m })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${st.reminder === m ? 'transparent' : t.border}`, background: st.reminder === m ? t.accentSoft : 'transparent', color: st.reminder === m ? t.accentText : t.muted }}>{m === 0 ? '不提醒' : `提前${m}分`}</button>)}
           </div>
         ))}
         {row('优先级', (
@@ -851,7 +851,7 @@
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontSize: 13, color: t.accentText, fontWeight: 650, letterSpacing: 0.3 }}>{cur.today ? '今天' : `周${cur.dow}`}</div>
+              <div style={{ fontSize: 13.5, color: t.accentText, fontWeight: 650, letterSpacing: 0.3 }}>{cur.today ? '今天' : `周${cur.dow}`}</div>
               <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>{cur.month}月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -882,7 +882,7 @@
             <div style={{ padding: '4px 20px 0', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <button onClick={() => setWeekOff((o) => o - 1)} style={{ width: 30, height: 30, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevL" size={17} color={t.muted} /></button>
-                <span style={{ fontSize: 12, fontWeight: 600, color: t.faint, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: t.faint, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   {weekDays[0].month}月{weekDays[0].day}日 – {weekDays[6].month}月{weekDays[6].day}日
                   {weekOff !== 0 && <button onClick={() => { setWeekOff(0); app.setDay(window.VL.todayKey()); }} style={{ height: 22, padding: '0 9px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 11.5, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>回今天</button>}
                 </span>
@@ -927,7 +927,7 @@
                     });
                     return out;
                   })()}
-                  <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 6 }}>← 左滑编辑/删除 · 右滑完成 →</div>
+                  <div style={{ textAlign: 'center', fontSize: 12.5, color: t.faint, marginTop: 6 }}>← 左滑编辑/删除 · 右滑完成 →</div>
                 </div>
               ) : allEmpty ? (
                 <div style={{ textAlign: 'center', padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
@@ -940,7 +940,7 @@
                     <Btn t={t} kind="primary" icon="mic" onClick={app.openVoice} style={{ width: '100%' }}>说一句</Btn>
                     <Btn t={t} kind="soft" icon="sparkle" onClick={app.openUpload} style={{ width: '100%' }}>打字 / 上传 / 手动</Btn>
                   </div>
-                  <button onClick={app.loadDemo} style={{ marginTop: 2, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, color: t.faint }}>或先看示例数据</button>
+                  <button onClick={app.loadDemo} style={{ marginTop: 2, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, color: t.faint }}>或先看示例数据</button>
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '44px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
