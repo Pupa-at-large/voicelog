@@ -44,6 +44,8 @@
     const [typedText, setTypedText] = useState(''); // 打字输入(语音不可用时的退路 + 引导第一步)
     const [transcript, setTranscript] = useState('');
     const [reflectText, setReflectText] = useState(''); // 语音/打字复盘内容
+    const [srcText, setSrcText] = useState(''); // 待执行清单的"原话"（可编辑，改完重新解析）
+    const srcOrig = useRef(''); // 原话编辑前的值，用于学习纠错（X→Y）
     const [mode, setMode] = useState('real'); // real | demo
     const [draft, setDraft] = useState(null);
     const [run, setRun] = useState(0);
@@ -103,6 +105,7 @@
       };
       const startParse = async (text, curated) => {
         if (ctx.parsing) return;
+        if (!curated) { text = window.VL.corrections.apply(text); setSrcText(text); srcOrig.current = text; } // 先过纠错词典，并留作可编辑原话
         // 复盘模式 / 识别到"我想复盘一下"意图 → 不建日程，转成"我的复盘"
         if (!curated && (ctx.reflectMode || (window.VL.isReflectIntent && window.VL.isReflectIntent(text)))) {
           ctx.parsing = true;
@@ -185,9 +188,18 @@
     const blankDraft = () => ({ title: '新日程', dateKey: window.VL.todayKey(), dateText: window.VL.dateText(window.VL.todayKey(), '今天'), time: '09:00', dur: 60, loc: null, reminder: 0, cat: 'misc', urgent: false, important: false });
     const openManual = () => { setEngineUsed('manual'); setDraft(blankDraft()); setPhase('preview'); };
     const openTyping = () => { setTypedText(''); setPhase('typing'); };
-    // 打字解析(组件作用域,供"打字输入"用;语音路径仍走 effect 里的 startParse)
+    // 从一次原话编辑里学到一条纠错（提取唯一被改动的那一小段 X→Y）
+    const learnEdit = (oldT, newT) => {
+      if (!oldT || oldT === newT) return;
+      let i = 0; while (i < oldT.length && i < newT.length && oldT[i] === newT[i]) i++;
+      let j = 0; while (j < oldT.length - i && j < newT.length - i && oldT[oldT.length - 1 - j] === newT[newT.length - 1 - j]) j++;
+      const wrong = oldT.slice(i, oldT.length - j), right = newT.slice(i, newT.length - j);
+      if (wrong && right && wrong.length <= 12 && right.length <= 12) window.VL.corrections.add(wrong, right);
+    };
+    // 打字解析(组件作用域,供"打字输入"/"重新解析"用;语音路径仍走 effect 里的 startParse)
     const doParse = async (text) => {
-      const txt = (text || '').trim(); if (!txt) return;
+      let txt = (text || '').trim(); if (!txt) return;
+      txt = window.VL.corrections.apply(txt); setSrcText(txt); srcOrig.current = txt;
       if (aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
         setEngineUsed(null); setPhase('parsing');
         try {
@@ -387,6 +399,16 @@
                 <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>待执行清单 · {batchActions.length} 条</span>
                 <Chip t={t} color={t.accentText} soft icon="sparkle">多意图</Chip>
               </div>
+              {srcText && (
+                <div style={{ padding: '9px 11px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <Icon name="mic" size={13} color={t.faint} />
+                    <span style={{ fontSize: 12.5, color: t.faint, fontWeight: 600 }}>识别到的原话（可改错字，改完重新解析）</span>
+                  </div>
+                  <textarea value={srcText} onChange={(e) => setSrcText(e.target.value)} rows={2} style={{ width: '100%', resize: 'none', border: `1px solid ${t.border}`, borderRadius: t.radius - 6, background: t.surface, color: t.text, font: 'inherit', fontSize: 13.5, lineHeight: 1.5, padding: '8px 10px', outline: 'none' }} />
+                  <button onClick={() => { learnEdit(srcOrig.current, srcText); doParse(srcText); }} style={{ marginTop: 7, display: 'inline-flex', alignItems: 'center', gap: 5, height: 30, padding: '0 12px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText }}><Icon name="redo" size={14} color={t.accentText} />重新解析（并记住改动）</button>
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 7, padding: '8px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 12 }}>
                 <Icon name="mic" size={14} color={t.faint} style={{ marginTop: 1, flexShrink: 0 }} />
                 <span style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.5 }}>从一段话里识别出多条意图，核对后一起执行——不会替你静默操作。</span>

@@ -193,6 +193,40 @@
     );
   }
 
+  // 纠错词典管理：查看 / 增删（听错的 → 正确的）
+  function DictManager({ t }) {
+    const [entries, setEntries] = React.useState(() => window.VL.corrections.list());
+    const [w, setW] = React.useState(''); const [r, setR] = React.useState('');
+    const refresh = () => setEntries(window.VL.corrections.list());
+    const add = () => { if (window.VL.corrections.add(w, r)) { setW(''); setR(''); refresh(); } };
+    const inp = { flex: 1, minWidth: 0, height: 36, padding: '0 10px', borderRadius: t.radius - 4, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none' };
+    return (
+      <Card t={t} style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.6, marginBottom: 10 }}>把老识别错的词记下来，下次说话/打字会自动纠正。你在「待执行清单」的转写框改一次，它也会自己学到。</div>
+        <div style={{ display: 'flex', gap: 7, marginBottom: 10 }}>
+          <input value={w} onChange={(e) => setW(e.target.value)} placeholder="听错的" style={inp} />
+          <span style={{ alignSelf: 'center', color: t.faint }}>→</span>
+          <input value={r} onChange={(e) => setR(e.target.value)} placeholder="正确的" style={inp} />
+          <button onClick={add} style={{ height: 36, padding: '0 14px', borderRadius: t.radius - 4, border: 'none', cursor: 'pointer', background: t.accent, color: t.onAccent, font: 'inherit', fontSize: 13.5, fontWeight: 700, flexShrink: 0 }}>加入</button>
+        </div>
+        {entries.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: t.faint, textAlign: 'center', padding: '8px 0' }}>还没有纠错词</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {entries.map((e) => (
+              <div key={e.wrong} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: t.radius - 4, background: t.surface2 }}>
+                <span style={{ fontSize: 13.5, color: t.faint, textDecoration: 'line-through' }}>{e.wrong}</span>
+                <Icon name="arrowR" size={13} color={t.faint} />
+                <span style={{ flex: 1, fontSize: 13.5, color: t.text, fontWeight: 600 }}>{e.right}</span>
+                <button onClick={() => { window.VL.corrections.remove(e.wrong); refresh(); }} title="删除" style={{ width: 28, height: 28, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={14} color={t.faint} /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    );
+  }
+
   function MeScreen({ t, app }) {
     const fileRef = React.useRef(null);
     const [openSec, setOpenSec] = React.useState(null); // 折叠的设置分区：'look' | 'time' | null
@@ -279,6 +313,9 @@
           <div style={{ margin: '-8px 2px 16px', display: 'flex', justifyContent: 'flex-end' }}>
             <Btn t={t} kind="soft" size="sm" icon={app.aiEngine ? 'bolt' : 'sparkle'} onClick={() => app.setAi(!app.aiEngine)}>{app.aiEngine ? '切回规则解析' : '配置 API Key，启用 AI'}</Btn>
           </div>
+
+          <SectionLabel t={t}>纠错词典</SectionLabel>
+          <DictManager t={t} />
 
           <SectionLabel t={t}>提醒</SectionLabel>
           <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>

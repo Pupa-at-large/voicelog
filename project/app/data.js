@@ -360,6 +360,17 @@
 
   // ── 语音复盘意图：用户说"我想复盘一下/复盘/记一下想法/今天感觉…"→ 不建日程，转成"个性化复盘" ──
   const REFLECT_TRIGGER = /^(嗯+|那个|我?想?)?\s*(复盘一?下?|做个?复盘|记一?下?(我的)?(想法|感受|心情)|说(说|下)(今天|这周)?(的)?(想法|感受|总结)|总结一?下?(今天|这周)?|今天(的)?(感觉|感受|想说)|聊聊今天)/;
+  // ── 本地纠错词典：{错→对}，存 localStorage。语音/打字解析前自动替换，越用越准 ──
+  window.VL.corrections = {
+    _key: 'voicelog:corrections',
+    _load() { try { return JSON.parse(localStorage.getItem(this._key) || '{}'); } catch (e) { return {}; } },
+    _save(d) { try { localStorage.setItem(this._key, JSON.stringify(d)); } catch (e) {} },
+    list() { const d = this._load(); return Object.keys(d).map((k) => ({ wrong: k, right: d[k] })); },
+    add(wrong, right) { wrong = String(wrong || '').trim(); right = String(right || '').trim(); if (!wrong || !right || wrong === right) return false; const d = this._load(); d[wrong] = right; this._save(d); return true; },
+    remove(wrong) { const d = this._load(); delete d[wrong]; this._save(d); },
+    // 把已知错词替换成对的（长词优先，避免子串误替换）
+    apply(text) { let s = String(text || ''); const d = this._load(); Object.keys(d).sort((a, b) => b.length - a.length).forEach((k) => { if (k) s = s.split(k).join(d[k]); }); return s; },
+  };
   window.VL.isReflectIntent = (text) => REFLECT_TRIGGER.test(String(text || '').trim());
   // 去掉开头的触发语，留下真正的复盘内容
   window.VL.stripReflectTrigger = (text) => String(text || '').trim().replace(REFLECT_TRIGGER, '').replace(/^[，,。、:：\s]+/, '').trim();
