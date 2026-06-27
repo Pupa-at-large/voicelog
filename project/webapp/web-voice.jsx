@@ -78,6 +78,7 @@
       };
       const startParse = async (text, curated) => {
         if (ctx.parsing) return;
+        if (!curated) text = window.VL.corrections.apply(text); // 先过本地纠错词典
         // 复盘模式 / 识别到"我想复盘一下" → 不建日程，转成"我的复盘"
         if (!curated && (ctx.reflectMode || (window.VL.isReflectIntent && window.VL.isReflectIntent(text)))) {
           ctx.parsing = true; setReflectText(ctx.reflectMode ? text : window.VL.stripReflectTrigger(text)); setEngineUsed('reflect'); setP('reflect'); return;
@@ -115,7 +116,7 @@
     const engine = engineOn ? { label: 'AI 解析', color: 'oklch(0.62 0.15 150)' } : { label: (engineUsed === 'rule' && aiEngine) ? '规则解析 · 云端未响应' : '规则解析', color: 'oklch(0.70 0.14 70)' };
     const openTyping = () => { setTypedText(''); setPhase('typing'); };
     const doParse = async (text) => {
-      const txt = (text || '').trim(); if (!txt) return;
+      const txt = window.VL.corrections.apply((text || '').trim()); if (!txt) return;
       if (aiEngine && window.VL.serverUrl && window.VL.parseRemote) {
         setEngineUsed(null); setPhase('parsing');
         try {

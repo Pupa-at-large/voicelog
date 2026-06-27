@@ -328,6 +328,38 @@
   }
 
   // ── 设置视图 ──
+  // 纠错词典管理（桌面）
+  function WebDictManager({ t }) {
+    const [entries, setEntries] = useState(() => window.VL.corrections.list());
+    const [w, setW] = useState(''); const [r, setR] = useState('');
+    const refresh = () => setEntries(window.VL.corrections.list());
+    const add = () => { if (window.VL.corrections.add(w, r)) { setW(''); setR(''); refresh(); } };
+    const inp = { flex: 1, minWidth: 0, height: 36, padding: '0 10px', borderRadius: t.radius - 4, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 13.5, outline: 'none' };
+    return (
+      <Card t={t} style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 12.5, color: t.muted, lineHeight: 1.6, marginBottom: 10 }}>把老识别错的词记下来，下次说话/打字会自动纠正；转写框改一次也会自己学到。</div>
+        <div style={{ display: 'flex', gap: 7, marginBottom: 10 }}>
+          <input value={w} onChange={(e) => setW(e.target.value)} placeholder="听错的" style={inp} />
+          <span style={{ alignSelf: 'center', color: t.faint }}>→</span>
+          <input value={r} onChange={(e) => setR(e.target.value)} placeholder="正确的" style={inp} />
+          <button onClick={add} style={{ height: 36, padding: '0 14px', borderRadius: t.radius - 4, border: 'none', cursor: 'pointer', background: t.accent, color: t.onAccent, font: 'inherit', fontSize: 13.5, fontWeight: 700, flexShrink: 0 }}>加入</button>
+        </div>
+        {entries.length === 0 ? <div style={{ fontSize: 12.5, color: t.faint, textAlign: 'center', padding: '8px 0' }}>还没有纠错词</div> : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {entries.map((e) => (
+              <div key={e.wrong} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: t.radius - 4, background: t.surface2 }}>
+                <span style={{ fontSize: 13.5, color: t.faint, textDecoration: 'line-through' }}>{e.wrong}</span>
+                <Icon name="arrowR" size={13} color={t.faint} />
+                <span style={{ flex: 1, fontSize: 13.5, color: t.text, fontWeight: 600 }}>{e.right}</span>
+                <button onClick={() => { window.VL.corrections.remove(e.wrong); refresh(); }} title="删除" style={{ width: 28, height: 28, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="x" size={14} color={t.faint} /></button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    );
+  }
+
   function SettingsView({ t, app, baseKey }) {
     const fileRef = React.useRef(null);
     const onFile = (e) => {
@@ -393,7 +425,9 @@
         </React.Fragment>)}
 
         <SectionLabel t={t}>解析引擎</SectionLabel>
-        <Card t={t} pad={0} style={{ marginBottom: 8, overflow: 'hidden' }}><Row icon={app.aiEngine ? 'sparkle' : 'bolt'} title={app.aiEngine ? 'AI 解析' : '规则解析'} sub={app.aiEngine ? '已接入大模型 · 口语理解更强、复盘更有洞察' : '离线规则引擎 · 无需联网、开箱即用'} right={<Toggle on={app.aiEngine} onChange={app.setAi} />} last /></Card>
+        <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}><Row icon={app.aiEngine ? 'sparkle' : 'bolt'} title={app.aiEngine ? 'AI 解析' : '规则解析'} sub={app.aiEngine ? '已接入大模型 · 口语理解更强、复盘更有洞察' : '离线规则引擎 · 无需联网、开箱即用'} right={<Toggle on={app.aiEngine} onChange={app.setAi} />} last /></Card>
+        <SectionLabel t={t}>纠错词典</SectionLabel>
+        <WebDictManager t={t} />
         <div style={{ display: 'flex', gap: 16, marginBottom: 16, marginTop: 16 }}>
           <SectionLabel t={t} style={{ margin: 0 }}>提醒与数据</SectionLabel>
         </div>
