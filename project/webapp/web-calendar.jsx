@@ -44,7 +44,7 @@
           {ev.repeat && <Icon name="repeat" size={11} color={col} sw={2.2} style={{ flexShrink: 0 }} />}
           <span style={{ fontSize: 12.5, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: done ? 'line-through' : 'none' }}>{ev.title}</span>
         </div>
-        {h > 40 && <div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>{window.VL.fmtRange(ev.t, ev.dur)}{ev.loc ? ` · ${ev.loc}` : ''}</div>}
+        {h > 40 && <div style={{ fontSize: 11.5, color: t.muted, marginTop: 2 }}>{window.VL.fmtRange(ev.t, ev.dur)}{ev.loc ? ` · ${ev.loc}` : ''}</div>}
       </div>
     );
   }
@@ -82,7 +82,7 @@
               const today = _isThisMonth && key === TODAY;
               return (
                 <div key={i} onClick={() => onPickDay(key)} style={{ minHeight: 116, padding: 7, borderRight: `1px solid ${t.border}`, borderBottom: `1px solid ${t.border}`, cursor: 'pointer', background: today ? t.accentSoft : t.surface }}>
-                  <div style={{ fontSize: 13, fontWeight: today ? 720 : 560, color: today ? t.accentText : t.text, marginBottom: 5 }}>{d}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: today ? 720 : 560, color: today ? t.accentText : t.text, marginBottom: 5 }}>{d}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                     {evs.slice(0, 3).map((ev) => (
                       <div key={ev.id} onClick={(e) => { e.stopPropagation(); onSelectEvent(ev); }} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: t.text, background: `color-mix(in oklch, ${catColor(t, ev.cat)} 13%, transparent)`, borderRadius: 5, padding: '2px 6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -90,7 +90,7 @@
                         <span style={{ width: 5, height: 5, borderRadius: 999, background: catColor(t, ev.cat), flexShrink: 0 }} />{ev.t} {ev.title}
                       </div>
                     ))}
-                    {evs.length > 3 && <div style={{ fontSize: 11, color: t.faint, paddingLeft: 4 }}>+{evs.length - 3}</div>}
+                    {evs.length > 3 && <div style={{ fontSize: 11.5, color: t.faint, paddingLeft: 4 }}>+{evs.length - 3}</div>}
                   </div>
                 </div>
               );
@@ -111,7 +111,7 @@
             const today = k === TODAY;
             return (
               <div key={k} onClick={() => onPickDay(k)} style={{ flex: 1, textAlign: 'center', padding: '10px 0', cursor: 'pointer', borderLeft: `1px solid ${t.border}` }}>
-                <span style={{ fontSize: 12, color: today ? t.accentText : t.faint, fontWeight: 600 }}>周{w.dow}</span>
+                <span style={{ fontSize: 12.5, color: today ? t.accentText : t.faint, fontWeight: 600 }}>周{w.dow}</span>
                 <div style={{ margin: '3px auto 0', width: 30, height: 30, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 680, background: today ? t.accent : 'transparent', color: today ? t.onAccent : t.text }}>{w.day}</div>
               </div>
             );
@@ -122,7 +122,7 @@
           <div style={{ width: 56, flexShrink: 0 }}>
             {Array.from({ length: end - base + 1 }).map((_, i) => (
               <div key={i} style={{ height: HH, position: 'relative' }}>
-                <span style={{ position: 'absolute', top: -7, right: 8, fontSize: 11, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{String(base + i).padStart(2, '0')}:00</span>
+                <span style={{ position: 'absolute', top: -7, right: 8, fontSize: 11.5, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{String(base + i).padStart(2, '0')}:00</span>
               </div>
             ))}
           </div>

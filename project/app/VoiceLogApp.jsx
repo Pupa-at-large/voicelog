@@ -65,7 +65,7 @@
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             }}>
               <Icon name={it.icon} size={23} color={on ? t.accent : t.faint} sw={on ? 2.2 : 1.9} />
-              <span style={{ fontSize: 11, fontWeight: on ? 680 : 550, color: on ? t.accent : t.faint }}>{it.label}</span>
+              <span style={{ fontSize: 11.5, fontWeight: on ? 680 : 550, color: on ? t.accent : t.faint }}>{it.label}</span>
             </button>
           );
         })}
@@ -87,7 +87,7 @@
           backdropFilter: 'blur(12px)', boxShadow: t.shadowLg, maxWidth: '90%',
         }}>
           {toast && toast.icon && <Icon name={toast.icon} size={17} color="#fff" sw={2.4} />}
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {toast ? toast.msg : ''}
           </span>
           {hasAction && <button onClick={toast.action.fn} style={{ height: 30, padding: '0 14px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 700, background: 'rgba(255,255,255,0.18)', color: '#fff', flexShrink: 0 }}>{toast.action.label}</button>}
@@ -98,7 +98,7 @@
 
   // 首开欢迎页（大 Logo + 名字 + 标语）。只在第一次进入时出现，点"开始使用"后记住。
   function WelcomeScreen({ t, onStart }) {
-    const btn = (primary) => ({ width: '100%', maxWidth: 320, height: 52, borderRadius: 16, cursor: 'pointer', font: 'inherit', fontSize: 16, fontWeight: 700, flexShrink: 0, border: primary ? 'none' : `1px solid ${t.border}`, background: primary ? t.accent : t.surface2, color: primary ? t.onAccent : t.text, boxShadow: primary ? t.shadowLg : 'none' });
+    const btn = (primary) => ({ width: '100%', maxWidth: 320, height: 52, borderRadius: 16, cursor: 'pointer', font: 'inherit', fontSize: 15, fontWeight: 700, flexShrink: 0, border: primary ? 'none' : `1px solid ${t.border}`, background: primary ? t.accent : t.surface2, color: primary ? t.onAccent : t.text, boxShadow: primary ? t.shadowLg : 'none' });
     return (
       <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: t.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 30px', textAlign: 'center', animation: 'vlin .45s ease' }}>
         <div style={{ width: 92, height: 92, borderRadius: 26, background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 26, flexShrink: 0 }}>
@@ -110,7 +110,7 @@
           </svg>
         </div>
         <h1 style={{ margin: 0, fontSize: 34, fontWeight: 800, letterSpacing: -0.5, color: t.text }}>语迹 <span style={{ color: t.accentText }}>VoiceLog</span></h1>
-        <div style={{ fontSize: 17, fontWeight: 600, color: t.text, marginTop: 14 }}>时间是你最大的资产</div>
+        <div style={{ fontSize: 18, fontWeight: 600, color: t.text, marginTop: 14 }}>时间是你最大的资产</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, width: '100%', maxWidth: 320, marginTop: 40 }}>
           <button onClick={() => onStart(false)} style={btn(true)}>开始（空白）</button>
           <button onClick={() => onStart(true)} style={btn(false)}>先看示例效果</button>
@@ -465,9 +465,9 @@
         <Sheet t={t} open={mtOpen} onClose={() => setMtOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bolt" size={20} color={'oklch(0.6 0.15 60)'} /></div>
-            <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>关于一心多用</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 720, color: t.text }}>关于一心多用</h3>
           </div>
-          <p style={{ margin: '0 0 12px', fontSize: 14.5, lineHeight: 1.65, color: t.text }}>{window.VL.MULTITASK_NOTE}</p>
+          <p style={{ margin: '0 0 12px', fontSize: 15, lineHeight: 1.65, color: t.text }}>{window.VL.MULTITASK_NOTE}</p>
           <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: t.muted }}>VoiceLog 不会阻止你叠加日程——你最了解自己的节奏。它只是温和提个醒。</p>
           <div style={{ marginTop: 16 }}><Btn t={t} kind="primary" full onClick={() => setMtOpen(false)}>知道了</Btn></div>
         </Sheet>
@@ -476,7 +476,7 @@
         <Sheet t={t} open={matrixOpen} onClose={() => setMatrixOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="grid4" size={20} color={t.accentText} /></div>
-            <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>重要 × 紧急 四象限</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 720, color: t.text }}>重要 × 紧急 四象限</h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
             {window.VL.QUAD_ORDER.map((k) => { const q = window.VL.QUADRANTS[k]; return (
@@ -493,7 +493,7 @@
         <Sheet t={t} open={trashOpen} onClose={() => setTrashOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="trash" size={19} color={t.muted} /></div>
-            <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>回收站</h3>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 720, color: t.text }}>回收站</h3>
           </div>
           <p style={{ margin: '0 0 14px', fontSize: 13.5, lineHeight: 1.55, color: t.muted }}>删除的日程都先放这里，随时可以找回。</p>
           {trash.length ? (
@@ -501,7 +501,7 @@
               {trash.map((it) => { const wk = window.VL.data.week.find((x) => x.key === it.day); return (
                 <div key={it.ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: t.radius - 2, border: `1px solid ${t.border}`, background: t.surface2 }}>
                   <div style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: window.catColor(t, it.ev.cat) }} />
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · ${wk.month}月${wk.day}日` : it.day} · {window.VL.fmtTime(it.ev.t)}</div></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.ev.title}</div><div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{wk ? `周${wk.dow} · ${wk.month}月${wk.day}日` : it.day} · {window.VL.fmtTime(it.ev.t)}</div></div>
                   <button onClick={() => app.restoreEvent(it)} style={{ flexShrink: 0, height: 32, padding: '0 13px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 650, background: t.accentSoft, color: t.accentText }}>恢复</button>
                 </div>
               ); })}

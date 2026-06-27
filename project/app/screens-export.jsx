@@ -75,10 +75,10 @@
           <span style={{ fontSize: 12.5, color: '#fff', opacity: 0.95, fontWeight: 500 }}>{fname}</span>
         </div>
         <div style={{ background: '#fff', padding: '22px 24px', maxHeight: 300, overflow: 'auto' }}>
-          <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 21, fontWeight: 700, color: ink, letterSpacing: -0.2 }}>{r.label}</div>
+          <div style={{ fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 22, fontWeight: 700, color: ink, letterSpacing: -0.2 }}>{r.label}</div>
           <div style={{ fontSize: 12.5, color: sub, marginTop: 3, marginBottom: 14 }}>{r.range} · 共 {r.count} 项 · 合计约 {fmtH(r.total)} 小时</div>
           <div style={{ height: 2, background: '#2B579A', width: 40, marginBottom: 16 }} />
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#2B579A', marginBottom: 8 }}>时间去向</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#2B579A', marginBottom: 8 }}>时间去向</div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: ink, marginBottom: 16 }}>
             <tbody>
               {r.alloc.map((a) => (
@@ -91,7 +91,7 @@
               ))}
             </tbody>
           </table>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#2B579A', marginBottom: 8 }}>洞察与建议</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#2B579A', marginBottom: 8 }}>洞察与建议</div>
           <ul style={{ margin: 0, paddingLeft: 18, color: ink }}>
             {r.insights.map((s, i) => <li key={i} style={{ fontSize: 12.5, lineHeight: 1.65, marginBottom: 5 }}>{s}</li>)}
           </ul>
@@ -178,7 +178,7 @@
       <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 14px', cursor: onClick ? 'pointer' : 'default', borderBottom: last ? 'none' : `1px solid ${t.border}` }}>
         <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={icon} size={18} color={t.muted} /></div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>{title}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: t.text }}>{title}</div>
           {sub && <div style={{ fontSize: 12.5, color: t.faint, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub}</div>}
         </div>
         {right}
@@ -237,8 +237,8 @@
                         const on = app.themeKey === k;
                         return (
                           <button key={k} onClick={() => app.setTheme(k)} style={{ flex: 1, cursor: 'pointer', font: 'inherit', padding: '12px 8px', borderRadius: t.radius - 2, border: `1.5px solid ${on ? t.accent : t.border}`, background: on ? t.accentSoft : t.surface, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                            <span style={{ fontSize: 17, fontWeight: 720, color: on ? t.accentText : t.text }}>{name}</span>
-                            <span style={{ fontSize: 11, color: on ? t.accentText : t.faint }}>{desc}</span>
+                            <span style={{ fontSize: 18, fontWeight: 720, color: on ? t.accentText : t.text }}>{name}</span>
+                            <span style={{ fontSize: 11.5, color: on ? t.accentText : t.faint }}>{desc}</span>
                           </button>
                         );
                       })}
@@ -287,7 +287,7 @@
               <div style={{ padding: '13px 16px', borderTop: `1px solid ${t.border}` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                   <Icon name="redo" size={17} color={t.muted} />
-                  <span style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>顺延提醒「先不用」后</span>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: t.text }}>顺延提醒「先不用」后</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 10px 27px', lineHeight: 1.5 }}>没做完的事点「先不用」后，多久再温和地提醒你一次</div>
                 <div style={{ display: 'flex', gap: 8, paddingLeft: 27, flexWrap: 'wrap' }}>

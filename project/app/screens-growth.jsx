@@ -51,7 +51,7 @@
         <div style={{ padding: '13px 15px', borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Icon name="shield" size={18} color={t.accentText} style={{ flexShrink: 0 }} />
-            <div style={{ flex: 1, fontSize: 14, fontWeight: 650, color: t.text }}>你的数据保持私密</div>
+            <div style={{ flex: 1, fontSize: 13.5, fontWeight: 650, color: t.text }}>你的数据保持私密</div>
             <button onClick={() => setOpen((o) => !o)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 650, color: t.accentText, padding: 0 }}>{open ? '显示更少' : '为什么'}</button>
           </div>
           {open && <p style={{ margin: '10px 0 0', fontSize: 12.5, lineHeight: 1.65, color: t.muted }}>语迹只在你的设备上分析时间模式（像识别习惯，而非记录具体内容）——不上传、不留存、不用于训练。等级与下面这份「了解」都由本机计算，随时可导出带走。</p>}
@@ -88,7 +88,7 @@
       <Card t={t} pad={0} style={{ marginBottom: 16, overflow: 'hidden' }}>
         <button onClick={() => setOpen((o) => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '13px 14px', background: 'transparent', border: 'none', cursor: 'pointer', font: 'inherit', textAlign: 'left' }}>
           <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0 }} />
-          <span style={{ flex: 1, fontSize: 14.5, fontWeight: 650, color: t.text }}>怎么算成长？</span>
+          <span style={{ flex: 1, fontSize: 15, fontWeight: 650, color: t.text }}>怎么算成长？</span>
           <span style={{ fontSize: 12.5, color: t.faint }}>{open ? '收起' : '看规则'}</span>
           <Icon name={open ? 'chevD' : 'chevR'} size={16} color={t.faint} />
         </button>
@@ -108,7 +108,7 @@
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {ladder.map((L) => (
                 <div key={L.lv} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: L.lv === level.lv ? t.text : t.muted }}>
-                  <span style={{ width: 20, height: 20, borderRadius: 999, flexShrink: 0, border: `1.5px solid ${L.lv === level.lv ? GOLD : t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 720, color: L.lv === level.lv ? GOLD : t.faint }}>{L.lv}</span>
+                  <span style={{ width: 20, height: 20, borderRadius: 999, flexShrink: 0, border: `1.5px solid ${L.lv === level.lv ? GOLD : t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11.5, fontWeight: 720, color: L.lv === level.lv ? GOLD : t.faint }}>{L.lv}</span>
                   <span style={{ flex: 1 }}>{L.name}</span>
                   <span style={{ color: t.faint }}>{L.need} XP</span>
                 </div>
@@ -130,7 +130,7 @@
     const stat = (v, label, color) => (
       <div style={{ flex: 1, padding: '14px 8px', borderRadius: t.radius - 4, background: t.surface2, textAlign: 'center' }}>
         <div style={{ fontSize: 22, fontWeight: 720, color: color || t.text }}>{v}</div>
-        <div style={{ fontSize: 11, color: t.faint, marginTop: 3 }}>{label}</div>
+        <div style={{ fontSize: 11.5, color: t.faint, marginTop: 3 }}>{label}</div>
       </div>
     );
 
@@ -148,8 +148,8 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <LevelBadge t={t} lv={L.lv} />
               <div>
-                <div style={{ fontSize: 11, color: GOLD, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4, fontWeight: 650 }}>Level {L.lv}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: t.text, lineHeight: 1.2 }}>{L.name}</div>
+                <div style={{ fontSize: 11.5, color: GOLD, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4, fontWeight: 650 }}>Level {L.lv}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: t.text, lineHeight: 1.2 }}>{L.name}</div>
               </div>
             </div>
             <div style={{ marginTop: 18 }}>
@@ -182,7 +182,7 @@
           {/* 一句话本周洞察（成长身份层的总结，详细洞察沉到下面的复盘） */}
           <div style={{ display: 'flex', gap: 11, padding: 14, borderRadius: t.radius, marginBottom: 8, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
             <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
-            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: t.text }}>{insight}</p>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: t.text }}>{insight}</p>
           </div>
 
           {/* ── 合并：复盘 · 回看这段时间 ── */}

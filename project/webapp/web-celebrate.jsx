@@ -43,8 +43,8 @@
             <Icon name={data.goal ? 'flame' : 'check'} size={data.goal ? 38 : 42} color={t.accent} sw={2.6} fill={false} />
           </div>
           <div style={{ marginTop: 14, padding: '10px 18px', borderRadius: 16, background: t.mode === 'dark' ? 'rgba(40,44,52,0.97)' : 'rgba(26,29,36,0.97)', boxShadow: t.shadowLg, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, maxWidth: 320 }}>
-            <span style={{ fontSize: 14.5, fontWeight: 680, color: '#fff', textAlign: 'center', whiteSpace: 'nowrap' }}>{data.msg}</span>
-            {data.streak > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'oklch(0.88 0.09 80)' }}><Icon name="flame" size={13} color={'oklch(0.78 0.16 55)'} sw={2} />今天已完成 {data.streak} 件</span>}
+            <span style={{ fontSize: 15, fontWeight: 680, color: '#fff', textAlign: 'center', whiteSpace: 'nowrap' }}>{data.msg}</span>
+            {data.streak > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'oklch(0.88 0.09 80)' }}><Icon name="flame" size={13} color={'oklch(0.78 0.16 55)'} sw={2} />今天已完成 {data.streak} 件</span>}
           </div>
         </div>
       </div>

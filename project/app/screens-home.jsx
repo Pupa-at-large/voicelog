@@ -251,7 +251,7 @@
               <button onClick={() => fileRef.current && fileRef.current.click()} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650, marginBottom: 10 }}><Icon name="export" size={18} color={t.accentText} />从相册 / 文件选择</button>
               <button onClick={openTyping} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650, marginBottom: 10 }}><Icon name="sparkle" size={18} color={t.accentText} />打字一句 · AI 解析</button>
               <button onClick={openManual} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, height: 50, borderRadius: 14, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, fontWeight: 650 }}><Icon name="pencil" size={18} color={t.accentText} />手动填写一条</button>
-              <button onClick={onClose} style={{ marginTop: 16, height: 40, borderRadius: 12, cursor: 'pointer', border: 'none', background: 'transparent', color: t.muted, font: 'inherit', fontSize: 14, fontWeight: 600 }}>取消</button>
+              <button onClick={onClose} style={{ marginTop: 16, height: 40, borderRadius: 12, cursor: 'pointer', border: 'none', background: 'transparent', color: t.muted, font: 'inherit', fontSize: 13.5, fontWeight: 600 }}>取消</button>
               <div style={{ fontSize: 11.5, color: t.faint, textAlign: 'center', marginTop: 6 }}>提示：拍照/上传现在是演示样例，真识别接入视觉模型后生效</div>
             </div>
           )}
@@ -260,7 +260,7 @@
             <div style={{ display: 'flex', flexDirection: 'column', padding: '14px 4px 6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <Icon name="sparkle" size={17} color={t.accentText} />
-                <span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>打一句话，AI 帮你建</span>
+                <span style={{ fontSize: 18, fontWeight: 720, color: t.text }}>打一句话，AI 帮你建</span>
               </div>
               <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>像说话那样写,不用工整,它会理清</div>
               <textarea value={typedText} onChange={(e) => setTypedText(e.target.value)} autoFocus rows={3} placeholder="例如：明天下午三点跟老王在公司开会，提前半小时提醒" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.5, outline: 'none' }} />
@@ -276,7 +276,7 @@
             <div style={{ display: 'flex', flexDirection: 'column', padding: '14px 4px 6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <Icon name="sparkle" size={17} color={t.accentText} />
-                <span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>今天的复盘</span>
+                <span style={{ fontSize: 18, fontWeight: 720, color: t.text }}>今天的复盘</span>
               </div>
               <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>说说今天的想法、感受、收获——这是给你自己的记录，不会被解析成日程</div>
               <textarea value={reflectText} onChange={(e) => setReflectText(e.target.value)} autoFocus rows={5} placeholder="例如：今天效率不错，专注写完了报告；晚上有点累，明天想早点睡。" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.6, outline: 'none' }} />
@@ -456,7 +456,7 @@
               })()}
               <div style={{ border: `1px solid ${t.border}`, borderRadius: t.radius, overflow: 'hidden', background: t.raised }}>
                 {field('标题', (
-                  <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>
+                  <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 15, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>
                 ), { icon: 'pencil' })}
                 {field('日期', (
                   <div>
@@ -584,12 +584,12 @@
         <div style={{ flex: 1, minWidth: 0, position: 'relative', borderRadius: t.radius, overflow: 'hidden', boxShadow: t.shadow }}>
           {/* 右侧操作：编辑 / 删除 */}
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: RIGHT, display: 'flex' }}>
-            <button onClick={() => { setTx(0); onEdit(ev); }} style={swBtn(t.accentSoft, t.accentText)}><Icon name="pencil" size={19} color={t.accentText} /><span style={{ fontSize: 11, marginTop: 3 }}>编辑</span></button>
-            <button onClick={() => { setTx(0); onDelete(ev.id); }} style={swBtn('oklch(0.62 0.2 25)', '#fff')}><Icon name="trash" size={19} color="#fff" /><span style={{ fontSize: 11, marginTop: 3 }}>删除</span></button>
+            <button onClick={() => { setTx(0); onEdit(ev); }} style={swBtn(t.accentSoft, t.accentText)}><Icon name="pencil" size={19} color={t.accentText} /><span style={{ fontSize: 11.5, marginTop: 3 }}>编辑</span></button>
+            <button onClick={() => { setTx(0); onDelete(ev.id); }} style={swBtn('oklch(0.62 0.2 25)', '#fff')}><Icon name="trash" size={19} color="#fff" /><span style={{ fontSize: 11.5, marginTop: 3 }}>删除</span></button>
           </div>
           {/* 左侧操作：完成 */}
           <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: LEFT, display: 'flex' }}>
-            <button onClick={() => { setTx(0); onToggle(ev.id); }} style={swBtn('oklch(0.6 0.14 150)', '#fff')}><Icon name="check" size={20} color="#fff" sw={2.4} /><span style={{ fontSize: 11, marginTop: 3 }}>{done ? '撤销' : '完成'}</span></button>
+            <button onClick={() => { setTx(0); onToggle(ev.id); }} style={swBtn('oklch(0.6 0.14 150)', '#fff')}><Icon name="check" size={20} color="#fff" sw={2.4} /><span style={{ fontSize: 11.5, marginTop: 3 }}>{done ? '撤销' : '完成'}</span></button>
           </div>
           {/* 前景卡片 */}
           <div onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onClick={onClickCard}
@@ -626,8 +626,8 @@
     const meta = (icon, label, val) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${t.border}` }}>
         <Icon name={icon} size={17} color={t.faint} />
-        <span style={{ fontSize: 14, color: t.muted, width: 52 }}>{label}</span>
-        <span style={{ fontSize: 14.5, color: t.text, fontWeight: 550 }}>{val}</span>
+        <span style={{ fontSize: 13.5, color: t.muted, width: 52 }}>{label}</span>
+        <span style={{ fontSize: 15, color: t.text, fontWeight: 550 }}>{val}</span>
       </div>
     );
     return (
@@ -659,7 +659,7 @@
         {ev.note && (
           <div style={{ marginTop: 14, padding: 14, borderRadius: t.radius - 2, background: t.surface2 }}>
             <div style={{ fontSize: 12.5, color: t.faint, fontWeight: 600, marginBottom: 5 }}>备注</div>
-            <div style={{ fontSize: 14.5, color: t.text, lineHeight: 1.55 }}>{ev.note}</div>
+            <div style={{ fontSize: 15, color: t.text, lineHeight: 1.55 }}>{ev.note}</div>
           </div>
         )}
         {app && !done && <window.RescheduleCard t={t} dayEvents={app.events[app.selectedDay] || []} ev={ev} onPick={(s) => app.rescheduleEvent(ev.id, s.time)} style={{ marginTop: 14 }} />}
@@ -694,7 +694,7 @@
     );
     return (
       <Sheet t={t} open={!!ev} onClose={onClose}>
-        <h3 style={{ margin: '2px 2px 16px', fontSize: 20, fontWeight: 720, color: t.text }}>编辑日程</h3>
+        <h3 style={{ margin: '2px 2px 16px', fontSize: 22, fontWeight: 720, color: t.text }}>编辑日程</h3>
         {row('标题', editable(titleRef, ev.title))}
         {row('时间', (
           <div>
@@ -732,7 +732,7 @@
         ))}
         {row('地点', editable(locRef, ev.loc || ''))}
         {row('备注 / 子任务', (
-          <span ref={noteRef} contentEditable suppressContentEditableWarning data-ph="写点备注，或每行一个子任务…" style={{ display: 'block', fontSize: 14.5, fontWeight: 500, color: t.text, outline: 'none', borderRadius: 8, padding: '10px 12px', background: t.surface2, minHeight: 58, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{ev.note || ''}</span>
+          <span ref={noteRef} contentEditable suppressContentEditableWarning data-ph="写点备注，或每行一个子任务…" style={{ display: 'block', fontSize: 15, fontWeight: 500, color: t.text, outline: 'none', borderRadius: 8, padding: '10px 12px', background: t.surface2, minHeight: 58, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{ev.note || ''}</span>
         ))}
         {row('提醒', (
           <div style={{ display: 'flex', gap: 7 }}>
@@ -779,13 +779,13 @@
       <Sheet t={t} open={open} onClose={onClose}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <Icon name="bell" size={19} color={t.accentText} />
-          <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>通知</h3>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 720, color: t.text }}>通知</h3>
           {notes.length > 0 && <span style={{ fontSize: 12.5, color: t.faint }}>{notes.length} 条</span>}
         </div>
         {notes.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '34px 0 26px' }}>
             <div style={{ width: 56, height: 56, borderRadius: 999, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Icon name="bell" size={26} color={t.borderStrong} /></div>
-            <div style={{ fontSize: 14.5, fontWeight: 600, color: t.muted }}>暂无通知</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: t.muted }}>暂无通知</div>
             <div style={{ fontSize: 12.5, color: t.faint, marginTop: 5 }}>到点的提醒、顺延会出现在这里</div>
           </div>
         ) : (
@@ -794,7 +794,7 @@
               <div key={i} onClick={() => { if (n.ev) { app.openDetail(n.ev); onClose(); } }} style={{ display: 'flex', gap: 11, padding: '12px 13px', borderRadius: t.radius, background: t.surface2, cursor: n.ev ? 'pointer' : 'default' }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={n.icon || 'bell'} size={17} color={t.accentText} /></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{n.title}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text }}>{n.title}</div>
                   <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{n.sub}</div>
                 </div>
                 {n.ev && <Icon name="chevR" size={16} color={t.faint} style={{ alignSelf: 'center' }} />}
@@ -895,7 +895,7 @@
                   return (
                     <button key={w.key} onClick={() => app.setDay(w.key)} style={{ flex: 1, padding: '8px 0 9px', borderRadius: 14, cursor: 'pointer', border: 'none', background: on ? t.accent : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'background .2s' }}>
                       <span style={{ fontSize: 11.5, fontWeight: 600, color: on ? t.onAccent : t.faint }}>{w.dow}</span>
-                      <span style={{ fontSize: 16, fontWeight: 680, color: on ? t.onAccent : t.text, fontVariantNumeric: 'tabular-nums' }}>{w.day}</span>
+                      <span style={{ fontSize: 15, fontWeight: 680, color: on ? t.onAccent : t.text, fontVariantNumeric: 'tabular-nums' }}>{w.day}</span>
                       <span style={{ width: 5, height: 5, borderRadius: 999, background: has ? (on ? t.onAccent : t.accent) : 'transparent' }} />
                     </button>
                   );
@@ -933,7 +933,7 @@
                 <div style={{ textAlign: 'center', padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
                   <div style={{ width: 76, height: 76, borderRadius: 22, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadowLg }}><Icon name="micFill" size={34} color={t.onAccent} /></div>
                   <div>
-                    <div style={{ fontSize: 19, fontWeight: 760, color: t.text }}>记下你的第一件事</div>
+                    <div style={{ fontSize: 18, fontWeight: 760, color: t.text }}>记下你的第一件事</div>
                     <div style={{ fontSize: 13.5, color: t.muted, marginTop: 5, lineHeight: 1.55 }}>说一句，或打一句话——语迹帮你变成日程。<br />例如「明天下午三点跟老王开会」</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 280 }}>
@@ -946,7 +946,7 @@
                 <div style={{ textAlign: 'center', padding: '44px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
                   <div style={{ width: 72, height: 72, borderRadius: 24, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="calendar" size={32} color={t.faint} sw={1.6} /></div>
                   <div>
-                    <div style={{ fontSize: 16, fontWeight: 650, color: t.text }}>这天还很空</div>
+                    <div style={{ fontSize: 15, fontWeight: 650, color: t.text }}>这天还很空</div>
                     <div style={{ fontSize: 13.5, color: t.muted, marginTop: 4, lineHeight: 1.5 }}>说一句话，就能建个日程</div>
                   </div>
                   <Btn t={t} kind="primary" icon="mic" onClick={app.openVoice}>说一句试试</Btn>

@@ -17,7 +17,7 @@
           <button onClick={app.openReflect} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 11px', borderRadius: 999, border: `1px solid ${t.border}`, background: t.surface, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, color: t.accentText }}><Icon name="mic" size={14} color={t.accentText} />说一段</button>
         </div>
         <Card t={t} style={{ marginBottom: 14 }}>
-          <textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={3} placeholder="今天过得怎么样？随便写写，或点「说一段」用语音记。" style={{ width: '100%', resize: 'none', border: 'none', outline: 'none', background: 'transparent', color: t.text, font: 'inherit', fontSize: 14.5, lineHeight: 1.6 }} />
+          <textarea value={text} onChange={(e) => setText(e.target.value)} onBlur={save} rows={3} placeholder="今天过得怎么样？随便写写，或点「说一段」用语音记。" style={{ width: '100%', resize: 'none', border: 'none', outline: 'none', background: 'transparent', color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.6 }} />
           {cur && <div style={{ fontSize: 11.5, color: t.faint, marginTop: 6 }}>记于 {new Date(cur.ts).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
         </Card>
       </React.Fragment>
@@ -80,7 +80,7 @@
             {r.insights.map((s, i) => (
               <div key={i} style={{ display: 'flex', gap: 11, padding: 14, borderRadius: t.radius, background: i === 0 ? t.accentSoft : t.surface, border: `1px solid ${i === 0 ? 'transparent' : t.border}`, boxShadow: i === 0 ? 'none' : t.shadow }}>
                 <div style={{ flexShrink: 0, marginTop: 1 }}><Icon name={i === 0 ? 'sparkle' : 'bolt'} size={17} color={i === 0 ? t.accentText : t.muted} /></div>
-                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: i === 0 ? t.accentText : t.text, fontWeight: i === 0 ? 550 : 400 }}>{s}</p>
+                <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: i === 0 ? t.accentText : t.text, fontWeight: i === 0 ? 550 : 400 }}>{s}</p>
               </div>
             ))}
           </div>
@@ -93,7 +93,7 @@
                   <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 14px', borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none', opacity: ev.status === 'cancelled' ? 0.55 : 1 }}>
                     <Dot color={catColor(t, ev.cat)} />
                     <span style={{ fontSize: 13.5, color: t.muted, fontVariantNumeric: 'tabular-nums', minWidth: 42 }}>{window.VL.timeLabel(ev) || '随手'}</span>
-                    <span style={{ flex: 1, fontSize: 14.5, color: t.text, fontWeight: 550, textDecoration: ev.status !== 'todo' ? 'line-through' : 'none', opacity: ev.status === 'done' ? 0.6 : 1 }}>{ev.title}</span>
+                    <span style={{ flex: 1, fontSize: 15, color: t.text, fontWeight: 550, textDecoration: ev.status !== 'todo' ? 'line-through' : 'none', opacity: ev.status === 'done' ? 0.6 : 1 }}>{ev.title}</span>
                     <span style={{ fontSize: 11.5, fontWeight: 600, padding: '3px 8px', borderRadius: 999, color: ev.status === 'done' ? 'oklch(0.6 0.13 150)' : t.faint, background: ev.status === 'done' ? 'color-mix(in oklch, oklch(0.6 0.13 150) 14%, transparent)' : t.surface2 }}>{ev.status === 'done' ? '完成' : ev.status === 'cancelled' ? '取消' : '待办'}</span>
                   </div>
                 ))}

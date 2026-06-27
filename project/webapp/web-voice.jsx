@@ -153,7 +153,7 @@
     const learnCol = catColor(t, 'learn');
     const field = (label, value, icon, last) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: last ? 'none' : `1px solid ${t.border}` }}>
-        <span style={{ fontSize: 13, color: t.faint, width: 44, flexShrink: 0 }}>{label}</span>
+        <span style={{ fontSize: 13.5, color: t.faint, width: 44, flexShrink: 0 }}>{label}</span>
         <div style={{ flex: 1, minWidth: 0 }}>{value}</div>
         {icon && <Icon name={icon} size={15} color={t.faint} />}
       </div>
@@ -167,7 +167,7 @@
 
           {phase === 'typing' && (
             <div style={{ padding: '6px 2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="sparkle" size={17} color={t.accentText} /><span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>打一句话，AI 帮你建</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="sparkle" size={17} color={t.accentText} /><span style={{ fontSize: 18, fontWeight: 720, color: t.text }}>打一句话，AI 帮你建</span></div>
               <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>像说话那样写,不用工整,它会理清</div>
               <textarea value={typedText} onChange={(e) => setTypedText(e.target.value)} autoFocus rows={3} placeholder="例如：明天下午三点跟老王在公司开会，提前半小时提醒" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.5, outline: 'none' }} />
               <button onClick={() => setTypedText('明天下午三点跟老王开会')} style={{ marginTop: 8, padding: '5px 11px', borderRadius: 999, border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 12.5, color: t.muted }}>用这句试试</button>
@@ -180,7 +180,7 @@
 
           {phase === 'reflect' && (
             <div style={{ padding: '6px 2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="sparkle" size={17} color={t.accentText} /><span style={{ fontSize: 17, fontWeight: 720, color: t.text }}>今天的复盘</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><Icon name="sparkle" size={17} color={t.accentText} /><span style={{ fontSize: 18, fontWeight: 720, color: t.text }}>今天的复盘</span></div>
               <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 12px 25px' }}>说说今天的想法、感受、收获——给你自己的记录，不会被解析成日程</div>
               <textarea value={reflectText} onChange={(e) => setReflectText(e.target.value)} autoFocus rows={5} placeholder="例如：今天效率不错，专注写完了报告；晚上有点累，明天想早点睡。" style={{ width: '100%', resize: 'none', padding: '12px 13px', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface2, color: t.text, font: 'inherit', fontSize: 15, lineHeight: 1.6, outline: 'none' }} />
               <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
@@ -199,20 +199,20 @@
               {!heardNothing && <Wave color={t.accent} />}
               <p style={{ marginTop: 18, fontSize: heardNothing ? 14 : 17, lineHeight: 1.5, color: (transcript && !heardNothing) ? t.text : t.faint, textAlign: 'center', fontWeight: 500, minHeight: 50 }}>{heardNothing ? '没识别到内容。点下面「重新听」再说一次，或上传文件 / 改用打字。' : (transcript || '说出你的安排，例如「明天下午三点跟老王开会」')}</p>
               <button onClick={() => (heardNothing ? setRun((r) => r + 1) : (R.current.stop && R.current.stop()))} style={{ width: 60, height: 60, borderRadius: 999, border: 'none', cursor: 'pointer', background: t.accent, boxShadow: t.shadowLg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>{heardNothing ? <Icon name="mic" size={26} color={t.onAccent} /> : <div style={{ width: 20, height: 20, borderRadius: 6, background: t.onAccent }} />}</button>
-              {heardNothing && <button onClick={openTyping} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 700, color: t.accentText }}>改用打字</button>}
+              {heardNothing && <button onClick={openTyping} style={{ marginTop: 10, padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 700, color: t.accentText }}>改用打字</button>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', margin: '18px 0 4px' }}>
-                <div style={{ flex: 1, height: 1, background: t.border }} /><span style={{ fontSize: 12, color: t.faint }}>或</span><div style={{ flex: 1, height: 1, background: t.border }} />
+                <div style={{ flex: 1, height: 1, background: t.border }} /><span style={{ fontSize: 12.5, color: t.faint }}>或</span><div style={{ flex: 1, height: 1, background: t.border }} />
               </div>
               <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx,.txt" style={{ display: 'none' }} onChange={onPickFile} />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9, width: '100%' }}>
                 <button onClick={() => pickFile('course')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: t.radius, cursor: 'pointer', textAlign: 'left', font: 'inherit', border: `1.5px solid ${t.accentText}`, background: t.accentSoft }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="grid" size={19} color={t.onAccent} /></div>
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 700, color: t.accentText }}>上传课表图片</div><div style={{ fontSize: 12, color: t.accentText, opacity: 0.8, marginTop: 1 }}>自动识别每周课程，并确认重复范围</div></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: 700, color: t.accentText }}>上传课表图片</div><div style={{ fontSize: 12.5, color: t.accentText, opacity: 0.8, marginTop: 1 }}>自动识别每周课程，并确认重复范围</div></div>
                   <Icon name="chevR" size={18} color={t.accentText} />
                 </button>
                 <button onClick={() => pickFile('doc')} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 15px', borderRadius: t.radius, cursor: 'pointer', textAlign: 'left', font: 'inherit', border: `1px solid ${t.border}`, background: t.surface2 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: t.raised, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="doc" size={19} color={t.muted} /></div>
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14, fontWeight: 650, color: t.text }}>上传文件 / 截图</div><div style={{ fontSize: 12, color: t.faint, marginTop: 1 }}>从通知、邮件、会议纪要里提取日程</div></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>上传文件 / 截图</div><div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>从通知、邮件、会议纪要里提取日程</div></div>
                   <Icon name="chevR" size={18} color={t.faint} />
                 </button>
               </div>
@@ -245,7 +245,7 @@
                     <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: x._sel ? 'none' : `2px solid ${t.borderStrong}`, background: x._sel ? t.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{x._sel && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 650, color: t.text }}>{x.title}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}><span style={{ fontSize: 12.5, color: t.muted }}>{x.dateText.split(' · ')[0]} {x.time}</span><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.faint }}><Dot color={catColor(t, x.cat)} size={7} />{catLabel(t, x.cat)}</span>{x.loc && <span style={{ fontSize: 12, color: t.faint }}>· {x.loc}</span>}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}><span style={{ fontSize: 12.5, color: t.muted }}>{x.dateText.split(' · ')[0]} {x.time}</span><span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12.5, color: t.faint }}><Dot color={catColor(t, x.cat)} size={7} />{catLabel(t, x.cat)}</span>{x.loc && <span style={{ fontSize: 12.5, color: t.faint }}>· {x.loc}</span>}</div>
                     </div>
                   </button>
                 ))}
@@ -270,13 +270,13 @@
               {/* AI 推断的重复规律 */}
               <div style={{ display: 'flex', gap: 10, padding: 13, borderRadius: t.radius, background: t.accentSoft, marginBottom: 14 }}>
                 <Icon name="repeat" size={18} color={t.accentText} sw={2} style={{ flexShrink: 0, marginTop: 1 }} />
-                <div style={{ fontSize: 13, lineHeight: 1.55, color: t.accentText }}>这看起来是一份<b>每周重复</b>的课表。AI 已按周几 / 节次整理好，下面确认重复到什么时候即可。</div>
+                <div style={{ fontSize: 13.5, lineHeight: 1.55, color: t.accentText }}>这看起来是一份<b>每周重复</b>的课表。AI 已按周几 / 节次整理好，下面确认重复到什么时候即可。</div>
               </div>
 
               {/* 课表网格预览 */}
               <div style={{ display: 'grid', gridTemplateColumns: `46px repeat(5, 1fr)`, gap: 4, marginBottom: 16 }}>
                 <div />
-                {DOW5.map(([d, lab]) => <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 650, color: t.muted, paddingBottom: 2 }}>周{lab}</div>)}
+                {DOW5.map(([d, lab]) => <div key={d} style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 650, color: t.muted, paddingBottom: 2 }}>周{lab}</div>)}
                 {times.map((tm) => (
                   <React.Fragment key={tm}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, fontSize: 11.5, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{tm}</div>
@@ -287,7 +287,7 @@
                       return (
                         <button key={d} onClick={() => setExcluded((m) => ({ ...m, [c._id]: !m[c._id] }))} title={off ? '点击加回' : '点击排除'} style={{ minHeight: 56, padding: '7px 8px', cursor: 'pointer', font: 'inherit', textAlign: 'left', borderRadius: 9, border: `1px solid ${off ? t.border : 'transparent'}`, background: off ? 'transparent' : `color-mix(in oklch, ${learnCol} 16%, ${t.surface})`, borderLeft: off ? `1px solid ${t.border}` : `3px solid ${learnCol}`, opacity: off ? 0.45 : 1, position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ fontSize: 12.5, fontWeight: 650, color: t.text, textDecoration: off ? 'line-through' : 'none', lineHeight: 1.25 }}>{c.title}</span>
-                          <span style={{ fontSize: 10.5, color: t.faint, marginTop: 2 }}>{c.loc}</span>
+                          <span style={{ fontSize: 11.5, color: t.faint, marginTop: 2 }}>{c.loc}</span>
                         </button>
                       );
                     })}
@@ -307,7 +307,7 @@
                           <span style={{ fontSize: 13.5, fontWeight: 650, color: on ? t.accentText : t.text }}>{o.label}</span>
                           {o.ai && <span style={{ fontSize: 10, fontWeight: 700, color: 'oklch(0.55 0.13 150)', background: 'color-mix(in oklch, oklch(0.62 0.15 150) 16%, transparent)', padding: '1px 6px', borderRadius: 999 }}>AI 推荐</span>}
                         </div>
-                        <div style={{ fontSize: 11, color: on ? t.accentText : t.faint, opacity: on ? 0.8 : 1, marginTop: 1 }}>{o.sub}</div>
+                        <div style={{ fontSize: 11.5, color: on ? t.accentText : t.faint, opacity: on ? 0.8 : 1, marginTop: 1 }}>{o.sub}</div>
                       </div>
                     </button>
                   );
@@ -319,7 +319,7 @@
               {recurKey === 'later' && (
                 <div style={{ display: 'flex', gap: 9, padding: 11, borderRadius: t.radius - 4, background: t.surface2 }}>
                   <Icon name="bell" size={15} color={t.faint} style={{ flexShrink: 0, marginTop: 1 }} />
-                  <div style={{ fontSize: 12, lineHeight: 1.55, color: t.muted }}>先按本学期暂存，<b>不影响现在就用</b>。等你知道确切的结课日期，随时在日历顶部或课程详情里补上。</div>
+                  <div style={{ fontSize: 12.5, lineHeight: 1.55, color: t.muted }}>先按本学期暂存，<b>不影响现在就用</b>。等你知道确切的结课日期，随时在日历顶部或课程详情里补上。</div>
                 </div>
               )}
 
@@ -337,7 +337,7 @@
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '2px 30px 12px 2px' }}>
                 <span style={{ fontSize: 18, fontWeight: 700, color: t.text }}>解析结果</span><Chip t={t} color={engine.color} soft icon="sparkle">{engine.label}</Chip>
               </div>
-              {transcript && <div style={{ display: 'flex', gap: 8, padding: '10px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 10 }}><Icon name="mic" size={15} color={t.faint} style={{ marginTop: 2, flexShrink: 0 }} /><span style={{ fontSize: 13, color: t.muted, lineHeight: 1.5 }}>{transcript}</span></div>}
+              {transcript && <div style={{ display: 'flex', gap: 8, padding: '10px 12px', borderRadius: t.radius - 4, background: t.surface2, marginBottom: 10 }}><Icon name="mic" size={15} color={t.faint} style={{ marginTop: 2, flexShrink: 0 }} /><span style={{ fontSize: 13.5, color: t.muted, lineHeight: 1.5 }}>{transcript}</span></div>}
               {transcript && (() => {
                 const tr = window.VL.speechTrust(transcript);
                 if (!tr.fillers && !tr.corrected) return null;
@@ -354,25 +354,25 @@
                 return (
                   <div style={{ padding: 12, borderRadius: t.radius - 2, marginBottom: 12, background: `color-mix(in oklch, ${amber} 12%, transparent)`, border: `1px solid color-mix(in oklch, ${amber} 32%, transparent)` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 9 }}><Icon name="bolt" size={16} color={'oklch(0.6 0.15 60)'} /><span style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>和「{conflict.map((c) => c.title).join('、')}」{C.t} 撞了，怎么办？</span></div>
-                    <div style={{ fontSize: 12, color: t.faint, margin: '0 0 5px' }}>把『{draft.title}』错开到：</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 5px' }}>把『{draft.title}』错开到：</div>
                     <window.SlotSuggestions t={t} slots={newSlots} onPick={(s) => { setDraft((dr) => ({ ...dr, time: s.time })); setExistResched(null); }} />
                     {oldSlots && oldSlots.length > 0 && (
                       <div style={{ marginTop: 10 }}>
-                        <div style={{ fontSize: 12, color: t.faint, margin: '0 0 5px' }}>或把『{C.title}』挪到：</div>
+                        <div style={{ fontSize: 12.5, color: t.faint, margin: '0 0 5px' }}>或把『{C.title}』挪到：</div>
                         <window.SlotSuggestions t={t} slots={oldSlots} onPick={(s) => setExistResched({ id: C.id, title: C.title, time: s.time })} />
                       </div>
                     )}
                     {existResched && existResched.id === C.id && (<div style={{ marginTop: 9, fontSize: 12.5, color: t.accentText, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="check" size={13} color={t.accentText} />确认后把『{existResched.title}』挪到 {existResched.time}</div>)}
-                    <div style={{ fontSize: 12, color: t.faint, marginTop: 9 }}>不想动？直接「加入日程」= 两个都留。</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, marginTop: 9 }}>不想动？直接「加入日程」= 两个都留。</div>
                   </div>
                 );
               })()}
               <div style={{ border: `1px solid ${t.border}`, borderRadius: t.radius, overflow: 'hidden', background: t.raised }}>
-                {field('标题', <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 16, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>, 'pencil')}
+                {field('标题', <span ref={titleRef} contentEditable suppressContentEditableWarning style={{ fontSize: 15, fontWeight: 650, color: t.text, outline: 'none', borderRadius: 4, padding: '1px 3px', margin: '0 -3px', display: 'inline-block' }}>{draft.title}</span>, 'pencil')}
                 {field('日期', <div><input type="date" value={draftISO} onChange={(e) => setDraftDate(e.target.value)} style={inputStyle} /><div style={{ fontSize: 12.5, color: t.faint, marginTop: 1 }}>{draft.dateText}</div></div>, 'clock')}
                 {field('时间', <div style={{ width: '100%' }}>
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>{[['at', '精确'], ['period', '时段'], ['allday', '全天'], ['untimed', '随手记']].map(([k, lab]) => { const on = window.VL.timeMode(draft) === k; return <button key={k} onClick={() => setDraft((dr) => { const nx = { ...dr, timeMode: k }; if (k === 'period') { nx.daypart = dr.daypart || 'afternoon'; const dp = window.VL.daypartOf(nx.daypart); nx.time = dp ? dp.rep : '15:00'; nx.dur = 0; } else if (k === 'allday') { nx.time = '00:00'; nx.dur = 0; } else if (k === 'untimed') { nx.dur = 0; } else { nx.dur = dr.dur || 60; } return nx; })} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>; })}</div>
-                  {window.VL.timeMode(draft) === 'at' && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15.5 }} /><span style={{ color: t.faint }}>到</span><input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15.5 }} /><span style={{ fontSize: 12, color: t.faint }}>· {draft.dur}分</span></div>}
+                  {window.VL.timeMode(draft) === 'at' && <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><input type="time" value={draft.time} onChange={(e) => { const v = e.target.value; if (v) setDraft((dr) => ({ ...dr, time: v })); }} style={{ ...inputStyle, fontSize: 15 }} /><span style={{ color: t.faint }}>到</span><input type="time" value={window.VL.endTime(draft.time, draft.dur)} onChange={(e) => { const v = e.target.value; if (!v) return; const [sh, sm] = draft.time.split(':').map(Number); const [eh, em] = v.split(':').map(Number); let d = (eh * 60 + em) - (sh * 60 + sm); if (d <= 0) d += 1440; setDraft((dr) => ({ ...dr, dur: d })); }} style={{ ...inputStyle, fontSize: 15 }} /><span style={{ fontSize: 12.5, color: t.faint }}>· {draft.dur}分</span></div>}
                   {window.VL.timeMode(draft) === 'period' && <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{window.VL.DAYPARTS.map((d) => { const on = draft.daypart === d.key; return <button key={d.key} onClick={() => setDraft((dr) => ({ ...dr, daypart: d.key, time: (window.VL.daypartOf(d.key) || {}).rep || '15:00' }))} style={{ height: 28, padding: '0 11px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{d.label}</button>; })}</div>}
                   {(window.VL.timeMode(draft) === 'allday' || window.VL.timeMode(draft) === 'untimed') && <span style={{ fontSize: 12.5, color: t.faint }}>{window.VL.timeMode(draft) === 'allday' ? '贯穿一整天，不占具体时段' : '只记一笔，不设时间'}</span>}
                 </div>, 'clock')}

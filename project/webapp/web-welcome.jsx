@@ -25,7 +25,7 @@
     const step = (n, ic, title, sub) => (
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1 }}>
         <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ic} size={18} color={t.accentText} /></div>
-        <div><div style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>{title}</div><div style={{ fontSize: 12, color: t.faint, marginTop: 2, lineHeight: 1.45 }}>{sub}</div></div>
+        <div><div style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>{title}</div><div style={{ fontSize: 12.5, color: t.faint, marginTop: 2, lineHeight: 1.45 }}>{sub}</div></div>
       </div>
     );
     return (
@@ -38,7 +38,7 @@
           </div>
 
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 780, letterSpacing: -0.6, color: t.text, lineHeight: 1.2 }}>说一句，就有了今天的安排</h1>
-          <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: t.muted, maxWidth: 420 }}>语迹把你随口说的话变成日程，到点提醒、按周复盘。<br />本地优先，离线也能用。</p>
+          <p style={{ margin: '14px 0 0', fontSize: 15, lineHeight: 1.6, color: t.muted, maxWidth: 420 }}>语迹把你随口说的话变成日程，到点提醒、按周复盘。<br />本地优先，离线也能用。</p>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 26 }}>
             <Btn t={t} kind="primary" size="lg" icon="mic" onClick={app.openVoice} style={{ whiteSpace: 'nowrap', padding: '0 28px' }}>说一句 / 上传课表</Btn>
@@ -52,7 +52,7 @@
               {examples.map((ex) => (
                 <button key={ex.text} onClick={() => app.quickAdd(ex.text)} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '13px 15px', cursor: 'pointer', font: 'inherit', textAlign: 'left', borderRadius: t.radius, border: `1px solid ${t.border}`, background: t.surface, boxShadow: t.shadow }}>
                   <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.accentSoft, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={ex.icon} size={17} color={t.accentText} /></div>
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 14.5, fontWeight: 600, color: t.text }}>「{ex.text}」</div><div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{ex.label}</div></div>
+                  <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 15, fontWeight: 600, color: t.text }}>「{ex.text}」</div><div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{ex.label}</div></div>
                   <Icon name="arrowR" size={18} color={t.faint} sw={2} />
                 </button>
               ))}

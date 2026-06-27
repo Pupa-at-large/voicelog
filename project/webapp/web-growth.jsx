@@ -13,7 +13,7 @@
     const stat = (v, label, color) => (
       <div style={{ flex: 1, padding: '16px 10px', borderRadius: t.radius - 2, background: t.surface, border: `1px solid ${t.border}`, boxShadow: t.shadow, textAlign: 'center' }}>
         <div style={{ fontSize: 26, fontWeight: 720, color: color || t.text }}>{v}</div>
-        <div style={{ fontSize: 12, color: t.faint, marginTop: 3 }}>{label}</div>
+        <div style={{ fontSize: 12.5, color: t.faint, marginTop: 3 }}>{label}</div>
       </div>
     );
 
@@ -29,8 +29,8 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <window.LevelBadge t={t} lv={L.lv} size={66} />
               <div>
-                <div style={{ fontSize: 11, color: GOLD, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4, fontWeight: 650 }}>Level {L.lv}</div>
-                <div style={{ fontSize: 21, fontWeight: 700, color: t.text, lineHeight: 1.2 }}>{L.name}</div>
+                <div style={{ fontSize: 11.5, color: GOLD, letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 4, fontWeight: 650 }}>Level {L.lv}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: t.text, lineHeight: 1.2 }}>{L.name}</div>
               </div>
             </div>
             <div style={{ marginTop: 20 }}>
@@ -44,17 +44,17 @@
             </div>
             <div style={{ display: 'flex', gap: 9, marginTop: 20, padding: '10px 0 0', borderTop: `1px solid ${t.border}` }}>
               <Icon name="shield" size={15} color={t.faint} style={{ flexShrink: 0, marginTop: 1 }} />
-              <p style={{ margin: 0, fontSize: 12, lineHeight: 1.6, color: t.faint }}>数据本地存储，随时导出带走。等级与 XP 只升不降——每一次记录都算数。</p>
+              <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: t.faint }}>数据本地存储，随时导出带走。等级与 XP 只升不降——每一次记录都算数。</p>
             </div>
             {/* 成长规则：经验只由真实动作产生，打开页面不加分 */}
             <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${t.border}` }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: t.text, marginBottom: 9 }}>怎么算成长（只升不降）</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: t.text, marginBottom: 9 }}>怎么算成长（只升不降）</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {(window.VL.XP_RULES || []).map((rule) => (
                   <div key={rule.key} style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: t.muted }}>
                     <Icon name={rule.icon} size={14} color={t.accentText} style={{ flexShrink: 0 }} />
                     <span style={{ flex: 1 }}>{rule.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 720, color: GOLD }}>+{rule.xp}</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 720, color: GOLD }}>+{rule.xp}</span>
                   </div>
                 ))}
               </div>
@@ -73,7 +73,7 @@
             </div>
             <div style={{ display: 'flex', gap: 11, padding: 15, borderRadius: t.radius, background: t.surface, border: `1px solid ${t.border}`, borderLeft: `2px solid ${GOLD}`, boxShadow: t.shadow }}>
               <Icon name="sparkle" size={17} color={GOLD} style={{ flexShrink: 0, marginTop: 1 }} />
-              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: t.text }}>{insight}</p>
+              <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.6, color: t.text }}>{insight}</p>
             </div>
           </div>
         </div>

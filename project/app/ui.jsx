@@ -133,7 +133,7 @@
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, width: 92, flexShrink: 0 }}>
           <Dot color={catColor(t, a.cat)} />
-          <span style={{ fontSize: 14, color: t.text, fontWeight: 550 }}>{catLabel(t, a.cat)}</span>
+          <span style={{ fontSize: 13.5, color: t.text, fontWeight: 550 }}>{catLabel(t, a.cat)}</span>
         </div>
         <div style={{ flex: 1, height: 8, borderRadius: 999, background: t.chartTrack, overflow: 'hidden' }}>
           <div style={{
@@ -231,7 +231,7 @@
         <span style={{ width: 4, alignSelf: 'stretch', minHeight: 30, borderRadius: 999, background: catColor(t, ev.cat), flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, color: isNow ? t.accentText : t.faint, textTransform: 'uppercase' }}>{label}</span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, color: isNow ? t.accentText : t.faint, textTransform: 'uppercase' }}>{label}</span>
             {isNow && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'oklch(0.62 0.2 25)', boxShadow: '0 0 0 3px color-mix(in oklch, oklch(0.62 0.2 25) 25%, transparent)' }} />}
             <span style={{ fontSize: 12.5, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{window.VL.fmtRange(ev.t, ev.dur)} · {isNow ? remain(ev) : rel(ev)}</span>
           </div>
@@ -326,7 +326,7 @@
     const [editIdx, setEditIdx] = React.useState(-1);
     const isoOf = (key) => (key ? window.VL.todayDateObj().getFullYear() + '-' + key : '');
     const datePatch = (iso) => { if (!iso) return {}; const dt = new Date(iso + 'T00:00:00'); if (isNaN(dt.getTime())) return {}; const key = String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); return { dateKey: key, dateText: window.VL.dateText ? window.VL.dateText(key) : key }; };
-    const inp = { font: 'inherit', fontSize: 14, fontWeight: 600, color: t.text, background: t.surface, border: `1px solid ${t.border}`, borderRadius: t.radius - 4, padding: '8px 10px', outline: 'none', colorScheme: t.mode === 'dark' ? 'dark' : 'light' };
+    const inp = { font: 'inherit', fontSize: 13.5, fontWeight: 600, color: t.text, background: t.surface, border: `1px solid ${t.border}`, borderRadius: t.radius - 4, padding: '8px 10px', outline: 'none', colorScheme: t.mode === 'dark' ? 'dark' : 'light' };
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, ...style }}>
         {actions.map((a, i) => {
@@ -347,7 +347,7 @@
                 <div style={{ width: 22, height: 22, borderRadius: 6, flexShrink: 0, border: on ? 'none' : `2px solid ${t.borderStrong}`, background: on ? k.on : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on && <Icon name="check" size={14} color={t.onAccent} sw={2.6} />}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: k.c, background: `color-mix(in oklch, ${k.on} 16%, transparent)`, padding: '1px 7px', borderRadius: 999, flexShrink: 0 }}>{k.label}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: k.c, background: `color-mix(in oklch, ${k.on} 16%, transparent)`, padding: '1px 7px', borderRadius: 999, flexShrink: 0 }}>{k.label}</span>
                     <span style={{ fontSize: 15, fontWeight: 650, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: a.kind === 'cancel' ? 'line-through' : 'none' }}>{d.title || a.title}</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
@@ -411,16 +411,16 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 8, height: 8, borderRadius: 999, background: q.color, flexShrink: 0 }} />
               <span style={{ fontSize: 12.5, fontWeight: 700, color: t.text, whiteSpace: 'nowrap' }}>{q.advice}</span>
-              <span style={{ fontSize: 11, color: t.faint, marginLeft: 'auto' }}>{items.length}</span>
+              <span style={{ fontSize: 11.5, color: t.faint, marginLeft: 'auto' }}>{items.length}</span>
             </div>
-            <div style={{ fontSize: 11, color: t.faint, marginTop: 2 }}>{q.label}</div>
+            <div style={{ fontSize: 11.5, color: t.faint, marginTop: 2 }}>{q.label}</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, overflowY: 'auto', flex: 1 }}>
             {items.length ? items.map((e) => (
               <button key={e.id} onClick={() => onOpen && onOpen(e)} style={{ display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left', font: 'inherit', cursor: 'pointer', border: 'none', background: t.surface2, borderRadius: 8, padding: '6px 8px' }}>
                 <span style={{ width: 3, alignSelf: 'stretch', borderRadius: 999, background: catColor(t, e.cat), flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: 550, color: e.status === 'done' ? t.faint : t.text, textDecoration: e.status === 'done' ? 'line-through' : 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</span>
-                <span style={{ fontSize: 11, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{window.VL.fmtTime(e.t)}</span>
+                <span style={{ fontSize: 11.5, color: t.faint, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{window.VL.fmtTime(e.t)}</span>
               </button>
             )) : <div style={{ fontSize: 11.5, color: t.faint, padding: '10px 0', textAlign: 'center' }}>—</div>}
           </div>

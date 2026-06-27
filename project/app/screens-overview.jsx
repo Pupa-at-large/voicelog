@@ -26,14 +26,14 @@
     const hours = []; for (let h = base; h <= end; h++) hours.push(h);
     return (
       <div style={{ flex: 1, overflowY: 'auto' }} data-vlpop>
-        <div style={{ padding: '2px 18px 6px', fontSize: 13, color: t.muted }}>
+        <div style={{ padding: '2px 18px 6px', fontSize: 13.5, color: t.muted }}>
           {w.month}月{w.day}日 周{w.dow} · {evs.length} 项
         </div>
         <div style={{ padding: '6px 16px 28px' }}>
           <div style={{ position: 'relative', marginLeft: 46, height: (end - base + 1) * HH }}>
             {hours.map((h, i) => (
               <div key={h} style={{ position: 'absolute', top: i * HH, left: -46, right: 0, height: HH }}>
-                <span style={{ position: 'absolute', left: 0, top: -7, width: 38, textAlign: 'right', fontSize: 11, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{String(h).padStart(2, '0')}:00</span>
+                <span style={{ position: 'absolute', left: 0, top: -7, width: 38, textAlign: 'right', fontSize: 11.5, color: t.faint, fontVariantNumeric: 'tabular-nums' }}>{String(h).padStart(2, '0')}:00</span>
                 <div style={{ position: 'absolute', left: 0, right: 0, top: 0, borderTop: `1px solid ${t.border}` }} />
               </div>
             ))}
@@ -75,9 +75,9 @@
             return (
               <div key={k} onClick={() => onPick(k)} style={{ flex: 1, cursor: 'pointer' }}>
                 <div style={{ textAlign: 'center', marginBottom: 6 }}>
-                  <div style={{ fontSize: 10.5, color: today ? t.accentText : t.faint, fontWeight: 600 }}>{w.dow}</div>
+                  <div style={{ fontSize: 11.5, color: today ? t.accentText : t.faint, fontWeight: 600 }}>{w.dow}</div>
                   <div style={{
-                    margin: '2px auto 0', width: 26, height: 26, borderRadius: 999, fontSize: 13, fontWeight: 680,
+                    margin: '2px auto 0', width: 26, height: 26, borderRadius: 999, fontSize: 13.5, fontWeight: 680,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: today ? t.accent : 'transparent', color: today ? t.onAccent : t.text,
                   }}>{w.day}</div>
@@ -93,7 +93,7 @@
             );
           })}
         </div>
-        <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 14 }}>点任意一天放大到「日」</div>
+        <div style={{ textAlign: 'center', fontSize: 12.5, color: t.faint, marginTop: 14 }}>点任意一天放大到「日」</div>
       </div>
     );
   }
@@ -120,7 +120,7 @@
           <button onClick={() => onMonth && onMonth(1)} style={navBtn}><Icon name="chevR" size={18} color={t.text} /></button>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', marginBottom: 6 }}>
-          {DOWH.map((d) => <div key={d} style={{ textAlign: 'center', fontSize: 11, color: t.faint, fontWeight: 600, padding: '2px 0' }}>{d}</div>)}
+          {DOWH.map((d) => <div key={d} style={{ textAlign: 'center', fontSize: 11.5, color: t.faint, fontWeight: 600, padding: '2px 0' }}>{d}</div>)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4 }}>
           {cells.map((d, i) => {
@@ -136,7 +136,7 @@
                 border: `1px solid ${today ? 'transparent' : (evs.length ? t.border : 'transparent')}`,
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
               }}>
-                <span style={{ fontSize: 13, fontWeight: today ? 720 : 560, color: today ? t.accentText : (evs.length ? t.text : t.faint) }}>{d}</span>
+                <span style={{ fontSize: 13.5, fontWeight: today ? 720 : 560, color: today ? t.accentText : (evs.length ? t.text : t.faint) }}>{d}</span>
                 <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', justifyContent: 'center', maxWidth: 38 }}>
                   {cats.slice(0, 4).map((c) => <span key={c} style={{ width: 6, height: 6, borderRadius: 999, background: catColor(t, c) }} />)}
                 </div>
@@ -144,7 +144,7 @@
             );
           })}
         </div>
-        <div style={{ textAlign: 'center', fontSize: 12, color: t.faint, marginTop: 14 }}>点有安排的日期放大查看</div>
+        <div style={{ textAlign: 'center', fontSize: 12.5, color: t.faint, marginTop: 14 }}>点有安排的日期放大查看</div>
       </div>
     );
   }
@@ -197,7 +197,7 @@
         {level === 'day' && <DayView t={t} app={app} dayKey={day} />}
         {level === 'week' && <WeekView t={t} app={app} onPick={(k) => { setDay(k); setIdx(2); }} />}
         {level === 'month' && <MonthView t={t} app={app} monthOff={monthOff} onMonth={(d) => setMonthOff((o) => o + d)} onPick={(k) => { setDay(k); setIdx(2); }} />}
-        <div style={{ textAlign: 'center', fontSize: 11, color: t.faint, padding: '2px 0 8px' }}>双指 / ⌘+滚轮缩放 · 或用上方 ± 切换</div>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: t.faint, padding: '2px 0 8px' }}>双指 / ⌘+滚轮缩放 · 或用上方 ± 切换</div>
       </div>
     );
   }
