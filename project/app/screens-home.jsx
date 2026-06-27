@@ -907,7 +907,7 @@
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 24px' }}>
               {pending.length > 0 && !rollSnoozed && (
-                <window.RolloverBanner t={t} items={pending} onMove={(picks) => app.rolloverUnfinished(picks)} onDismiss={() => app.snoozeRollover()} style={{ marginBottom: 12 }} />
+                <window.RolloverBanner t={t} items={pending} onMove={(picks) => app.rolloverUnfinished(picks)} onDismiss={() => app.snoozeRollover()} onEdit={(p) => app.openEdit(p.ev, p.key)} onDelete={(p) => app.deleteEventAt(p.key, p.ev.id)} style={{ marginBottom: 12 }} />
               )}
               {totalH > window.VL.DAILY_CAPACITY_H && !capDismiss[sel] && (
                 <window.CapacityBanner t={t} hours={totalH} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [sel]: true }))} style={{ marginBottom: 12 }} />

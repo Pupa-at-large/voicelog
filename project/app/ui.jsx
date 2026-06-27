@@ -265,7 +265,7 @@
 
   // 未完成顺延提示：把没做完的温和地拉到今天（借 Sunsama；不羞辱，late better than never）
   // items: [{key, ev}]，含前几天累积的待办。点开可逐条勾选要挪哪些。
-  function RolloverBanner({ t, items, onMove, onDismiss, style }) {
+  function RolloverBanner({ t, items, onMove, onDismiss, onEdit, onDelete, style }) {
     const list = items || [];
     const [open, setOpen] = React.useState(false);
     const [sel, setSel] = React.useState(() => list.map(() => true));
@@ -287,16 +287,23 @@
         </div>
         {open && (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 220, overflowY: 'auto' }}>
-            {list.map((p, i) => (
-              <button key={p.key + '·' + p.ev.id} onClick={() => setSel((s) => s.map((v, j) => (j === i ? !v : v)))} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: t.radius - 4, cursor: 'pointer', font: 'inherit', textAlign: 'left', border: `1px solid ${sel[i] ? t.accent : t.border}`, background: t.surface }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: sel[i] ? 'none' : `2px solid ${t.borderStrong}`, background: sel[i] ? t.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{sel[i] && <Icon name="check" size={13} color={t.onAccent} sw={2.6} />}</span>
-                <span style={{ width: 7, height: 7, borderRadius: 999, background: catColor(t, p.ev.cat), flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.ev.title}</div>
-                  <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{lbl(p.key)} · {window.VL.fmtTime(p.ev.t)}</div>
-                </div>
-              </button>
-            ))}
+            {list.map((p, i) => {
+              const iconBtn = { width: 30, height: 30, flexShrink: 0, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+              return (
+              <div key={p.key + '·' + p.ev.id} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 6px 4px 10px', borderRadius: t.radius - 4, border: `1px solid ${sel[i] ? t.accent : t.border}`, background: t.surface }}>
+                <button onClick={() => setSel((s) => s.map((v, j) => (j === i ? !v : v)))} style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', textAlign: 'left' }}>
+                  <span style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, border: sel[i] ? 'none' : `2px solid ${t.borderStrong}`, background: sel[i] ? t.accent : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{sel[i] && <Icon name="check" size={13} color={t.onAccent} sw={2.6} />}</span>
+                  <span style={{ width: 7, height: 7, borderRadius: 999, background: catColor(t, p.ev.cat), flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.ev.title}</div>
+                    <div style={{ fontSize: 11.5, color: t.faint, marginTop: 1 }}>{lbl(p.key)} · {window.VL.timeLabel ? (window.VL.timeLabel(p.ev) || '随手') : window.VL.fmtTime(p.ev.t)}</div>
+                  </div>
+                </button>
+                {onEdit && <button onClick={() => onEdit(p)} title="编辑" style={iconBtn}><Icon name="pencil" size={15} color={t.muted} /></button>}
+                {onDelete && <button onClick={() => onDelete(p)} title="删除" style={iconBtn}><Icon name="trash" size={15} color={t.muted} /></button>}
+              </div>
+              );
+            })}
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>

@@ -140,6 +140,7 @@
     const [voiceMode, setVoiceMode] = useState('voice'); // 'voice' 说话 | 'upload' 拍照/上传
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
+    const [editDay, setEditDay] = useState(null); // 编辑对象所在的天（顺延项在过去某天，不一定是 selectedDay）
     const [mtOpen, setMtOpen] = useState(false);
     const [reminderEv, setReminderEv] = useState(null);
     const [toast, setToastState] = useState(null);
@@ -294,7 +295,7 @@
       toggleUrgent: (id) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, urgent: !e.urgent } : e)); setDetail((d) => d && d.id === id ? { ...d, urgent: !d.urgent } : d); },
       showMatrix: () => setMatrixOpen(true),
       openDetail: (ev) => setDetail(ev),
-      openEdit: (ev) => { setDetail(null); setEditEv(ev); },
+      openEdit: (ev, day) => { setDetail(null); setEditDay(day || selectedDay); setEditEv(ev); },
       showMultitask: () => setMtOpen(true),
       addExtracted: (list) => {
         setEvents((prev) => {
@@ -317,7 +318,20 @@
         const parts = [r.created && `新增 ${r.created}`, r.completed && `完成 ${r.completed}`, r.rescheduled && `改期 ${r.rescheduled}`, r.cancelled && `取消 ${r.cancelled}`].filter(Boolean);
         setToast(parts.length ? '已' + parts.join(' · ') : '已处理', 'check');
       },
-      saveEvent: (id, patch) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
+      saveEvent: (id, patch) => { mutate(editDay || selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
+      // 删除指定某天的某条（顺延项可能在过去某天），带撤销
+      deleteEventAt: (day, id) => {
+        const ev = (events[day] || []).find((e) => e.id === id);
+        mutate(day, (arr) => arr.filter((e) => e.id !== id));
+        if (ev) {
+          setTrash((tr) => [{ ev, day, ts: Date.now() }, ...tr]);
+          setToast('已删除', 'trash', { label: '撤销', fn: () => {
+            setEvents((prev) => ({ ...prev, [day]: [...(prev[day] || []).map((e) => ({ ...e })), ev] }));
+            setTrash((tr) => tr.filter((x) => x.ev.id !== ev.id));
+            setToast('已恢复', 'check');
+          } });
+        }
+      },
       rescheduleEvent: (id, time) => { mutate(selectedDay, (arr) => arr.map((e) => e.id === id ? { ...e, t: time } : e)); setDetail((d) => d && d.id === id ? { ...d, t: time } : d); setToast('已改到 ' + time, 'check'); },
       cancelEvent: (id) => mutate(selectedDay, (arr) => arr.map((e) =>
         e.id === id ? { ...e, status: 'cancelled' } : e)),
