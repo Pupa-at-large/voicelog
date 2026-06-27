@@ -156,6 +156,7 @@
     const [demoMode, setDemoMode] = useState(false); // 示例预览中：不落库，可一键退出回到真实数据
     const demoBackup = useRef(null);
     const [notifOpen, setNotifOpen] = useState(false);
+    const [notifSeenSig, setNotifSeenSig] = useState(() => { try { return localStorage.getItem('voicelog:notifSeen') || ''; } catch (e) { return ''; } });
     const toastTimer = useRef(0);
     const remTimer = useRef(0);
 
@@ -202,22 +203,26 @@
     const notifications = useMemo(() => {
       const out = []; const tk = window.VL.todayKey();
       const pend = window.VL.pendingBefore ? window.VL.pendingBefore(events, tk) : [];
-      if (pend.length) out.push({ icon: 'redo', title: `${pend.length} 件未完成可顺延到今天`, sub: '在日程页顶部一键挪过来' });
+      if (pend.length) out.push({ kind: 'rollover', icon: 'redo', title: `${pend.length} 件未完成可顺延`, sub: '点右侧一键挪到今天' });
       Object.keys(events).sort().forEach((day) => {
         if (day < tk) return;
         (events[day] || []).forEach((ev) => {
           if (ev.status === 'todo' && ev.reminder > 0 && window.VL.timeMode(ev) === 'at') {
-            out.push({ icon: 'bell', title: ev.title, sub: `提前 ${ev.reminder} 分 · ${day === tk ? '今天' : day} ${window.VL.fmtTime(ev.t)}`, ev });
+            out.push({ kind: 'reminder', icon: 'bell', title: ev.title, sub: `提前 ${ev.reminder} 分 · ${day === tk ? '今天' : day} ${window.VL.fmtTime(ev.t)}`, ev, day });
           }
         });
       });
       return out;
     }, [events]);
+    const notifSig = notifications.map((n) => n.title + '|' + n.sub).join('§');
 
     const app = {
       events, selectedDay, aiEngine, notify, exportPeriod, accentKey,
       themeKey, setTheme: onTheme,
-      notifications, notifCount: notifications.length, openNotifications: () => setNotifOpen(true),
+      notifications, notifCount: notifications.length,
+      notifUnseen: notifications.length > 0 && notifSig !== notifSeenSig, // 红点：有"没看过的"才显示
+      openNotifications: () => { setNotifOpen(true); setNotifSeenSig(notifSig); try { localStorage.setItem('voicelog:notifSeen', notifSig); } catch (e) {} },
+      completeAt: (day, id) => { const ev = (events[day] || []).find((e) => e.id === id); if (!ev || ev.status === 'done') return; mutate(day, (arr) => arr.map((e) => e.id === id ? { ...e, status: 'done' } : e)); awardXp(XP.done); setToast('完成！做了就是胜利', 'check'); },
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelectedDay,
       setToast,

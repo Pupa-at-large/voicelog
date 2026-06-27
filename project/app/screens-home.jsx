@@ -790,16 +790,24 @@
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {notes.map((n, i) => (
-              <div key={i} onClick={() => { if (n.ev) { app.openDetail(n.ev); onClose(); } }} style={{ display: 'flex', gap: 11, padding: '12px 13px', borderRadius: t.radius, background: t.surface2, cursor: n.ev ? 'pointer' : 'default' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={n.icon || 'bell'} size={17} color={t.accentText} /></div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text }}>{n.title}</div>
-                  <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{n.sub}</div>
+            {notes.map((n, i) => {
+              const aBtn = { height: 30, padding: '0 12px', borderRadius: 999, border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 700, flexShrink: 0 };
+              const ghost = { ...aBtn, border: `1px solid ${t.border}`, background: 'transparent', color: t.muted, fontWeight: 600 };
+              return (
+                <div key={i} style={{ display: 'flex', gap: 11, padding: '12px 13px', borderRadius: t.radius, background: t.surface2 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={n.icon || 'bell'} size={17} color={t.accentText} /></div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{n.title}</div>
+                    <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{n.sub}</div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
+                      {n.kind === 'rollover' && <button onClick={() => { app.rolloverUnfinished(); onClose(); }} style={{ ...aBtn, background: t.accent, color: t.onAccent }}>全部挪到今天</button>}
+                      {n.kind === 'reminder' && <button onClick={() => app.completeAt(n.day, n.ev.id)} style={{ ...aBtn, background: t.accent, color: t.onAccent }}>完成</button>}
+                      {n.kind === 'reminder' && <button onClick={() => { app.openEdit(n.ev, n.day); onClose(); }} style={ghost}>编辑</button>}
+                    </div>
+                  </div>
                 </div>
-                {n.ev && <Icon name="chevR" size={16} color={t.faint} style={{ alignSelf: 'center' }} />}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Sheet>
@@ -858,7 +866,7 @@
               {/* 成长入口：纯图标按钮，和 +/通知 一套语言（上升趋势 = 成长） */}
               <button onClick={app.goGrowth} title="成长" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="trend" size={20} color={t.text} /></button>
               <button onClick={app.openUpload} title="添加日程（拍照/上传/手动）" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="plus" size={20} color={t.text} /></button>
-              <button onClick={app.openNotifications} title="通知" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow, position: 'relative' }}><Icon name="bell" size={20} color={t.text} />{app.notifCount > 0 && <span style={{ position: 'absolute', top: 7, right: 8, width: 8, height: 8, borderRadius: 999, background: 'oklch(0.62 0.19 25)', border: `1.5px solid ${t.surface}` }} />}</button>
+              <button onClick={app.openNotifications} title="通知" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow, position: 'relative' }}><Icon name="bell" size={20} color={t.text} />{app.notifUnseen && <span style={{ position: 'absolute', top: 7, right: 8, width: 8, height: 8, borderRadius: 999, background: 'oklch(0.62 0.19 25)', border: `1.5px solid ${t.surface}` }} />}</button>
             </div>
           </div>
           {/* 列表 / 全览 切换 */}
