@@ -111,7 +111,7 @@
     const load = window.VL.dayLoad(list);
     const todayKey = window.VL.todayKey();
     const prevKey = window.VL.prevKey(todayKey);
-    const rollN = (dayKey === todayKey && prevKey) ? (app.events[prevKey] || []).filter((e) => e.status === 'todo').length : 0;
+    const rollN = (dayKey === todayKey) ? window.VL.pendingBefore(app.events, todayKey).length : 0;
     const w = window.VL.data.week.find((x) => x.key === dayKey);
     const submit = () => { const v = text.trim(); if (!v) return; app.quickAdd(v); setText(''); };
     return (
@@ -126,7 +126,7 @@
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 18 }}>
           {rollN > 0 && !rollDismiss && (
-            <window.RolloverBanner t={t} count={rollN} onMove={() => { app.rolloverUnfinished(); setRollDismiss(true); }} onDismiss={() => setRollDismiss(true)} style={{ marginBottom: 14 }} />
+            <window.RolloverBanner t={t} items={window.VL.pendingBefore(app.events, todayKey)} onMove={(picks) => { app.rolloverUnfinished(picks); setRollDismiss(true); }} onDismiss={() => setRollDismiss(true)} onEdit={(p) => app.openEdit(p.ev, p.key)} onDelete={(p) => app.deleteEventAt(p.key, p.ev.id)} style={{ marginBottom: 14 }} />
           )}
           {load > window.VL.DAILY_CAPACITY_H && !capDismiss[dayKey] && (
             <window.CapacityBanner t={t} hours={load} cap={window.VL.DAILY_CAPACITY_H} onDismiss={() => setCapDismiss((d) => ({ ...d, [dayKey]: true }))} style={{ marginBottom: 14 }} />
@@ -564,6 +564,7 @@
     const [selDay, setSelDay] = useState(window.VL.todayKey());
     const [detail, setDetail] = useState(null);
     const [editEv, setEditEv] = useState(null);
+    const [editDay, setEditDay] = useState(null);
     const [voiceOpen, setVoiceOpen] = useState(false);
     const [aiEngine, setAiEngine] = useState(!!(window.VL && window.VL.serverUrl));
     const [notify, setNotify] = useState(true);
@@ -630,7 +631,7 @@
       },
       openReflect: () => setVoiceOpen('reflect'),
       openDetail: (ev) => setDetail(ev),
-      openEdit: (ev) => { setDetail(null); setEditEv(ev); },
+      openEdit: (ev, day) => { setDetail(null); setEditDay(day || selDay); setEditEv(ev); },
       openRecur: () => setRecurOpen(true),
       openVoice: () => setVoiceOpen(true),
       showMultitask: () => setMtOpen(true),
@@ -709,25 +710,31 @@
         setDetail(null);
         setToast('已顺延到下一天 · 开始了就好，late better than never', 'redo');
       },
-      rolloverUnfinished: () => {
+      // picks: [{key, id}] 勾选要挪的项；不传 = 全部今天之前的待办（含跨天累积）
+      rolloverUnfinished: (picks) => {
         const toKey = window.VL.todayKey();
-        const fromKey = window.VL.prevKey(toKey);
-        if (!fromKey) return;
-        const items = (events[fromKey] || []).filter((e) => e.status === 'todo');
-        if (!items.length) return;
+        const all = window.VL.pendingBefore(events, toKey);
+        const chosen = (picks && picks.length) ? all.filter((p) => picks.some((q) => q.key === p.key && q.id === p.ev.id)) : all;
+        if (!chosen.length) return;
         setEvents((prev) => {
-          const next = { ...prev };
-          next[fromKey] = (prev[fromKey] || []).filter((e) => e.status !== 'todo').map((e) => ({ ...e }));
-          next[toKey] = [...(prev[toKey] || []).map((e) => ({ ...e })), ...items.map((e) => ({ ...e }))];
+          const next = {}; Object.keys(prev).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
+          const moveIds = {}; chosen.forEach((p) => { (moveIds[p.key] = moveIds[p.key] || {})[p.ev.id] = 1; });
+          Object.keys(moveIds).forEach((k) => { next[k] = (next[k] || []).filter((e) => !moveIds[k][e.id]); });
+          next[toKey] = [...(next[toKey] || []), ...chosen.map((p) => ({ ...p.ev }))];
           return next;
         });
         setSelDay(toKey);
-        setToast(`已把 ${items.length} 件挪到今天 · 开始了就好`, 'redo');
+        setToast(`已把 ${chosen.length} 件挪到今天 · 开始了就好`, 'redo');
       },
       toggleImportant: (id) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, important: !e.important } : e)); setDetail((d) => d && d.id === id ? { ...d, important: !d.important } : d); },
       toggleUrgent: (id) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, urgent: !e.urgent } : e)); setDetail((d) => d && d.id === id ? { ...d, urgent: !d.urgent } : d); },
       showMatrix: () => setMatrixOpen(true),
-      saveEvent: (id, patch) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
+      saveEvent: (id, patch) => { mutate(editDay || selDay, (arr) => arr.map((e) => e.id === id ? { ...e, ...patch } : e)); setToast('已更新日程', 'check'); },
+      deleteEventAt: (day, id) => {
+        const ev = (events[day] || []).find((e) => e.id === id);
+        mutate(day, (arr) => arr.filter((e) => e.id !== id));
+        if (ev) { setTrash((tr) => [{ ev, day, ts: Date.now() }, ...tr]); setToast('已删除', 'trash', { label: '撤销', fn: () => { setEvents((prev) => ({ ...prev, [day]: [...(prev[day] || []).map((e) => ({ ...e })), ev] })); setTrash((tr) => tr.filter((x) => x.ev.id !== ev.id)); setToast('已恢复', 'check'); } }); }
+      },
       rescheduleEvent: (id, time) => { mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, t: time } : e)); setDetail((d) => d && d.id === id ? { ...d, t: time } : d); setToast('已改到 ' + time, 'check'); },
       cancelEvent: (id) => mutate(selDay, (arr) => arr.map((e) => e.id === id ? { ...e, status: 'cancelled' } : e)),
       deleteEvent: (id) => {
