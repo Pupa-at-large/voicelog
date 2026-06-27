@@ -154,6 +154,7 @@
     const [showWelcome, setShowWelcome] = useState(() => { try { return !localStorage.getItem('voicelog:welcomed'); } catch (e) { return false; } });
     const [demoMode, setDemoMode] = useState(false); // 示例预览中：不落库，可一键退出回到真实数据
     const demoBackup = useRef(null);
+    const [notifOpen, setNotifOpen] = useState(false);
     const toastTimer = useRef(0);
     const remTimer = useRef(0);
 
@@ -196,9 +197,26 @@
       return next;
     });
 
+    // 通知中心数据：顺延提醒 + 今天及以后设了提醒、未完成的日程
+    const notifications = useMemo(() => {
+      const out = []; const tk = window.VL.todayKey();
+      const pend = window.VL.pendingBefore ? window.VL.pendingBefore(events, tk) : [];
+      if (pend.length) out.push({ icon: 'redo', title: `${pend.length} 件未完成可顺延到今天`, sub: '在日程页顶部一键挪过来' });
+      Object.keys(events).sort().forEach((day) => {
+        if (day < tk) return;
+        (events[day] || []).forEach((ev) => {
+          if (ev.status === 'todo' && ev.reminder > 0 && window.VL.timeMode(ev) === 'at') {
+            out.push({ icon: 'bell', title: ev.title, sub: `提前 ${ev.reminder} 分 · ${day === tk ? '今天' : day} ${window.VL.fmtTime(ev.t)}`, ev });
+          }
+        });
+      });
+      return out;
+    }, [events]);
+
     const app = {
       events, selectedDay, aiEngine, notify, exportPeriod, accentKey,
       themeKey, setTheme: onTheme,
+      notifications, notifCount: notifications.length, openNotifications: () => setNotifOpen(true),
       xp, accumulatedDays, level: window.VL.levelFromXp(xp),
       setDay: setSelectedDay,
       setToast,
@@ -429,6 +447,7 @@
           onToggle={app.toggleDone} onCancel={app.cancelEvent} onDelete={app.deleteEvent} onEdit={app.openEdit}
           onStar={app.toggleImportant} onUrgent={app.toggleUrgent} onMatrixInfo={app.showMatrix} onPostpone={(id) => { app.postpone(id); setDetail(null); }} app={app} />
         <EditSheet t={t} ev={editEv} onClose={() => setEditEv(null)} onSave={app.saveEvent} app={app} />
+        <window.NotificationSheet t={t} open={notifOpen} onClose={() => setNotifOpen(false)} app={app} />
         <Sheet t={t} open={mtOpen} onClose={() => setMtOpen(false)}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: 'color-mix(in oklch, oklch(0.72 0.15 70) 16%, transparent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="bolt" size={20} color={'oklch(0.6 0.15 60)'} /></div>

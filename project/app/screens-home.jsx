@@ -772,6 +772,40 @@
   function stepBtn(t) { return { width: 40, height: 40, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center' }; }
 
   // ── 主页 ──
+  // 通知中心（二级页）：聚合到点提醒 / 顺延；空态「暂无通知」
+  function NotificationSheet({ t, open, onClose, app }) {
+    const notes = (app && app.notifications) || [];
+    return (
+      <Sheet t={t} open={open} onClose={onClose}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <Icon name="bell" size={19} color={t.accentText} />
+          <h3 style={{ margin: 0, fontSize: 19, fontWeight: 720, color: t.text }}>通知</h3>
+          {notes.length > 0 && <span style={{ fontSize: 12.5, color: t.faint }}>{notes.length} 条</span>}
+        </div>
+        {notes.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '34px 0 26px' }}>
+            <div style={{ width: 56, height: 56, borderRadius: 999, background: t.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}><Icon name="bell" size={26} color={t.borderStrong} /></div>
+            <div style={{ fontSize: 14.5, fontWeight: 600, color: t.muted }}>暂无通知</div>
+            <div style={{ fontSize: 12.5, color: t.faint, marginTop: 5 }}>到点的提醒、顺延会出现在这里</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {notes.map((n, i) => (
+              <div key={i} onClick={() => { if (n.ev) { app.openDetail(n.ev); onClose(); } }} style={{ display: 'flex', gap: 11, padding: '12px 13px', borderRadius: t.radius, background: t.surface2, cursor: n.ev ? 'pointer' : 'default' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name={n.icon || 'bell'} size={17} color={t.accentText} /></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{n.title}</div>
+                  <div style={{ fontSize: 12.5, color: t.faint, marginTop: 2 }}>{n.sub}</div>
+                </div>
+                {n.ev && <Icon name="chevR" size={16} color={t.faint} style={{ alignSelf: 'center' }} />}
+              </div>
+            ))}
+          </div>
+        )}
+      </Sheet>
+    );
+  }
+
   function HomeScreen({ t, app }) {
     const [view, setView] = useState('list');
     const [capDismiss, setCapDismiss] = useState({});
@@ -821,18 +855,18 @@
               <h1 style={{ margin: '2px 0 0', fontSize: 30, fontWeight: 760, color: t.text, letterSpacing: -0.6 }}>{cur.month}月{cur.day}日 <span style={{ fontSize: 18, fontWeight: 600, color: t.muted }}>周{cur.dow}</span></h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {/* 成长入口：从底栏移到这里，点开是成长（含复盘）的全部页面 */}
-              <button onClick={app.goGrowth} title="成长" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 42, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, boxShadow: t.shadow }}><Icon name="sparkle" size={16} color={window.VL.GOLD} /><span style={{ fontSize: 13.5, fontWeight: 650, color: t.text }}>成长</span></button>
+              {/* 成长入口：纯图标按钮，和 +/通知 一套语言（上升趋势 = 成长） */}
+              <button onClick={app.goGrowth} title="成长" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="trend" size={20} color={t.text} /></button>
               <button onClick={app.openUpload} title="添加日程（拍照/上传/手动）" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="plus" size={20} color={t.text} /></button>
-              <button onClick={app.demoReminder} style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow }}><Icon name="bell" size={20} color={t.text} /></button>
+              <button onClick={app.openNotifications} title="通知" style={{ width: 42, height: 42, borderRadius: 999, cursor: 'pointer', border: `1px solid ${t.border}`, background: t.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadow, position: 'relative' }}><Icon name="bell" size={20} color={t.text} />{app.notifCount > 0 && <span style={{ position: 'absolute', top: 7, right: 8, width: 8, height: 8, borderRadius: 999, background: 'oklch(0.62 0.19 25)', border: `1.5px solid ${t.surface}` }} />}</button>
             </div>
           </div>
           {/* 列表 / 全览 切换 */}
           <div style={{ marginTop: 10 }}>
             <div style={{ display: 'inline-flex', background: t.surface2, borderRadius: 999, padding: 3, border: `1px solid ${t.border}` }}>
-              {[['list', '列表', 'list'], ['overview', '全览', 'grid'], ['matrix', '象限', 'grid4']].map(([k, lab, ic]) => {
+              {[['list', '列表', 'list'], ['overview', '全览', 'grid'], ['matrix', '象限', 'matrix']].map(([k, lab, ic]) => {
                 const on = view === k;
-                return <button key={k} onClick={() => setView(k)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 16px', border: 'none', cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: on ? 650 : 500, borderRadius: 999, color: on ? t.text : t.muted, background: on ? t.raised : 'transparent', boxShadow: on ? t.shadow : 'none' }}><Icon name={ic} size={15} color={on ? t.text : t.muted} sw={on ? 2.1 : 1.8} />{lab}</button>;
+                return <button key={k} onClick={() => setView(k)} title={lab} aria-label={lab} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 52, height: 36, border: 'none', cursor: 'pointer', borderRadius: 999, background: on ? t.raised : 'transparent', boxShadow: on ? t.shadow : 'none' }}><Icon name={ic} size={19} color={on ? t.accentText : t.muted} sw={on ? 2.1 : 1.85} /></button>;
               })}
             </div>
           </div>
@@ -925,5 +959,5 @@
     );
   }
 
-  Object.assign(window, { HomeScreen, VoiceOverlay, ReminderBanner, DetailSheet, EditSheet });
+  Object.assign(window, { HomeScreen, VoiceOverlay, ReminderBanner, DetailSheet, EditSheet, NotificationSheet });
 })();
