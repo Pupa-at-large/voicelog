@@ -118,8 +118,11 @@ const server = http.createServer(async (req, res) => {
     try {
       const { text, today, now, events } = JSON.parse((await readBody(req)) || '{}');
       if (!text || !text.trim()) return json(res, 400, { error: '缺少 text' });
-      return json(res, 200, await parseUtterance(text.trim(), today, now, events));
-    } catch (e) { return json(res, 500, { error: String(e.message || e) }); }
+      console.log(`[parse] (${PROVIDER}) ${String(text).slice(0, 50)}`);
+      const out = await parseUtterance(text.trim(), today, now, events);
+      console.log(`[parse] ok · ${(out.actions || []).length} 条`);
+      return json(res, 200, out);
+    } catch (e) { console.error('[parse] 失败:', String(e.message || e)); return json(res, 500, { error: String(e.message || e) }); }
   }
   // ── 账户：手机号验证码登录（骨架：验证码直接返回 / 打印到控制台；生产换短信服务商 + 限流）──
   if (req.url === '/auth/request' && req.method === 'POST') {
