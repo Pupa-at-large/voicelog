@@ -1,0 +1,14 @@
+{
+  "name": "voicelog-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "语迹 VoiceLog 后端：解析(豆包/千问)代理 + 手机号登录 + 增量同步。零依赖。",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node test.mjs"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
