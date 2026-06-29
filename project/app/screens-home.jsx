@@ -840,6 +840,14 @@
     const [view, setView] = useState('list');
     const [capDismiss, setCapDismiss] = useState({});
     const [weekOff, setWeekOff] = useState(0); // 周条翻周偏移
+    // 周条手指左右滑翻周；did 标记"刚滑过"，避免顺手触发某天的点选
+    const swipeRef = useRef({ x: 0, y: 0, did: false });
+    const onWeekTouchStart = (e) => { const c = e.touches[0]; swipeRef.current = { x: c.clientX, y: c.clientY, did: false }; };
+    const onWeekTouchEnd = (e) => {
+      const s = swipeRef.current, c = e.changedTouches[0];
+      const dx = c.clientX - s.x, dy = c.clientY - s.y;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) { swipeRef.current.did = true; setWeekOff((o) => o + (dx < 0 ? 1 : -1)); }
+    };
     const sel = app.selectedDay;
     const todayKey = window.VL.todayKey();
     // 周条跟随选中日：选中日变化时，把周条移到包含它的那一周（语音加未来日程也能在首页看到）
@@ -909,7 +917,7 @@
           </div>
         ) : (
           <React.Fragment>
-            <div style={{ padding: '4px 20px 0', flexShrink: 0 }}>
+            <div style={{ padding: '4px 20px 0', flexShrink: 0 }} onTouchStart={onWeekTouchStart} onTouchEnd={onWeekTouchEnd}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <button onClick={() => setWeekOff((o) => o - 1)} style={{ width: 30, height: 30, borderRadius: 999, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Icon name="chevL" size={17} color={t.muted} /></button>
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: t.faint, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -923,7 +931,7 @@
                   const on = w.key === sel;
                   const has = (app.events[w.key] || []).length > 0;
                   return (
-                    <button key={w.key} onClick={() => app.setDay(w.key)} style={{ flex: 1, padding: '8px 0 9px', borderRadius: 14, cursor: 'pointer', border: 'none', background: on ? t.accent : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'background .2s' }}>
+                    <button key={w.key} onClick={() => { if (swipeRef.current.did) { swipeRef.current.did = false; return; } app.setDay(w.key); }} style={{ flex: 1, padding: '8px 0 9px', borderRadius: 14, cursor: 'pointer', border: 'none', background: on ? t.accent : 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, transition: 'background .2s' }}>
                       <span style={{ fontSize: 11.5, fontWeight: 600, color: on ? t.onAccent : t.faint }}>{w.dow}</span>
                       <span style={{ fontSize: 15, fontWeight: 680, color: on ? t.onAccent : t.text, fontVariantNumeric: 'tabular-nums' }}>{w.day}</span>
                       <span style={{ width: 5, height: 5, borderRadius: 999, background: has ? (on ? t.onAccent : t.accent) : 'transparent' }} />
