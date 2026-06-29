@@ -282,7 +282,7 @@
     const base = (window.VL.serverUrl || '').replace(/\/+$/, '');
     if (!base) throw new Error('未配置后端地址');
     const ctrl = new AbortController();
-    const to = setTimeout(() => ctrl.abort(), 30000); // 容忍免费后端冷启动(~50s 仍可能超时→回退规则)
+    const to = setTimeout(() => ctrl.abort(), 60000); // 容忍免费后端冷启动(可达 ~50s)：超时放宽到 60s
     try {
       const _n = new Date();
       const _hm = String(_n.getHours()).padStart(2, '0') + ':' + String(_n.getMinutes()).padStart(2, '0');

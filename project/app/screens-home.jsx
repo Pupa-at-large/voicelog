@@ -968,8 +968,7 @@
                   <div style={{ textAlign: 'center', fontSize: 12.5, color: t.faint, marginTop: 6 }}>← 左滑编辑/删除 · 右滑完成 →</div>
                 </div>
               ) : allEmpty ? (
-                <div style={{ textAlign: 'center', padding: '32px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-                  <div style={{ width: 76, height: 76, borderRadius: 22, background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: t.shadowLg }}><Icon name="micFill" size={34} color={t.onAccent} /></div>
+                <div style={{ textAlign: 'center', padding: '40px 16px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 760, color: t.text }}>记下你的第一件事</div>
                     <div style={{ fontSize: 13.5, color: t.muted, marginTop: 5, lineHeight: 1.55 }}>说一句，或打一句话——语迹帮你变成日程。<br />例如「明天下午三点跟老王开会」</div>
