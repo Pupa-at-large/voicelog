@@ -209,16 +209,10 @@
     const w = week.find((x) => x.key === dayKey);
     if (!w || !w.today) return null;
     const toMin = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
-    const live = (events || []).filter((e) => e.status !== 'cancelled').slice().sort((a, b) => a.t.localeCompare(b.t));
-    if (!live.length) return null;
-    const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
-    let current = null;
-    for (const e of live) { const s = toMin(e.t), en = s + (e.dur || 60); if (e.status !== 'done' && s <= nm && nm < en) { current = e; break; } }
-    const next = live.find((e) => e.status !== 'done' && toMin(e.t) > nm) || null;
-    const rel = (e) => { const d = toMin(e.t) - nm; if (d <= 0) return '即将开始'; if (d < 60) return d + ' 分钟后'; const h = Math.floor(d / 60), m = d % 60; return h + ' 小时' + (m ? ` ${m} 分` : '') + '后'; };
-    const remain = (e) => { const left = toMin(e.t) + (e.dur || 60) - nm; return left > 0 ? `还剩 ${left} 分钟` : '进行中'; };
-
-    if (!current && !next) {
+    const live = (events || []).filter((e) => e.status !== 'cancelled');
+    if (!live.length) return null; // 没有有效日程（含全部取消）→ 什么都不显示
+    // 「都过完」只在确实没有待办时庆祝（取消/全空都不算"过完"）
+    if (!live.some((e) => e.status !== 'done')) {
       return (
         <div style={{ padding: '13px 16px', borderRadius: t.radius, background: t.accentSoft, ...style }}>
           <div style={{ fontSize: 13.5, fontWeight: 650, color: t.accentText }}>今天的安排都过完啦 ✓</div>
@@ -226,6 +220,16 @@
         </div>
       );
     }
+    // 现在/接下来：只看「精确」事件（时段/全天/随手记没有真实时刻，不参与）
+    const timed = live.filter((e) => window.VL.timeMode(e) === 'at').slice().sort((a, b) => a.t.localeCompare(b.t));
+    const now = new Date(); const nm = now.getHours() * 60 + now.getMinutes();
+    let current = null;
+    for (const e of timed) { const s = toMin(e.t), en = s + (e.dur || 60); if (e.status !== 'done' && s <= nm && nm < en) { current = e; break; } }
+    const next = timed.find((e) => e.status !== 'done' && toMin(e.t) > nm) || null;
+    const rel = (e) => { const d = toMin(e.t) - nm; if (d <= 0) return '即将开始'; if (d < 60) return d + ' 分钟后'; const h = Math.floor(d / 60), m = d % 60; return h + ' 小时' + (m ? ` ${m} 分` : '') + '后'; };
+    const remain = (e) => { const left = toMin(e.t) + (e.dur || 60) - nm; return left > 0 ? `还剩 ${left} 分钟` : '进行中'; };
+
+    if (!current && !next) return null; // 有待办但都不是精确时间（时段/随手记/过去）→ 不显示焦点卡，也不误报"过完"
     const line = (label, ev, isNow) => (
       <button onClick={() => onOpen && onOpen(ev)} style={{ display: 'flex', alignItems: 'center', gap: 11, width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer', border: 'none', background: 'transparent', padding: '4px 0' }}>
         <span style={{ width: 4, alignSelf: 'stretch', minHeight: 30, borderRadius: 999, background: catColor(t, ev.cat), flexShrink: 0 }} />

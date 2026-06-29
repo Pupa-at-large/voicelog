@@ -123,13 +123,7 @@
     if (hasTime) { hh = _adj(hh); if (_end) _end.hh = _adj(_end.hh); } else { hh = 9; mm = 0; }
     if (_end) { const d = (_end.hh * 60 + _end.mm) - (hh * 60 + mm); if (d > 0) dur = d; }
     let time = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-    // ── 时间精度：有具体点=精确；只说时段=time段；说"全天/一整天"=全天；什么都没说=随手记 ──
     let timeMode = 'at', daypart = null;
-    if (!hasTime) {
-      if (/全天|一整天|整天|一天到晚|一整日/.test(raw)) { timeMode = 'allday'; time = '00:00'; dur = 0; }
-      else if (dpart) { timeMode = 'period'; daypart = dpart; const dp = window.VL.daypartOf && window.VL.daypartOf(dpart); if (dp) time = dp.rep; dur = 0; }
-      else { timeMode = 'untimed'; dur = 0; }
-    }
 
     // ── 提醒 ──
     let reminder = 0;
@@ -139,6 +133,19 @@
       let v = /半/.test(m[1]) ? (unit.indexOf('小时') >= 0 ? 30 : 30) : cnInt(m[1]);
       if (/半/.test(m[1])) reminder = unit.indexOf('小时') >= 0 ? 30 : 30;
       else if (v != null) reminder = unit.indexOf('小时') >= 0 ? v * 60 : v;
+    }
+
+    // ── 时长（"两个小时""半小时""90分钟"）：补录"做了多久"。在提醒之后抓，别吃掉"提前X分"；"X小时前"是时间不是时长 ──
+    let durSet = false;
+    if (!_end) {
+      const dm = strip(/(半|[0-9]+|[零一二两三四五六七八九十]+)\s*个?\s*(小时|分钟|分)(?!钟前|前)/);
+      if (dm) { const unit = dm[2], v = /半/.test(dm[1]) ? 0.5 : cnInt(dm[1]); if (v != null) { dur = unit.indexOf('小时') >= 0 ? Math.round(v * 60) : Math.round(v); durSet = true; } }
+    }
+    // ── 时间精度：有具体点=精确；只说时段=时段；"全天/一整天"=全天；什么都没说=随手记。补录有时长就保留 ──
+    if (!hasTime) {
+      if (/全天|一整天|整天|一天到晚|一整日/.test(raw)) { timeMode = 'allday'; time = '00:00'; if (!durSet) dur = 0; }
+      else if (dpart) { timeMode = 'period'; daypart = dpart; const dp = window.VL.daypartOf && window.VL.daypartOf(dpart); if (dp) time = dp.rep; if (!durSet) dur = 0; }
+      else { timeMode = 'untimed'; if (!durSet) dur = 0; }
     }
 
     // ── 地点 ──
@@ -265,9 +272,11 @@
     const DPK = ['dawn', 'morning', 'noon', 'afternoon', 'evening', 'night'];
     const tmode = hasTime ? 'at' : (['allday', 'untimed', 'period'].indexOf(a.timeMode) >= 0 ? a.timeMode : (DPK.indexOf(a.daypart) >= 0 ? 'period' : 'untimed'));
     draft.timeMode = tmode;
-    if (tmode === 'period') { draft.daypart = DPK.indexOf(a.daypart) >= 0 ? a.daypart : 'afternoon'; const dp = window.VL.daypartOf(draft.daypart); draft.time = dp ? dp.rep : '15:00'; draft.dur = 0; }
-    else if (tmode === 'allday') { draft.time = '00:00'; draft.dur = 0; }
-    else if (tmode === 'untimed') { draft.dur = 0; }
+    // 非精确事件默认不占时长，但"做了多久"(补录时长 a.dur)若有则保留
+    const carriedDur = Number(a.dur) > 0 ? Number(a.dur) : 0;
+    if (tmode === 'period') { draft.daypart = DPK.indexOf(a.daypart) >= 0 ? a.daypart : 'afternoon'; const dp = window.VL.daypartOf(draft.daypart); draft.time = dp ? dp.rep : '15:00'; draft.dur = carriedDur; }
+    else if (tmode === 'allday') { draft.time = '00:00'; draft.dur = carriedDur; }
+    else if (tmode === 'untimed') { draft.dur = carriedDur; }
     // 子任务 → 备注 + 进度；补录(done) → 标已记录
     const subs = Array.isArray(a.subtasks) ? a.subtasks.map((s) => String(s || '').trim()).filter(Boolean) : [];
     if (subs.length) { draft.subtasks = subs; draft.note = subs.map((s) => '· ' + s).join('\n'); draft.progress = { done: a.done ? subs.length : 0, total: subs.length }; }

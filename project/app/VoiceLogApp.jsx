@@ -410,7 +410,7 @@
 
     const onConfirmVoice = (parsed, reschedules) => {
       const ev = {
-        id: 'v' + Date.now(), t: parsed.time, dur: (parsed.timeMode && parsed.timeMode !== 'at') ? 0 : (parsed.dur || 60), title: parsed.title,
+        id: 'v' + Date.now(), t: parsed.time, dur: parsed.dur || ((parsed.timeMode && parsed.timeMode !== 'at') ? 0 : 60), title: parsed.title,
         timeMode: parsed.timeMode || undefined, daypart: parsed.daypart || undefined,
         cat: parsed.cat, loc: parsed.loc, reminder: parsed.reminder,
         status: parsed.status === 'done' ? 'done' : 'todo', // 补录→已记录

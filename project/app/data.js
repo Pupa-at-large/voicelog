@@ -323,6 +323,12 @@
     { key: 'night', label: '深夜', rep: '23:00' },
   ];
   window.VL.daypartOf = (key) => window.VL.DAYPARTS.find((d) => d.key === key) || null;
+  // 时长文案："90→1.5 小时"、"30→30 分钟"
+  window.VL.durText = function (min) {
+    min = Number(min) || 0; if (min <= 0) return '';
+    if (min < 60) return min + ' 分钟';
+    const h = min / 60; return (Number.isInteger(h) ? h : h.toFixed(1)) + ' 小时';
+  };
   // 规范化精度：显式 timeMode 优先；否则有合法 t → 精确，无 → 随手记（向后兼容老数据）
   window.VL.timeMode = function (ev) {
     const m = ev && ev.timeMode;
@@ -479,7 +485,7 @@
     const next = {}; Object.keys(prev || {}).forEach((k) => { next[k] = (prev[k] || []).map((e) => ({ ...e })); });
     let created = 0, completed = 0;
     const rid = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    const mk = (d, status) => ({ id: rid(), t: d.time, timeMode: d.timeMode || undefined, daypart: d.daypart || undefined, dur: (d.timeMode && d.timeMode !== 'at') ? 0 : (d.dur || 60), title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent, note: d.note || undefined, progress: d.progress || undefined });
+    const mk = (d, status) => ({ id: rid(), t: d.time, timeMode: d.timeMode || undefined, daypart: d.daypart || undefined, dur: d.dur || ((d.timeMode && d.timeMode !== 'at') ? 0 : 60), title: d.title, cat: d.cat, loc: d.loc || null, reminder: d.reminder || 0, status, important: !!d.important, urgent: !!d.urgent, note: d.note || undefined, progress: d.progress || undefined });
     let rescheduled = 0, cancelled = 0;
     // 定位已有日程：优先 targetId（千问从我们给的清单里选），否则按标题模糊匹配
     const findLoc = (id, title, dateKey) => {

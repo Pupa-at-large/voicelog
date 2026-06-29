@@ -674,7 +674,7 @@
         <div style={{ marginTop: 10 }}>
           {window.VL.timeMode(ev) === 'at'
             ? meta('clock', '时间', `${window.VL.fmtRange(ev.t, ev.dur)} · ${ev.dur} 分钟`)
-            : meta('clock', '时间', window.VL.timeMode(ev) === 'allday' ? '全天 · 贯穿一整天' : (window.VL.timeLabel(ev) || '随手记 · 未设时间'))}
+            : meta('clock', '时间', (window.VL.timeMode(ev) === 'allday' ? '全天' : (window.VL.timeLabel(ev) || '随手记')) + (ev.dur > 0 ? ` · 做了 ${window.VL.durText(ev.dur)}` : ''))}
           {ev.loc && meta('pin', '地点', ev.loc)}
           {meta('bell', '提醒', ev.reminder ? `提前 ${ev.reminder} 分钟` : '不提醒')}
         </div>
@@ -701,7 +701,7 @@
   function EditSheet({ t, ev, onClose, onSave, app }) {
     const [st, setSt] = useState(null);
     const titleRef = useRef(null), locRef = useRef(null), noteRef = useRef(null);
-    useEffect(() => { if (ev) { const [h, m] = (ev.t || '09:00').split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent, timeMode: window.VL.timeMode(ev), daypart: ev.daypart || 'afternoon' }); } }, [ev]);
+    useEffect(() => { if (ev) { const [h, m] = (ev.t || '09:00').split(':').map(Number); setSt({ hh: h, mm: m, cat: ev.cat, reminder: ev.reminder || 0, important: !!ev.important, urgent: !!ev.urgent, timeMode: window.VL.timeMode(ev), daypart: ev.daypart || 'afternoon', dur: ev.dur || 0 }); } }, [ev]);
     if (!ev || !st) return null;
     const bump = (delta) => setSt((s) => { let total = (s.hh * 60 + s.mm + delta + 1440) % 1440; return { ...s, hh: Math.floor(total / 60), mm: total % 60 }; });
     const time = `${String(st.hh).padStart(2, '0')}:${String(st.mm).padStart(2, '0')}`;
@@ -742,6 +742,14 @@
             {(st.timeMode === 'allday' || st.timeMode === 'untimed') && (
               <div style={{ fontSize: 12.5, color: t.faint, paddingLeft: 2 }}>{st.timeMode === 'allday' ? '贯穿一整天，不占具体时段' : '只是记一笔，不设时间'}</div>
             )}
+            {st.timeMode !== 'at' && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12.5, color: t.faint, marginBottom: 7 }}>做了多久（可不填）</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[[0, '没记'], [30, '30分'], [60, '1小时'], [120, '2小时'], [180, '3小时']].map(([mn, lab]) => { const on = (st.dur || 0) === mn; return <button key={mn} onClick={() => setSt({ ...st, dur: mn })} style={{ height: 32, padding: '0 13px', borderRadius: 999, cursor: 'pointer', font: 'inherit', fontSize: 13.5, fontWeight: 600, border: `1px solid ${on ? 'transparent' : t.border}`, background: on ? t.accentSoft : 'transparent', color: on ? t.accentText : t.muted }}>{lab}</button>; })}
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {row('类别', (
@@ -781,9 +789,9 @@
             const note = noteRef.current ? noteRef.current.innerText.trim() : ev.note;
             const tmode = st.timeMode || 'at';
             let nt = time, ndur = ev.dur || 60, ndaypart = null;
-            if (tmode === 'period') { ndaypart = st.daypart; const dp = window.VL.daypartOf(st.daypart); nt = dp ? dp.rep : '15:00'; ndur = 0; }
-            else if (tmode === 'allday') { nt = '00:00'; ndur = 0; }
-            else if (tmode === 'untimed') { ndur = 0; }
+            if (tmode === 'period') { ndaypart = st.daypart; const dp = window.VL.daypartOf(st.daypart); nt = dp ? dp.rep : '15:00'; ndur = st.dur || 0; }
+            else if (tmode === 'allday') { nt = '00:00'; ndur = st.dur || 0; }
+            else if (tmode === 'untimed') { ndur = st.dur || 0; }
             onSave(ev.id, { title, t: nt, dur: ndur, timeMode: tmode, daypart: ndaypart, cat: st.cat, reminder: st.reminder, loc: loc || null, note: note || null, important: st.important, urgent: st.urgent });
             onClose();
           }} style={{ flex: 2 }}>保存</Btn>
